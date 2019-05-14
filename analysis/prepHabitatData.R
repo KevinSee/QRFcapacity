@@ -146,5 +146,7 @@ list('CHaMP' = cm_data,
            FreezeRow = 1,
            BoldHeaderRow = T)
 
+# make available like a package, by calling "data()"
 use_data(cm_data, avgHab, hab_dict,
          version = 2)
+
