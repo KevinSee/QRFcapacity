@@ -35,10 +35,10 @@ redd_champ = full_join(champ_sites %>%
 
 # redd counts, by site / species / year
 reddsSiteYr = redd_champ %>%
-  group_by(SiteName, Species, Year) %>%
+  group_by(WatershedName, SiteName, Species, Year) %>%
   summarise(nRedds = n_distinct(reddID)) %>%
   ungroup() %>%
-  arrange(Species, SiteName, Year)
+  arrange(Species, WatershedName, SiteName, Year)
 
 # pull out maximum number of redds found at any CHaMP site
 maxRedds = redd_champ %>%
@@ -52,10 +52,10 @@ maxRedds = redd_champ %>%
   rename(maxReddsPerKm = ReddsPerKm) %>%
   ungroup() %>%
   left_join(champ_sites %>%
-              select(SiteName, minArea_m2)) %>%
+              select(SiteName, WatershedName, minArea_m2)) %>%
   mutate(maxReddsPerMsq = maxReddsPerKm / minArea_m2) %>%
-  select(Species, SiteName, maxYr = Year, maxReddsPerKm, maxReddsPerMsq) %>%
-  arrange(SiteName, Species)
+  select(Species, WatershedName, SiteName, maxYr = Year, maxReddsPerKm, maxReddsPerMsq) %>%
+  arrange(WatershedName, SiteName, Species)
 
 #-----------------------------------------------------------------
 # save redd data
