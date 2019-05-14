@@ -60,4 +60,5 @@ maxRedds = redd_champ %>%
 #-----------------------------------------------------------------
 # save redd data
 use_data(reddsSiteYr, maxRedds,
-         version = 2)
+         version = 2,
+         overwrite = T)
