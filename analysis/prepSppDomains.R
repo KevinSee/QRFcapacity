@@ -231,3 +231,8 @@ sthdDomain %>%
   filter(! NWR_NAME %in% unique(ugrSthd$NWR_NAME)) %>%
   rbind(ugrSthd) -> sthdDomain
 
+#-----------------------------------------------------------------
+# Save species extents
+#-----------------------------------------------------------------
+save(chnkDomain, sthdDomain,
+     file = 'data/prepped/ranges.rda')
