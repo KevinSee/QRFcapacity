@@ -1,0 +1,17 @@
+Package: QRFcapacity
+Title: Carrying Capacity with QRF
+Version: 0.0.1
+Authors@R: person("Kevin", "See", email = "kevin.see@biomark.com", role = c("aut", "cre"))
+Maintainer: Kevin See <kevin.see@biomark.com>
+Description: Estimates carrying capacity using paired fish/habitat data and quantile random forest models.
+Depends: 
+  R (>= 3.5.2),
+  tidyverse(>= 1.2.1),
+  sf(>= 0.7-4)
+License: GPL-2
+Imports:
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
