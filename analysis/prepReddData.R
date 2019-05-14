@@ -8,7 +8,6 @@
 #-----------------------------------------------------------------
 # load needed libraries
 library(tidyverse)
-# library(lubridate)
 
 #-----------------------------------------------------------------
 # Read in and prepare CHaMP habitat data
