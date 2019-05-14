@@ -236,3 +236,13 @@ sthdDomain %>%
 #-----------------------------------------------------------------
 save(chnkDomain, sthdDomain,
      file = 'data/prepped/ranges.rda')
+
+st_write(chnkDomain,
+         dsn = 'data/prepped/ChnkDomain.shp',
+         driver = 'ESRI Shapefile',
+         delete_layer = T)
+
+st_write(sthdDomain,
+         dsn = 'data/prepped/SthdDomain.shp',
+         driver = 'ESRI Shapefile',
+         delete_layer = T)
