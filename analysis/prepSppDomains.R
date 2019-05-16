@@ -234,9 +234,11 @@ sthdDomain %>%
 #-----------------------------------------------------------------
 # Save species extents
 #-----------------------------------------------------------------
-save(chnkDomain, sthdDomain,
-     file = 'data/prepped/ranges.rda')
+# make available like in a package, by calling "data()"
+use_data(chnkDomain, sthdDomain,
+         version = 2)
 
+# save as shape files
 st_write(chnkDomain,
          dsn = 'data/prepped/ChnkDomain.shp',
          driver = 'ESRI Shapefile',
