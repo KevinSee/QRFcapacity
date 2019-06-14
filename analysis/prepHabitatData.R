@@ -150,3 +150,13 @@ list('CHaMP' = cm_data,
 use_data(cm_data, avgHab, hab_dict,
          version = 2)
 
+
+#-----------------------------------------------------------------
+# make use of final CHaMP data
+#-----------------------------------------------------------------
+# load('/Users/kevin/Dropbox/ISEMP/Data/Habitat/CHaMP/CMorg/CHaMP_FinalMetrics_20180308/CHaMPdata.rda')
+# 
+# use_data(chunitDf, siteData,
+#          overwrite = T,
+#          version = 2)
+
