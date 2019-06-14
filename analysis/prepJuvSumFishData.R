@@ -677,6 +677,11 @@ fishSumDf %>%
   select(Watershed, FishSite, Year, SampleDate, FishCrew, Species, Pass1.M:pSE)
 # drop the ODFW data point - raw data doesn't make sense
 
-  
+fishSumDf %>%
+  filter(Method == 'Continuous',
+         is.na(p)) %>%
+  # filter(Pass1.M > 0) %>%
+  # as.data.frame()
+  xtabs(~ Pass1.M == 0, .)
 
 
