@@ -5,4 +5,5 @@
 .Rbuildignore
 .DS_Store
 data/raw
+data/prepped/outgoing
 RepoDesign.txt
