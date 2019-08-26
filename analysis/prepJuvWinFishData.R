@@ -498,6 +498,7 @@ write_csv(fishWinDf,
 
 # save to use as data
 use_data(fishWinDf,
+         version = 2,
          overwrite = T)
 
 #------------------------------------------------------
