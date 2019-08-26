@@ -1,12 +1,12 @@
 # Author: Kevin See
 # Purpose: Process species ranges
 # Created: 5/14/2019
-# Last Modified: 5/14/19
+# Last Modified: 6/19/19
 # Notes: 
 # From StreamNet: http://www.streamnet.org/data/interactive-maps-and-gis-data/
 # Bureau of Rec provided updated extents in the Upper Salmon watersheds
 # Ted Sedell at ODFW provided updated extents in the Upper Grande Ronde
-
+# downloaded new ranges from StreamNet on June 19, 2019 (compiled in Jan, 2019)
 
 #-----------------------------------------------------------------
 # load needed libraries
@@ -21,7 +21,8 @@ myCRS = 5070
 # get species' ranges
 #-----------------------------------------------------------------
 # read in StreamNet shapefile
-StmNt = st_read('data/raw/domain/StreamNet_FishDist.shp') %>%
+StmNt = st_read('data/raw/domain/FishDist_AllSpecies.shp') %>%
+# StmNt = st_read('data/raw/domain/StreamNet_FishDist.shp') %>%
   st_transform(crs = myCRS)
 
 
@@ -52,6 +53,7 @@ crb = st_read('/Users/kevin/Dropbox/ISEMP/Data/DesignDocs/WatershedBoundaryLines
 chnkDomain = StmNt %>%
   filter(Species == 'Chinook salmon' &
            Run %in% c('Spring', 'Summer')) %>%
+  st_zm() %>%
   st_intersection(crb) %>%
   mutate(Source = 'StreamNet') %>%
   st_join(chnkPops %>%
@@ -64,6 +66,7 @@ chnkDomain = StmNt %>%
 sthdDomain = StmNt %>%
   filter(Species == 'Steelhead' &
            Run == 'Summer') %>%
+  st_zm() %>%
   mutate(Source = 'StreamNet') %>%
   st_intersection(crb) %>%
   st_join(sthdPops %>%
@@ -145,8 +148,6 @@ uppSalmSthd = st_read('data/raw/domain/UPsalmon_SteelheadExtent_All.shp') %>%
             filter(MPG == 'Salmon River') %>%
             mutate(Basin = str_remove(NWR_NAME, 'Steelhead \\(Snake River Basin DPS\\) \\- ')) %>%
             select(Basin))
-
-
 
 
 p1 = sthdDomain %>%
@@ -236,7 +237,8 @@ sthdDomain %>%
 #-----------------------------------------------------------------
 # make available like in a package, by calling "data()"
 use_data(chnkDomain, sthdDomain,
-         version = 2)
+         version = 2,
+         overwrite = T)
 
 # save as shape files
 st_write(chnkDomain,
