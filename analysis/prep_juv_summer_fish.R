@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep summer juvenile fish data
 # Created: 5/14/2019
-# Last Modified: 9/13/19
+# Last Modified: 9/17/19
 # Notes: need info for site name, fish crew, sample data, site length, watershed AND
 # number marks, captures, recaptures OR
 # 1st, 2nd, 3rd pass depletion OR
@@ -15,6 +15,7 @@ library(lubridate)
 library(magrittr)
 library(readxl)
 library(dbplyr)
+library(QRFcapacity)
 
 #-----------------------------------------------------------------
 # Entiat
@@ -102,14 +103,14 @@ aso %>%
   nrow()
 nrow(aso)
 
-asoSites = aso %>%
+aso_sites = aso %>%
   select(Year, FishSiteName, SiteName) %>%
   distinct %>%
   arrange(FishSiteName, SiteName, Year)
 
 # look at all CHaMP sites in Asotin, and match them with corresponding Stream / FishSiteName
-data(siteData)
-siteData %>% 
+data("champ_site_2011_17")
+champ_site_2011_17 %>% 
   # filter(grepl('ASW', SiteName)) %>%
   filter(Watershed == 'Asotin') %>%
   select(Site,
@@ -118,7 +119,7 @@ siteData %>%
   mutate(FishSiteName = str_split(Site, ' ', simplify = T)[,1],
          FishSiteName = str_remove(FishSiteName, 'ASW00001-')) %>%
   mutate(champ = T) %>%
-  full_join(asoSites %>%
+  full_join(aso_sites %>%
               rename(Site = SiteName) %>%
               mutate(aso = T)) %>%
   mutate_at(vars(champ, aso),
@@ -152,11 +153,11 @@ ugr = read_excel('data/raw/fish/summer/ODFW_Export_Output4Kevin.xlsx') %>%
 # John Day
 #-----------------------------------------------------------------
 # use the fish database provided by Nick Weber for fish data from ELR
-myConn = DBI::dbConnect(RSQLite::SQLite(),
+elr_conn = DBI::dbConnect(RSQLite::SQLite(),
                         '/Users/kevin/Dropbox/ISEMP/Data/Fish/John Day/JohnDayRovingFish_MASTER.db')
-src_dbi(myConn)
+src_dbi(elr_conn)
 
-dce = tbl(myConn,
+dce = tbl(elr_conn,
           'fld_DataCollectionEvent') %>%
   mutate(FishWettedArea = SiteLength * WettedWidth) %>%
   select(FishSiteName = SiteName,
@@ -206,17 +207,17 @@ dce = tbl(myConn,
                               SampleDate)) %>%
   arrange(Year, FishSiteName, dceGroup, SampleDate)
 
-fishPass = tbl(myConn, 'fld_FishCapturePass') %>%
+fish_pass = tbl(elr_conn, 'fld_FishCapturePass') %>%
   select(dceID, passKey, CaptureMethod) %>%
   collect() 
 
 # correct one entry, to make 3 passes of a depletion have the same method
-fishPass %<>%
+fish_pass %<>%
   mutate(CaptureMethod = if_else(dceID == 1563,
                                  'Electro Fishing',
                                  CaptureMethod))
 
-fishObs = tbl(myConn, 'fld_FishObservation') %>%
+fish_obs = tbl(elr_conn, 'fld_FishObservation') %>%
   filter(Species %in% c('Steelhead', 'Chinook')) %>%
   filter(FishLifeStage != 'Adult') %>%
   # filter for certain size class
@@ -239,9 +240,9 @@ fishObs = tbl(myConn, 'fld_FishObservation') %>%
                                     'Efficiency Recapture' = 'Non-Efficiency Recapture'))
 
 # depletion data
-elrDepl = dce %>%
-  left_join(fishPass) %>%
-  left_join(fishObs %>%
+elr_depl = dce %>%
+  left_join(fish_pass) %>%
+  left_join(fish_obs %>%
               group_by(Species, dceID, passKey) %>%
               summarise(nFish = sum(FishCount))) %>%
   filter(Method == 'Depletion') %>%
@@ -271,9 +272,9 @@ elrDepl = dce %>%
   arrange(Year, FishSiteName, SampleDate)
 
 # mark-recapture data
-elrMR = dce %>%
+elr_mr = dce %>%
   filter(Method %in% c('Mark', 'Recapture')) %>%
-  left_join(fishObs %>%
+  left_join(fish_obs %>%
               group_by(Species, dceID, PitTagCaptureType) %>%
               summarise(nFish = sum(FishCount))) %>%
   filter(!is.na(dceGroup)) %>%
@@ -298,9 +299,9 @@ elrMR = dce %>%
   arrange(Year, FishSiteName, SampleDate)
 
 # count data (including Method == 'Mark' with no dceGroup -> no recapture pass)
-elrCnt = dce %>%
+elr_count = dce %>%
   filter(Method %in% c('Count') | (Method == 'Mark' & is.na(dceGroup))) %>%
-  left_join(fishObs %>%
+  left_join(fish_obs %>%
               group_by(Species, dceID) %>%
               summarise(nFish = sum(FishCount))) %>%
   filter(!is.na(Species)) %>%
@@ -318,9 +319,9 @@ elrCnt = dce %>%
 dce %>%
   select(FishSiteName, Year, Season, Method, anayMeth, SampledStatus) %>%
   distinct() %>%
-  anti_join(elrDepl %>%
-              bind_rows(elrMR) %>%
-              bind_rows(elrCnt) %>%
+  anti_join(elr_depl %>%
+              bind_rows(elr_mr) %>%
+              bind_rows(elr_count) %>%
               select(FishSiteName, Year, Season, dceID) %>%
               distinct()) %>%
   # xtabs(~ Method + is.na(SampledStatus), .) %>%
@@ -332,24 +333,24 @@ dce %>%
 dce %>%
   select(FishSiteName, Year, Season, Method, anayMeth, SampledStatus) %>%
   distinct() %>%
-  anti_join(elrDepl %>%
-              bind_rows(elrMR) %>%
-              bind_rows(elrCnt) %>%
+  anti_join(elr_depl %>%
+              bind_rows(elr_mr) %>%
+              bind_rows(elr_count) %>%
               select(FishSiteName, Year, Season, dceID) %>%
               distinct()) %>%
   filter(SampledStatus == 'Sampled') 
 
 
-jdELR = elrDepl %>%
-  bind_rows(elrMR) %>%
-  bind_rows(elrCnt) %>%
+jd_ELR = elr_depl %>%
+  bind_rows(elr_mr) %>%
+  bind_rows(elr_count) %>%
   arrange(Year, FishSiteName, SampleDate, Species)
 
-# xtabs(~ Season + Year + Species, jdELR)
+# xtabs(~ Season + Year + Species, jd_ELR)
 
 # add some GRTS sites to rows with missing values, based on other years where that fish site has a GRTS site associated with it
-jdELR %<>%
-  left_join(jdELR %>%
+jd_ELR %<>%
+  left_join(jd_ELR %>%
               filter(!is.na(SiteName)) %>%
               select(FishSiteName, Site = SiteName, Stream) %>%
               distinct()) %>%
@@ -360,22 +361,22 @@ jdELR %<>%
   select(one_of(names(aso)), starts_with('Pass'))
 
 # # which fish sites never have a GRTS site associated with them?
-# xtabs(~ is.na(SiteName) + Year, jdELR)
+# xtabs(~ is.na(SiteName) + Year, jd_ELR)
 # 
-# jdELR %>%
+# jd_ELR %>%
 #   filter(is.na(SiteName)) %>%
 #   select(FishSiteName, Stream) %>%
 #   distinct() %>%
 #   xtabs(~ Stream, .) %>% 
 #   sort(decreasing = T) %>% addmargins()
 # 
-# n_distinct(jdELR$FishSiteName)
+# n_distinct(jd_ELR$FishSiteName)
 
 #----------------------
 # ODFW
 #----------------------
 # uses all fish at least 35mm in length
-jdODFW = read_csv('data/raw/fish/summer/ODFW_JohnDay_SiteSummary_35mmandUp.csv') %>%
+jd_ODFW = read_csv('data/raw/fish/summer/ODFW_JohnDay_SiteSummary_35mmandUp.csv') %>%
   rename(Lat = US.LatDD, Lon = US.LongDD,
          SampleDate = Date,
          Species = SpeciesSampled,
@@ -401,7 +402,7 @@ jdODFW = read_csv('data/raw/fish/summer/ODFW_JohnDay_SiteSummary_35mmandUp.csv')
 
 # # this re-creates the summary table, based on the raw fish data, but without some details like sampling data and method.
 # lngthCutOff = 35
-# jdODFW = read_csv('data/raw/fish/summer/ODFW_JohnDay_FishSummary.csv') %>%
+# jd_ODFW = read_csv('data/raw/fish/summer/ODFW_JohnDay_FishSummary.csv') %>%
 #   filter(!is.na(DataCollectionEvent)) %>%
 #   filter(Length < 0 | Length >= lngthCutOff) %>%
 #   filter(!(Length > 200 & SpeciesCode == '11W')) %>%
@@ -444,7 +445,7 @@ jdODFW = read_csv('data/raw/fish/summer/ODFW_JohnDay_SiteSummary_35mmandUp.csv')
 #   select(DataCollectionEvent:SpeciesCode, Species, everything())
 
 # uses all fish at least 35mm in length
-jdODFW = read_csv('data/raw/fish/summer/ODFW_JohnDay_SiteSummary_35mmandUp.csv') %>%
+jd_ODFW = read_csv('data/raw/fish/summer/ODFW_JohnDay_SiteSummary_35mmandUp.csv') %>%
   rename(Lat = US.LatDD, Lon = US.LongDD,
          SampleDate = Date,
          Species = SpeciesSampled,
@@ -633,15 +634,15 @@ qci %>%
 #-----------------------------------------------------------------
 # Put it all together
 #-----------------------------------------------------------------
-fishSumDf = aso %>%
+fish_sum_data = aso %>%
   bind_rows(ent %>%
               anti_join(tq %>%
                           select(SiteName, Year, Species, FishCrew, SampleDate))) %>%
   bind_rows(tq) %>%
   bind_rows(ugr) %>%
-  bind_rows(jdELR %>%
+  bind_rows(jd_ELR %>%
               filter(!is.na(SiteName))) %>%
-  bind_rows(jdODFW %>%
+  bind_rows(jd_ODFW %>%
               select(-DataCollectionEvent)) %>%
   bind_rows(qci) %>%
   filter(Year >= 2011) %>%
@@ -662,7 +663,7 @@ fishSumDf = aso %>%
   select(Year:FishWettedArea, Pass1.M, Pass2.C, Pass3.R, Pass4, Nmethod, everything())
 
 # make sure some fish site names match the habitat site names
-fishSumDf %<>%
+fish_sum_data %<>%
   mutate(Site = recode(Site,
                        'Big0Springs_4' = 'LEM00001-Big0Springs-4',
                        'Big0Springs-4' = 'LEM00001-Big0Springs-4',
@@ -681,12 +682,17 @@ fishSumDf %<>%
                        'LEM00001-00001D' = 'LEM00002-00001D'))
 
 
-# add some missing lat/long from the CHaMP data
-data(siteData)
-data("avgHab_v2")
+# add some missing lat/long from the CHaMP data, or the GAA data
+data(champ_site_2011_17)
+data(champ_site_2011_17_avg)
+data(gaa)
+gaa_locs = gaa %>%
+  select(Site, 
+         LON_DD = Lon, 
+         LAT_DD = Lat)
 
-fishSumDf %<>%
-  left_join(siteData %>%
+fish_sum_data %<>%
+  left_join(champ_site_2011_17 %>%
               select(Site, Year = VisitYear,
                      LON_DD, LAT_DD) %>%
               distinct() %>%
@@ -698,7 +704,7 @@ fishSumDf %<>%
                        LON_DD,
                        Lon)) %>%
   select(-LON_DD, -LAT_DD) %>%
-  left_join(avgHab_v2 %>%
+  left_join(champ_site_2011_17_avg %>%
               select(Site, Watershed, LAT_DD, LON_DD)) %>%
   mutate(Lat = if_else(is.na(Lat),
                        LAT_DD,
@@ -706,11 +712,20 @@ fishSumDf %<>%
          Lon = if_else(is.na(Lon),
                        LON_DD,
                        Lon)) %>%
+  select(-LON_DD, -LAT_DD) %>%
+  left_join(gaa_locs) %>%
+  mutate(Lat = if_else(is.na(Lat),
+                       LAT_DD,
+                       Lat),
+         Lon = if_else(is.na(Lon),
+                       LON_DD,
+                       Lon)) %>%
   select(-LON_DD, -LAT_DD)
+  
 
 # add site length and area where missing
 # primary estimates of site length, width and area
-yrHab = siteData %>%
+yrHab = champ_site_2011_17 %>%
   filter(VisitObjective == 'Primary Visit',
          VisitStatus == 'Released to Public') %>%
   select(Site, Watershed, Year = VisitYear, Lgth_WetChnl, WetWdth_Int, Area_Wet) %>%
@@ -719,7 +734,7 @@ yrHab = siteData %>%
   filter(Lgth_WetChnl == max(Lgth_WetChnl, na.rm = T)) %>%
   ungroup()
 
-fishSumDf %<>%
+fish_sum_data %<>%
   left_join(yrHab) %>%
   mutate(FishSiteLength = if_else(is.na(FishSiteLength) | FishSiteLength == 0,
                                   Lgth_WetChnl,
@@ -730,7 +745,7 @@ fishSumDf %<>%
                                           Area_Wet,
                                           FishWettedArea))) %>%
   select(-(Lgth_WetChnl:Area_Wet)) %>%
-  left_join(avgHab_v2 %>%
+  left_join(champ_site_2011_17_avg %>%
               select(Site, Watershed, Lgth_WetChnl, WetWdth_Int, Area_Wet)) %>%
   mutate(FishSiteLength = if_else(is.na(FishSiteLength),
                                   Lgth_WetChnl,
@@ -743,27 +758,27 @@ fishSumDf %<>%
   select(-(Lgth_WetChnl:Area_Wet))
 
 
-fishSumDf %>%
+fish_sum_data %>%
   filter(is.na(FishWettedArea) | is.na(FishSiteLength)) %>%
   select(Watershed, Site, FishSiteLength, FishWettedArea) %>%
   arrange(Watershed, Site) %>%
   distinct() %>%
   as.data.frame() %>%
-  left_join(siteData %>%
+  left_join(champ_site_2011_17 %>%
               select(Watershed, Site, VisitYear, VisitObjective, VisitPhase, VisitStatus, Lgth_WetChnl, WetWdth_Int, Area_Wet))
 
 
 #-----------------------------------------------------------------
 # save as csv file
-write_csv(fishSumDf,
+write_csv(fish_sum_data,
           'data/prepped/QRFsummerDataPrepped.csv')
 
 # save to use like in a package
-use_data(fishSumDf,
+use_data(fish_sum_data,
          version = 2,
          overwrite = T)
 
-fishSumDf %>% 
+fish_sum_data %>% 
   group_by(Watershed) %>% 
   summarise(nLgth = sum(is.na(FishSiteLength)), 
             nArea = sum(is.na(FishWettedArea)))
@@ -772,13 +787,13 @@ fishSumDf %>%
 # Issues
 #-----------------------------------------------------------------
 # surveys with more recaptures than marks
-fishSumDf %>%
+fish_sum_data %>%
   filter(Method == 'Mark Recapture',
          Pass3.R > Pass1.M) %>%
   select(Watershed, FishSite, Year, SampleDate, FishCrew, Species, Pass1.M:pSE)
 # drop the ODFW data point - raw data doesn't make sense
 
-fishSumDf %>%
+fish_sum_data %>%
   filter(Method == 'Continuous',
          is.na(p)) %>%
   # filter(Pass1.M > 0) %>%
