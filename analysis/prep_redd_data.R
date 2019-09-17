@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep redd data
 # Created: 5/14/2019
-# Last Modified: 5/14/19
+# Last Modified: 9/11/19
 # Notes: 
 
 
@@ -12,7 +12,7 @@ library(tidyverse)
 #-----------------------------------------------------------------
 # Read in and prepare CHaMP habitat data
 champ_sites = read_csv(file = 'data/raw/fish/redds/CHAMPsites_With_RID_MEAS.csv') %>%
-  select(ProgramSiteID, SiteName, WatershedID, WatershedName, Stream, 
+  select(ProgramSiteID, Site = SiteName, WatershedID, Watershed = WatershedName, Stream, 
          LAT_DD, LON_DD,
          RID, MEAS_champ = MEAS, 
          NEAR_DIST, NEAR_X, NEAR_Y, minArea_m2)
@@ -28,34 +28,34 @@ redd_df = read_csv(file = 'data/raw/fish/redds/ReddData_With_RID_MEAS.csv') %>%
 buffer <- 500
 
 redd_champ = full_join(champ_sites %>%
-                         select(SiteName, WatershedName:MEAS_champ),
+                         select(Site, Watershed:MEAS_champ),
                        redd_df %>%
                          select(-Stream)) %>%
   filter(MEAS_redd <= MEAS_champ + buffer & MEAS_redd >= MEAS_champ - buffer)
 
 # redd counts, by site / species / year
 reddsSiteYr = redd_champ %>%
-  group_by(WatershedName, SiteName, Species, Year) %>%
+  group_by(Watershed, Site, Species, Year) %>%
   summarise(nRedds = n_distinct(reddID)) %>%
   ungroup() %>%
-  arrange(Species, WatershedName, SiteName, Year)
+  arrange(Species, Watershed, Site, Year)
 
 # pull out maximum number of redds found at any CHaMP site
 maxRedds = redd_champ %>%
-  group_by(SiteName, Species, Year) %>%
+  group_by(Site, Species, Year) %>%
   summarise(ReddsPerKm = n_distinct(reddID)) %>%
   ungroup() %>%
-  group_by(SiteName, Species) %>%
+  group_by(Site, Species) %>%
   filter(ReddsPerKm == max(ReddsPerKm, na.rm = T)) %>%
   # if some years are tied, use the latest year (to better match CHaMP data)
   filter(Year == max(Year)) %>%
   rename(maxReddsPerKm = ReddsPerKm) %>%
   ungroup() %>%
   left_join(champ_sites %>%
-              select(SiteName, WatershedName, minArea_m2)) %>%
+              select(Site, Watershed, minArea_m2)) %>%
   mutate(maxReddsPerMsq = maxReddsPerKm / minArea_m2) %>%
-  select(Species, WatershedName, SiteName, maxYr = Year, maxReddsPerKm, maxReddsPerMsq) %>%
-  arrange(WatershedName, SiteName, Species)
+  select(Species, Watershed, Site, maxYr = Year, maxReddsPerKm, maxReddsPerMsq) %>%
+  arrange(Watershed, Site, Species)
 
 #-----------------------------------------------------------------
 # save redd data

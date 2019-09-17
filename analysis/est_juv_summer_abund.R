@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Estimate abundance of summer juvenile fish
 # Created: 6/3/2019
-# Last Modified: 8/26/19
+# Last Modified: 9/12/19
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -10,9 +10,9 @@ library(tidyverse)
 library(lubridate)
 library(magrittr)
 library(FSA)
-# library(lme4)
-# library(MuMIn)
 # library(Rcapture)
+
+theme_set(theme_bw())
 
 #-----------------------------------------------------------------
 # load fish data
@@ -235,10 +235,24 @@ fishSumDf %<>%
 
 #-----------------------------------------------------------------
 # pull out valid estimates, save to use
+
 fishSumEst = fishSumDf %>%
-  filter(Valid) %>%
+  mutate(fish_dens = N / FishSiteLength) %>%
+  # filter(Valid) %>%
   mutate_at(vars(Species, Watershed, Season, FishCrew, Method),
             list(fct_drop))
+
+
+fishSumEst %>%
+  filter(is.na(FishSiteLength)) %>%
+  pull(Site) %>% unique() %>% sort()
+
+fishSumEst %>%
+  filter(!is.na(FishSiteLength)) %>%
+  group_by(Species, Valid) %>%
+  summarise(nSites = n_distinct(Site)) %>%
+  ungroup() %>%
+  spread(Valid, nSites)
 
 use_data(fishSumEst,
          version = 2,
@@ -246,14 +260,20 @@ use_data(fishSumEst,
 
 #-----------------------------------------------------------------
 # Modeling capture probability for the single pass surveys
+library(lme4)
+library(MuMIn)
+
 # for most places, use valid mark-recapture data to estimate capture efficiency
 # for single pass sites in the Lemhi, use depletion sites for ratio estimator model
 
-data("siteData")
+
+
+data(siteData)
+data(fishSumEst)
 # which surveys do we need to make predictions for?
-ratPredDf = fishSumDf %>%
+ratPredDf = fishSumEst %>%
   filter((Method == 'Single Pass' & is.na(N)) |
-           (Method == 'Mark Recapture' & !((Pass1.M * Pass2.C) / 4 > N) | Pass3.R >= 7)) %>%
+           (Method == 'Mark Recapture' & !Valid)) %>%
   mutate(N = NA,
          SE = NA,
          p = NA,
@@ -282,13 +302,11 @@ xtabs(~ Watershed + Year,
   addmargins()
 
 # what can we use to predict capture probability?
-ratModDf = fishSumDf %>%
+ratModDf = fishSumEst %>%
   filter(Method == 'Mark Recapture',
+         Valid,
          # Watershed %in% unique(ratPredDf$Watershed),
          !(FishCrew == 'QCI' & Watershed == 'Lemhi')) %>%
-  mutate(Valid = if_else(((Pass1.M * Pass2.C) / 4 > N) | Pass3.R >= 7, T, F)) %>%
-  filter(Valid) %>%
-  select(-Valid) %>%
   left_join(siteData %>%
               filter(VisitStatus == 'Released to Public',
                      VisitObjective == 'Primary Visit') %>%
@@ -303,31 +321,48 @@ ratModDf = fishSumDf %>%
   mutate(Stream = if_else(is.na(Stream),
                           StreamName,
                           Stream)) %>%
-  select(Year, Site, Stream, Watershed, FishCrew, Channel_Type, FishSiteLength, WetWidth, Species, Pass1.M, N) %>%
+  select(Year, Site, Stream, Watershed, FishCrew, Channel_Type, FishSiteLength, WetWidth, Species, Pass1.M, N, SE, p, pSE) %>%
   drop_na() %>%
+  # center some variables
   mutate_at(vars(WetWidth),
             list(~ (. - mean(., na.rm = T))))
 
-# ratModDf %>%
-#   filter(FishSiteLength > Lgth_Wet) %>%
-#   mutate(diff = FishSiteLength - Lgth_Wet) %>%
-#   ggplot(aes(x = diff,
-#              fill = Watershed)) +
-#   geom_histogram()
+ratModDf %>%
+  ggplot(aes(x = Channel_Type,
+             y = p,
+             fill = FishCrew)) +
+  geom_boxplot() +
+  theme(legend.position = 'bottom') +
+  scale_fill_brewer(palette = 'Set1') +
+  facet_wrap(~ Species)
 
+ratModDf %>%
+  ggplot(aes(x = WetWidth,
+             y = p)) +
+  geom_point(aes(color = Species)) +
+  geom_smooth(method = lm) +
+  facet_wrap(~ FishCrew)
+
+lm(p ~ Channel_Type,
+   data = ratModDf) %>%
+  # anova()
+  summary()
+
+xtabs(~ Channel_Type + Species,
+      ratModDf)
 
 xtabs(~ Watershed + FishCrew + Species, 
       ratModDf, 
       drop.unused.levels = T) %>%
   addmargins(margin = c(1,2))
 
-test = glm(cbind(Pass1.M, (N - Pass1.M)) ~ FishCrew + Stream + (Species + Pass1.M + WetWidth)^2,
+test = glm(cbind(Pass1.M, (N - Pass1.M)) ~ FishCrew + (Species + Pass1.M + WetWidth + Channel_Type)^2,
              data = ratModDf,
              family = 'binomial',
              na.action = 'na.fail')
 autoplot(test)
 
-fullMod = glmer(cbind(Pass1.M, (N - Pass1.M)) ~ (Species + Pass1.M + WetWidth)^2 + (1 | FishCrew) + (1 | Stream),
+fullMod = glmer(cbind(Pass1.M, (N - Pass1.M)) ~ (Species + Pass1.M + WetWidth + Channel_Type)^2 + (1 | FishCrew),
 # fullMod = glm(cbind(Pass1.M, (N - Pass1.M)) ~ (Species + FishCrew + Pass1.M + WetWidth)^2,
                 data = ratModDf,
                 family = 'binomial',

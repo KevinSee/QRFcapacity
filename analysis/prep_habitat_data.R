@@ -13,7 +13,7 @@ library(WriteXLS)
 
 #-----------------------------------------------------------------
 # get CHaMP data
-cm_data = read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricAndCovariates.csv') %>%
+champ_2011_14 = read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricAndCovariates.csv') %>%
   inner_join(read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricVisitInformation.csv')) %>%
   left_join(read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/StreamTempSummer7dAM.csv')) %>%
   mutate_at(vars(SiteName, WatershedName), 
@@ -33,7 +33,7 @@ cm_data = read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricAndCova
                      MaxMeanTemp = MaxMean))
 
 # average metrics across years for sites visited multiple times, keep metrics that don't change
-avgHab = cm_data %>%
+champ_2011_14_avg = champ_2011_14 %>%
   filter(`Primary Visit` == 'Yes') %>%
   select(-matches('FileName'),
          -matches('GCD')) %>%
@@ -42,7 +42,7 @@ avgHab = cm_data %>%
                     Grad:MaxMeanTemp),
                list(median),
                na.rm = T) %>%
-  left_join(cm_data %>%
+  left_join(champ_2011_14 %>%
               filter(`Primary Visit` == 'Yes') %>%
               select(ProgramSiteID:WatershedName,
                      x_albers:Elev_M,
@@ -61,7 +61,7 @@ avgHab = cm_data %>%
                              x_albers:y_albers,
                              CEC_L1, CEC_L2),
                         list(as.numeric))) %>%
-  select(one_of(names(cm_data)))
+  select(one_of(names(champ_2011_14)))
 
 # read in dictionary of habitat metrics
 hab_dict = read_csv(paste0('data/raw/habitat/CHaMP_ProgramMetrics_20150916/Definitions.csv'))
@@ -138,25 +138,84 @@ hab_dict %<>%
 #-----------------------------------------------------------------
 # save prepped data
 #-----------------------------------------------------------------
-list('CHaMP' = cm_data,
-     'Avg CHaMP' = avgHab,
+list('CHaMP' = champ_2011_14,
+     'Avg CHaMP' = champ_2011_14_avg,
      'Metric Dictionary' = hab_dict) %>%
-  WriteXLS('data/Prepped/HabitatData.xlsx',
+  WriteXLS('data/Prepped/CHaMP_2011_2014_Data.xlsx',
            AdjWidth = T,
            FreezeRow = 1,
            BoldHeaderRow = T)
 
 # make available like a package, by calling "data()"
-use_data(cm_data, avgHab, hab_dict,
+use_data(champ_2011_14, champ_2011_14_avg, hab_dict,
          version = 2)
 
 
 #-----------------------------------------------------------------
 # make use of final CHaMP data
 #-----------------------------------------------------------------
-# load('/Users/kevin/Dropbox/ISEMP/Data/Habitat/CHaMP/CMorg/CHaMP_FinalMetrics_20180308/CHaMPdata.rda')
-# 
-# use_data(chunitDf, siteData,
-#          overwrite = T,
-#          version = 2)
+load('data/raw/habitat/CHaMP_FinalMetrics_20180308/CHaMPdata.rda')
 
+# get any missing lat/longs from GAA data
+gaa_locs = read_csv('data/raw/masterSamplePts/IC_Sites_withMetrics_20151016.csv') %>%
+  select(Site = Site_ID, 
+         Lon = LON_DD,
+         Lat = LAT_DD)
+
+site_data = siteData %<>%
+  # add one more metric related to cnt and freq of channel units
+  mutate(CU_Ct = SlowWater_Ct + FstTurb_Ct + FstNT_Ct,
+         CU_Freq = CU_Ct / (Lgth_Wet / 100)) %>%
+  left_join(gaa_locs) %>%
+  mutate(LON_DD = if_else(is.na(LON_DD), Lon, LON_DD),
+         LAT_DD = if_else(is.na(LAT_DD), Lat, LAT_DD)) %>%
+  select(-Lon, -Lat)
+
+# calculate average habitat data across all years
+avgHab_v2 = site_data %>%
+  filter(VisitObjective == 'Primary Visit',
+         VisitStatus == 'Released to Public') %>%
+  select(-(`Metric #`:GenerationDate),
+         -RS_name,
+         -Geo_Cond) %>%
+  group_by(Watershed, Site) %>%
+  summarise_at(vars(LAT_DD,
+                    LON_DD,
+                    SlowWater_Area:CU_Freq),
+               list(median),
+               na.rm = T) %>%
+  ungroup() %>%
+  left_join(site_data %>%
+              filter(VisitObjective == 'Primary Visit',
+                     VisitStatus == 'Released to Public') %>%
+              select(Watershed, Site,
+                     # Category:SideChannel,
+                     x_albers:y_albers,
+                     Stream:MeanU,
+                     Geo_Cond) %>%
+              distinct() %>%
+              arrange(Watershed, Site) %>%
+              gather(metric, value, -Watershed, -Site) %>%
+              filter(!is.na(value)) %>%
+              distinct() %>%
+              spread(metric, value, fill = NA) %>%
+              distinct() %>%
+              mutate_at(vars(CEC_L1, CEC_L2,
+                             CUMDRAINAG, DistPrin1,
+                             Elev_M, 
+                             HUC4:LEVEL3_NM,
+                             MeanU,
+                             NatPrin1:NatPrin2,
+                             Ppt:Strah,
+                             x_albers:y_albers),
+                        list(as.numeric))) %>%
+  mutate(VisitObjective = 'Primary Visit',
+         VisitStatus = 'Released to Public',
+         VisitYear = 'All') %>%
+  select(one_of(names(site_data))) %>%
+  mutate_at(vars(Site, Watershed),
+            list(fct_explicit_na))
+
+use_data(chunitDf, site_data, avgHab_v2,
+         overwrite = T,
+         version = 2)

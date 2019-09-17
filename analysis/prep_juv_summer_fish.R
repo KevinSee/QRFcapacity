@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep summer juvenile fish data
 # Created: 5/14/2019
-# Last Modified: 6/13/19
+# Last Modified: 9/13/19
 # Notes: need info for site name, fish crew, sample data, site length, watershed AND
 # number marks, captures, recaptures OR
 # 1st, 2nd, 3rd pass depletion OR
@@ -210,6 +210,12 @@ fishPass = tbl(myConn, 'fld_FishCapturePass') %>%
   select(dceID, passKey, CaptureMethod) %>%
   collect() 
 
+# correct one entry, to make 3 passes of a depletion have the same method
+fishPass %<>%
+  mutate(CaptureMethod = if_else(dceID == 1563,
+                                 'Electro Fishing',
+                                 CaptureMethod))
+
 fishObs = tbl(myConn, 'fld_FishObservation') %>%
   filter(Species %in% c('Steelhead', 'Chinook')) %>%
   filter(FishLifeStage != 'Adult') %>%
@@ -271,6 +277,7 @@ elrMR = dce %>%
               group_by(Species, dceID, PitTagCaptureType) %>%
               summarise(nFish = sum(FishCount))) %>%
   filter(!is.na(dceGroup)) %>%
+  filter(!is.na(Species)) %>%
   filter(DcePassNumber < 3) %>%
   arrange(dceGroup, Species, Method) %>%
   group_by(FishSiteName, dceGroup, Species) %>%
@@ -296,6 +303,7 @@ elrCnt = dce %>%
   left_join(fishObs %>%
               group_by(Species, dceID) %>%
               summarise(nFish = sum(FishCount))) %>%
+  filter(!is.na(Species)) %>%
   mutate(Watershed = 'John Day',
          FishCrew = 'ELR',
          Method = 'Single Pass',
@@ -319,6 +327,18 @@ dce %>%
   xtabs(~ Method + SampledStatus, .) %>%
   addmargins()
 # all the missing depletions were not sampled
+
+# these dce show up as sampled, but no fish associated with them. Unclear if there were 0 fish caught, of what species?
+dce %>%
+  select(FishSiteName, Year, Season, Method, anayMeth, SampledStatus) %>%
+  distinct() %>%
+  anti_join(elrDepl %>%
+              bind_rows(elrMR) %>%
+              bind_rows(elrCnt) %>%
+              select(FishSiteName, Year, Season, dceID) %>%
+              distinct()) %>%
+  filter(SampledStatus == 'Sampled') 
+
 
 jdELR = elrDepl %>%
   bind_rows(elrMR) %>%
@@ -641,8 +661,29 @@ fishSumDf = aso %>%
   filter(!(Method == 'Mark Recapture' & Pass3.R > Pass1.M)) %>%
   select(Year:FishWettedArea, Pass1.M, Pass2.C, Pass3.R, Pass4, Nmethod, everything())
 
+# make sure some fish site names match the habitat site names
+fishSumDf %<>%
+  mutate(Site = recode(Site,
+                       'Big0Springs_4' = 'LEM00001-Big0Springs-4',
+                       'Big0Springs-4' = 'LEM00001-Big0Springs-4',
+                       'Big0Springs-5' = 'LEM00001-Big0Springs-5',
+                       'Little0Springs-6' = 'LEM00001-Little0Springs-6',
+                       'cbw05583-504634' = 'CBW05583-504634',
+                       'WENMASTER 000298' = 'WENMASTER-000298',
+                       'stky-P5-Ex1' = 'Stky-P5-Ex1',
+                       'Stky-P5-EX3' = 'Stky-P5-Ex3',
+                       'JDW00001-Meyers Canyon 2' = 'JDW00001-Meyers Camp 2',
+                       'CBW05583-00001B' = 'LEM00002-00001B',
+                       'CBW05583-00001D' = 'LEM00002-00001D',
+                       'LEM00001-00001A' = 'LEM00002-00001A',
+                       'LEM00001-00001B' = 'LEM00002-00001B',
+                       'LEM00001-00001C' = 'LEM00002-00001C',
+                       'LEM00001-00001D' = 'LEM00002-00001D'))
+
+
 # add some missing lat/long from the CHaMP data
 data(siteData)
+data("avgHab_v2")
 
 fishSumDf %<>%
   left_join(siteData %>%
@@ -656,16 +697,76 @@ fishSumDf %<>%
          Lon = if_else(is.na(Lon),
                        LON_DD,
                        Lon)) %>%
+  select(-LON_DD, -LAT_DD) %>%
+  left_join(avgHab_v2 %>%
+              select(Site, Watershed, LAT_DD, LON_DD)) %>%
+  mutate(Lat = if_else(is.na(Lat),
+                       LAT_DD,
+                       Lat),
+         Lon = if_else(is.na(Lon),
+                       LON_DD,
+                       Lon)) %>%
   select(-LON_DD, -LAT_DD)
 
+# add site length and area where missing
+# primary estimates of site length, width and area
+yrHab = siteData %>%
+  filter(VisitObjective == 'Primary Visit',
+         VisitStatus == 'Released to Public') %>%
+  select(Site, Watershed, Year = VisitYear, Lgth_WetChnl, WetWdth_Int, Area_Wet) %>%
+  distinct() %>%
+  group_by(Site, Watershed, Year) %>%
+  filter(Lgth_WetChnl == max(Lgth_WetChnl, na.rm = T)) %>%
+  ungroup()
+
+fishSumDf %<>%
+  left_join(yrHab) %>%
+  mutate(FishSiteLength = if_else(is.na(FishSiteLength) | FishSiteLength == 0,
+                                  Lgth_WetChnl,
+                                  FishSiteLength),
+         FishWettedArea = if_else(is.na(FishWettedArea) & abs(FishSiteLength - Lgth_WetChnl) > 100,
+                                  WetWdth_Int * FishSiteLength,
+                                  if_else(is.na(FishWettedArea),
+                                          Area_Wet,
+                                          FishWettedArea))) %>%
+  select(-(Lgth_WetChnl:Area_Wet)) %>%
+  left_join(avgHab_v2 %>%
+              select(Site, Watershed, Lgth_WetChnl, WetWdth_Int, Area_Wet)) %>%
+  mutate(FishSiteLength = if_else(is.na(FishSiteLength),
+                                  Lgth_WetChnl,
+                                  FishSiteLength),
+         FishWettedArea = if_else(is.na(FishWettedArea) & abs(FishSiteLength - Lgth_WetChnl) > 100,
+                                  WetWdth_Int * FishSiteLength,
+                                  if_else(is.na(FishWettedArea),
+                                          Area_Wet,
+                                          FishWettedArea))) %>%
+  select(-(Lgth_WetChnl:Area_Wet))
+
+
+fishSumDf %>%
+  filter(is.na(FishWettedArea) | is.na(FishSiteLength)) %>%
+  select(Watershed, Site, FishSiteLength, FishWettedArea) %>%
+  arrange(Watershed, Site) %>%
+  distinct() %>%
+  as.data.frame() %>%
+  left_join(siteData %>%
+              select(Watershed, Site, VisitYear, VisitObjective, VisitPhase, VisitStatus, Lgth_WetChnl, WetWdth_Int, Area_Wet))
+
+
+#-----------------------------------------------------------------
 # save as csv file
 write_csv(fishSumDf,
           'data/prepped/QRFsummerDataPrepped.csv')
 
 # save to use like in a package
 use_data(fishSumDf,
+         version = 2,
          overwrite = T)
 
+fishSumDf %>% 
+  group_by(Watershed) %>% 
+  summarise(nLgth = sum(is.na(FishSiteLength)), 
+            nArea = sum(is.na(FishWettedArea)))
 
 #-----------------------------------------------------------------
 # Issues
