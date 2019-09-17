@@ -1,18 +1,46 @@
 # Author: Kevin See
 # Purpose: Prep habitat data
 # Created: 5/14/2019
-# Last Modified: 5/14/19
-# Notes: data downloaded from CHaMP webpage on 9/16/2015
+# Last Modified: 9/17/19
+# Notes: some data downloaded from CHaMP webpage on 9/16/2015
+# final champ dataset downloaded on 3/8/2018
 
 
 #-----------------------------------------------------------------
 # load needed libraries
 library(tidyverse)
 library(lubridate)
+library(magrittr)
 library(WriteXLS)
+library(readxl)
 
 #-----------------------------------------------------------------
-# get CHaMP data
+# get globally available attributes from all master sample points
+#-----------------------------------------------------------------
+gaa = read_csv('data/raw/masterSamplePts/IC_Sites_withMetrics_20151016.csv') %>%
+  rename(Site = Site_ID, 
+         Lon = LON_DD,
+         Lat = LAT_DD)
+
+# make available like a package, by calling "data()"
+use_data(gaa,
+         version = 2,
+         overwrite = T)
+
+# pull out lats/longs for use below
+gaa_locs = gaa %>%
+  select(Site, Lon, Lat)
+
+gaa_meta = readxl::read_excel('data/raw/masterSamplePts/GAA_Metadata_20150506.xlsx') %>%
+  select(ShortName = GlossaryTermName,
+         Name = DisplayName,
+         DescriptiveText = Description,
+         FieldName,
+         UnitOfMeasureAbbrv = Units)
+
+#-----------------------------------------------------------------
+# get CHaMP data from 2011 - 2014
+#-----------------------------------------------------------------
 champ_2011_14 = read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricAndCovariates.csv') %>%
   inner_join(read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricVisitInformation.csv')) %>%
   left_join(read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/StreamTempSummer7dAM.csv')) %>%
@@ -31,6 +59,15 @@ champ_2011_14 = read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricA
                      VisitYear = year,
                      MeanTemp = Mean,
                      MaxMeanTemp = MaxMean))
+
+# get any missing lat/longs from GAA data
+champ_2011_14 %<>%
+  left_join(gaa_locs %>%
+              rename(SiteName = Site)) %>%
+  mutate(LON_DD = if_else(is.na(LON_DD), Lon, LON_DD),
+         LAT_DD = if_else(is.na(LAT_DD), Lat, LAT_DD)) %>%
+  select(-Lon, -Lat)
+
 
 # average metrics across years for sites visited multiple times, keep metrics that don't change
 champ_2011_14_avg = champ_2011_14 %>%
@@ -64,10 +101,10 @@ champ_2011_14_avg = champ_2011_14 %>%
   select(one_of(names(champ_2011_14)))
 
 # read in dictionary of habitat metrics
-hab_dict = read_csv(paste0('data/raw/habitat/CHaMP_ProgramMetrics_20150916/Definitions.csv'))
+hab_dict_2014 = read_csv(paste0('data/raw/habitat/CHaMP_ProgramMetrics_20150916/Definitions.csv'))
 
 # put metrics in categories
-hab_catg = filter(hab_dict,
+hab_catg = filter(hab_dict_2014,
                   MetricGroupName %in% c('Visit Metric', 'Stream Temp Summer 7dAM'),
                   !grepl('^GCD', ShortName),
                   !grepl('GeoDatabase$', ShortName),
@@ -104,8 +141,8 @@ hab_catg = filter(hab_dict,
   mutate(ShortName = as.factor(ShortName),
          MetricCategory = as.factor(MetricCategory))
 
-hab_dict %<>%
-  inner_join(hab_catg) %>%
+hab_dict_2014 %<>%
+  left_join(hab_catg) %>%
   # add a couple other metrics
   bind_rows(tibble(ShortName = c('DistPrin1', 'NatPrin1', 'NatPrin2', 'mean_JulAug_temp', 'CUMDRAINAG', 'BraidChannelRatio', 'PoolToTurbulentAreaRatio'),
                    Name = c('Disturbance Index', 'Natural PC 1', 'Natural PC 2', 'Mean Summer Temperature', 'Cummulative Drainage Area', 'Braid to Channel Ratio', 'Pool To Turbulent Area Ratio'),
@@ -132,47 +169,52 @@ hab_dict %<>%
                                        rep(NA, 2)),
                    MetricCategory = rep(c('ChannelUnit', 'Temperature'), each = 2))) %>%
   # filter(!is.na(MetricCategory))
-  select(ShortName, Name, DescriptiveText, UnitOfMeasure, UnitOfMeasureAbbrv, MetricCategory) %>%
+  select(ShortName, Name, MetricEngineName, MetricGroupName, DescriptiveText, UnitOfMeasure, UnitOfMeasureAbbrv, MetricCategory) %>%
   distinct()
+
+hab_dict_2014 = hab_dict_2014 %>%
+  filter(!ShortName %in% gaa_meta$ShortName) %>%
+  bind_rows(hab_dict_2014 %>%
+              filter(is.na(MetricEngineName)) %>%
+              select(ShortName, MetricCategory) %>%
+              inner_join(gaa_meta))
 
 #-----------------------------------------------------------------
 # save prepped data
 #-----------------------------------------------------------------
 list('CHaMP' = champ_2011_14,
      'Avg CHaMP' = champ_2011_14_avg,
-     'Metric Dictionary' = hab_dict) %>%
+     'Metric Dictionary' = hab_dict_2014) %>%
   WriteXLS('data/Prepped/CHaMP_2011_2014_Data.xlsx',
            AdjWidth = T,
            FreezeRow = 1,
            BoldHeaderRow = T)
 
 # make available like a package, by calling "data()"
-use_data(champ_2011_14, champ_2011_14_avg, hab_dict,
-         version = 2)
+use_data(champ_2011_14, champ_2011_14_avg, hab_dict_2014,
+         version = 2,
+         overwrite = T)
 
 
 #-----------------------------------------------------------------
-# make use of final CHaMP data
+# make use of final CHaMP data - downloaded 3/8/2018
 #-----------------------------------------------------------------
 load('data/raw/habitat/CHaMP_FinalMetrics_20180308/CHaMPdata.rda')
 
-# get any missing lat/longs from GAA data
-gaa_locs = read_csv('data/raw/masterSamplePts/IC_Sites_withMetrics_20151016.csv') %>%
-  select(Site = Site_ID, 
-         Lon = LON_DD,
-         Lat = LAT_DD)
-
-site_data = siteData %<>%
+champ_site_2011_17 = siteData %<>%
   # add one more metric related to cnt and freq of channel units
   mutate(CU_Ct = SlowWater_Ct + FstTurb_Ct + FstNT_Ct,
          CU_Freq = CU_Ct / (Lgth_Wet / 100)) %>%
+  # get any missing lat/longs from GAA data
   left_join(gaa_locs) %>%
   mutate(LON_DD = if_else(is.na(LON_DD), Lon, LON_DD),
          LAT_DD = if_else(is.na(LAT_DD), Lat, LAT_DD)) %>%
   select(-Lon, -Lat)
 
+champ_cu = chunitDf
+
 # calculate average habitat data across all years
-avgHab_v2 = site_data %>%
+champ_site_2011_17_avg = champ_site_2011_17 %>%
   filter(VisitObjective == 'Primary Visit',
          VisitStatus == 'Released to Public') %>%
   select(-(`Metric #`:GenerationDate),
@@ -185,7 +227,7 @@ avgHab_v2 = site_data %>%
                list(median),
                na.rm = T) %>%
   ungroup() %>%
-  left_join(site_data %>%
+  left_join(champ_site_2011_17 %>%
               filter(VisitObjective == 'Primary Visit',
                      VisitStatus == 'Released to Public') %>%
               select(Watershed, Site,
@@ -212,10 +254,23 @@ avgHab_v2 = site_data %>%
   mutate(VisitObjective = 'Primary Visit',
          VisitStatus = 'Released to Public',
          VisitYear = 'All') %>%
-  select(one_of(names(site_data))) %>%
+  select(one_of(names(champ_site_2011_17))) %>%
   mutate_at(vars(Site, Watershed),
             list(fct_explicit_na))
 
-use_data(chunitDf, site_data, avgHab_v2,
+# updated habitat dictionary
+hab_dict_2017 = read_csv('data/raw/habitat/CHaMP_FinalMetrics_20180308/Definitions.csv') %>%
+  select(ShortName, Name, MetricEngineName, MetricGroupName, DescriptiveText, UnitOfMeasure, UnitOfMeasureAbbrv) %>%
+  distinct() %>%
+  left_join(hab_catg %>%
+              select(ShortName, MetricCategory)) %>%
+  bind_rows(hab_dict_2014 %>%
+              filter(is.na(MetricGroupName)))
+
+use_data(champ_site_2011_17, champ_site_2011_17_avg, champ_cu, hab_dict_2017,
          overwrite = T,
          version = 2)
+
+#-----------------------------------------------------------------
+# DASH metrics at CHaMP sites
+#-----------------------------------------------------------------
