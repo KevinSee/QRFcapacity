@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep redd data
 # Created: 5/14/2019
-# Last Modified: 9/11/19
+# Last Modified: 9/17/19
 # Notes: 
 
 
@@ -34,14 +34,14 @@ redd_champ = full_join(champ_sites %>%
   filter(MEAS_redd <= MEAS_champ + buffer & MEAS_redd >= MEAS_champ - buffer)
 
 # redd counts, by site / species / year
-reddsSiteYr = redd_champ %>%
+redds_site_yr = redd_champ %>%
   group_by(Watershed, Site, Species, Year) %>%
   summarise(nRedds = n_distinct(reddID)) %>%
   ungroup() %>%
   arrange(Species, Watershed, Site, Year)
 
 # pull out maximum number of redds found at any CHaMP site
-maxRedds = redd_champ %>%
+redds_site_max = redd_champ %>%
   group_by(Site, Species, Year) %>%
   summarise(ReddsPerKm = n_distinct(reddID)) %>%
   ungroup() %>%
@@ -59,6 +59,6 @@ maxRedds = redd_champ %>%
 
 #-----------------------------------------------------------------
 # save redd data
-use_data(reddsSiteYr, maxRedds,
+use_data(redds_site_yr, redds_site_max,
          version = 2,
          overwrite = T)
