@@ -41,7 +41,7 @@ gaa_meta = readxl::read_excel('data/raw/masterSamplePts/GAA_Metadata_20150506.xl
 #-----------------------------------------------------------------
 # get CHaMP data from 2011 - 2014
 #-----------------------------------------------------------------
-champ_2011_14 = read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricAndCovariates.csv') %>%
+champ_site_2011_14 = read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricAndCovariates.csv') %>%
   inner_join(read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricVisitInformation.csv')) %>%
   left_join(read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/StreamTempSummer7dAM.csv')) %>%
   mutate_at(vars(SiteName, WatershedName), 
@@ -61,7 +61,7 @@ champ_2011_14 = read_csv('data/raw/habitat/CHaMP_ProgramMetrics_20150916/MetricA
                      MaxMeanTemp = MaxMean))
 
 # get any missing lat/longs from GAA data
-champ_2011_14 %<>%
+champ_site_2011_14 %<>%
   left_join(gaa_locs %>%
               rename(SiteName = Site)) %>%
   mutate(LON_DD = if_else(is.na(LON_DD), Lon, LON_DD),
@@ -70,7 +70,7 @@ champ_2011_14 %<>%
 
 
 # average metrics across years for sites visited multiple times, keep metrics that don't change
-champ_2011_14_avg = champ_2011_14 %>%
+champ_site_2011_14_avg = champ_site_2011_14 %>%
   filter(`Primary Visit` == 'Yes') %>%
   select(-matches('FileName'),
          -matches('GCD')) %>%
@@ -79,7 +79,7 @@ champ_2011_14_avg = champ_2011_14 %>%
                     Grad:MaxMeanTemp),
                list(median),
                na.rm = T) %>%
-  left_join(champ_2011_14 %>%
+  left_join(champ_site_2011_14 %>%
               filter(`Primary Visit` == 'Yes') %>%
               select(ProgramSiteID:WatershedName,
                      x_albers:Elev_M,
@@ -98,7 +98,7 @@ champ_2011_14_avg = champ_2011_14 %>%
                              x_albers:y_albers,
                              CEC_L1, CEC_L2),
                         list(as.numeric))) %>%
-  select(one_of(names(champ_2011_14)))
+  select(one_of(names(champ_site_2011_14)))
 
 # read in dictionary of habitat metrics
 hab_dict_2014 = read_csv(paste0('data/raw/habitat/CHaMP_ProgramMetrics_20150916/Definitions.csv'))
@@ -182,8 +182,8 @@ hab_dict_2014 = hab_dict_2014 %>%
 #-----------------------------------------------------------------
 # save prepped data
 #-----------------------------------------------------------------
-list('CHaMP' = champ_2011_14,
-     'Avg CHaMP' = champ_2011_14_avg,
+list('CHaMP' = champ_site_2011_14,
+     'Avg CHaMP' = champ_site_2011_14_avg,
      'Metric Dictionary' = hab_dict_2014) %>%
   WriteXLS('data/Prepped/CHaMP_2011_2014_Data.xlsx',
            AdjWidth = T,
@@ -191,7 +191,7 @@ list('CHaMP' = champ_2011_14,
            BoldHeaderRow = T)
 
 # make available like a package, by calling "data()"
-use_data(champ_2011_14, champ_2011_14_avg, hab_dict_2014,
+use_data(champ_site_2011_14, champ_site_2011_14_avg, hab_dict_2014,
          version = 2,
          overwrite = T)
 
