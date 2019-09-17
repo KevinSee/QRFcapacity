@@ -771,7 +771,7 @@ fish_sum_data %>%
 #-----------------------------------------------------------------
 # save as csv file
 write_csv(fish_sum_data,
-          'data/prepped/QRFsummerDataPrepped.csv')
+          'data/prepped/fish_data_summer_prepped.csv')
 
 # save to use like in a package
 use_data(fish_sum_data,

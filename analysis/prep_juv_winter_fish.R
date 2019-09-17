@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep the data collected by various outfits
 # Created: 5/16/2019
-# Last Modified: 5/16/2019
+# Last Modified: 9/17/2019
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -16,8 +16,8 @@ library(measurements)
 
 #-----------------------------------------------------------------
 # Bring in some CHaMP habitat data at the channel unit scale, to fill in blank Tier 1 classifications.
-data(chunitDf)
-champCU = chunitDf %>%
+data(champ_cu)
+cu_data = champ_cu %>%
   select(VisitID, SiteName = Site, ChUnitNumber, Tier1) %>%
   mutate(Tier1 = recode(Tier1,
                         'Fast-NonTurbulent/Glide' = 'Run',
@@ -32,7 +32,7 @@ champCU = chunitDf %>%
 # ODFW
 #-----------------------------------------------------------------
 # snorkel
-odfwSnork = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
+odfw_snork = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
                        'SnorkelCount') %>%
   rename(SiteUnit = `Site_ID_+Unit`,
          SiteName = `Site ID`,
@@ -51,7 +51,7 @@ odfwSnork = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
             list(str_to_upper))
 
 # mark recapture
-odfwMR = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
+odfw_mr = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
                     'MarkRecap') %>%
   rename(SiteName = `Site ID`,
          ChUnitNumber = `Unit No.`,
@@ -79,7 +79,7 @@ odfwMR = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
          Pass3_R = Recap)
 
 # depletions
-odfwDeplOrg = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
+odfw_depl_org = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
                          'Depletions') %>%
   rename(SiteName = `Site ID`,
          ChUnitNumber = `Unit No.`,
@@ -106,7 +106,7 @@ odfwDeplOrg = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx'
   mutate(value = as.numeric(value))
 
 # don't worry about effort, not enough data to incorporate that as variable
-odfwDepl = odfwDeplOrg %>%
+odfw_depl = odfw_depl_org %>%
   filter(variable != 'Effort') %>%
   select(-variable) %>%
   spread(Pass, value) %>%
@@ -116,7 +116,7 @@ odfwDepl = odfwDeplOrg %>%
 
 
 # snorkel counts
-odfwSnorkOnly = read_excel('data/raw/fish/winter/qry_Count_Salmonids_By_Unit_winter.xlsx',
+odfw_snork_only = read_excel('data/raw/fish/winter/qry_Count_Salmonids_By_Unit_winter.xlsx',
                            'Combined_Kevins_Format') %>%
   select(Stream:pass3_R) %>%
   rename(Pass1_M = pass1_M,
@@ -134,10 +134,10 @@ odfwSnorkOnly = read_excel('data/raw/fish/winter/qry_Count_Salmonids_By_Unit_win
             list(as.numeric))
 
 
-odfwData = odfwSnork %>%
+odfw_data = odfw_snork %>%
   select(-Method) %>%
-  full_join(odfwMR %>%
-              bind_rows(odfwDepl) %>%
+  full_join(odfw_mr %>%
+              bind_rows(odfw_depl) %>%
               select(-Date, -Temp)) %>%
   mutate(Discharge = NA) %>%
   mutate(SurveyType = 'Calibration') %>%
@@ -145,7 +145,7 @@ odfwData = odfwSnork %>%
   select(SiteUnit:Date,
          Crew, DCEtype, SurveyType, Temp, Discharge,
          everything()) %>%
-  bind_rows(odfwSnorkOnly) %>%
+  bind_rows(odfw_snork_only) %>%
   mutate(Tier1 = recode(Tier1,
                         'Fast-NonTurbulent' = 'Run',
                         'Fast-Turbulent' = 'Riffle',
@@ -153,7 +153,7 @@ odfwData = odfwSnork %>%
                         'SmSideChnnl' = 'Small Side Channel'))
 
 # what's missing?
-odfwData %>%
+odfw_data %>%
   summarise_at(vars(everything()),
                list(~sum(is.na(.)) / length(.))) %>%
   gather(variable, percNA)
@@ -161,7 +161,7 @@ odfwData %>%
 #-----------------------------------------------------------------
 # QCI
 #-----------------------------------------------------------------
-qciData = read_excel('data/raw/fish/winter/QCI_winterQRF_capture.xlsx') %>%
+qci_data = read_excel('data/raw/fish/winter/QCI_winterQRF_capture.xlsx') %>%
   rename(ChUnitNumber = ChUnitNum,
          Stream = StreamName,
          Date = SurveyDateTime,
@@ -187,21 +187,21 @@ qciData = read_excel('data/raw/fish/winter/QCI_winterQRF_capture.xlsx') %>%
                                ifelse(Tier2 %in% c('Pool/Off Channel', 'Side Channel'),
                                       'Small Side Channel',
                                       'Pool')))) %>%
-  select(one_of(names(odfwData)), PercentIceCover, Tier2) %>%
+  select(one_of(names(odfw_data)), PercentIceCover, Tier2) %>%
   select(SiteUnit:Discharge, PercentIceCover, Tier2, everything())
 
 # for surveys with missing discharge data, use discharge from other surveys at the same site
-qciDischarge = qciData %>%
+qci_discharge = qci_data %>%
   select(Date, Stream, SiteName, SurveyType, Discharge) %>%
   mutate(Date = floor_date(Date, unit = 'day')) %>%
   distinct()
 
-qciData %<>%
-  left_join(qciDischarge %>%
+qci_data %<>%
+  left_join(qci_discharge %>%
               group_by(Stream, SiteName) %>%
               summarise(nTot = n_distinct(Date),
                         nNonNA = n_distinct(Date[!is.na(Discharge)])) %>%
-              left_join(qciDischarge %>%
+              left_join(qci_discharge %>%
                           filter(!is.na(Discharge)) %>%
                           group_by(SiteName) %>%
                           summarise_at(vars(Discharge),
@@ -219,18 +219,18 @@ qciData %<>%
   select(-meanDis)
 
 # # what's missing?
-# qciData %>%
+# qci_data %>%
 #   summarise_at(vars(everything()),
 #                list(~sum(is.na(.)) / length(.))) %>%
 #   gather(variable, percNA)
 # 
-# xtabs(~ DCEtype + SurveyType + is.na(count), qciData)
+# xtabs(~ DCEtype + SurveyType + is.na(count), qci_data)
 
 #-----------------------------------------------------------------
 # WDFW
 #-----------------------------------------------------------------
 # Flow data
-wdfwFlow = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
+wdfw_flow = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
                       'Flow',
                       range = 'O4:Q39') %>%
   rename(Stream = 1,
@@ -257,7 +257,7 @@ wdfwFlow = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
 
 
 # snorkel
-wdfwSnork = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
+wdfw_snork = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
                        'Raw Snorkel Data') %>%
   select(Date,
          Time = `Start Time`,
@@ -288,7 +288,7 @@ wdfwSnork = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
   mutate(Date = if_else(VisitID == 4806,
                         min(Date[VisitID == 4806]),
                         Date)) %>%
-  left_join(wdfwFlow) %>%
+  left_join(wdfw_flow) %>%
   mutate(diff = abs(as.numeric(difftime(Date, FlowDate, units = 'days'))),
          Discharge = ifelse(diff > 7,
                             NA,
@@ -313,7 +313,7 @@ wdfwSnork = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
 # WDFW mark-recapture / snorkel calibration surveys
 
 # by size class
-wdfwMRsizeCls = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
+wdfw_mr_size_cls = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
                            'Correction Factor',
                            range = 'S40:BP60') %>%
   rename(Stream = 1,
@@ -377,7 +377,7 @@ wdfwMRsizeCls = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
   arrange(id, VisitID, species, sizeCls)
 
 # lump across size classes
-wdfwMR = wdfwMRsizeCls %>%
+wdfw_mr = wdfw_mr_size_cls %>%
   group_by(Stream, VisitID, Tier2, id, species) %>%
   summarise_at(vars(count:Pass3_R),
                list(sum)) %>%
@@ -413,7 +413,7 @@ wdfwMR = wdfwMRsizeCls %>%
   filter(!is.na(Watershed))
 
 
-wdfwData = wdfwSnork %>%
+wdfw_data = wdfw_snork %>%
   group_by(Watershed, Stream, VisitID, ChUnitNumber, Date, Temp, Discharge, species) %>%
   summarise_at(vars(count),
                list(sum),
@@ -421,7 +421,7 @@ wdfwData = wdfwSnork %>%
   ungroup() %>%
   mutate(SurveyType = 'Snorkeling',
          DCEtype = 'Count') %>%
-  left_join(wdfwSnork %>%
+  left_join(wdfw_snork %>%
               mutate(Tier2 = recode(Tier2,
                                     'OC' = 'Off Channel',
                                     'PP' = 'Plunge Pool',
@@ -433,8 +433,8 @@ wdfwData = wdfwSnork %>%
               group_by(Stream, VisitID, ChUnitNumber) %>%
               slice(1) %>%
               ungroup()) %>%
-  bind_rows(wdfwMR %>%
-              left_join(wdfwFlow) %>%
+  bind_rows(wdfw_mr %>%
+              left_join(wdfw_flow) %>%
               mutate(diff = abs(as.numeric(difftime(Date, FlowDate, units = 'days'))),
                      Discharge = ifelse(diff > 7,
                                         NA,
@@ -442,10 +442,10 @@ wdfwData = wdfwSnork %>%
               select(-diff, -FlowDate) %>%
               mutate(DCEtype = 'MarkRecap',
                      SurveyType = 'Calibration')) %>%
-  left_join(champCU %>%
+  left_join(cu_data %>%
               mutate_at(vars(ChUnitNumber),
                         list(as.character)) %>%
-              bind_rows(champCU %>%
+              bind_rows(cu_data %>%
                           filter(VisitID == 4816,
                                  ChUnitNumber %in% c(7,8)) %>%
                           select(VisitID, SiteName, Tier1) %>%
@@ -460,17 +460,17 @@ wdfwData = wdfwSnork %>%
          #                              'Pool',
          #                              Tier2))),
          Crew = 'WDFW') %>%
-  select(one_of(names(qciData))) %>%
+  select(one_of(names(qci_data))) %>%
   arrange(Stream, SiteName, ChUnitNumber, species)
 
 #------------------------------------------------------
 # Combine everything and save as a .csv file.
-fishWinDf = odfwData %>%
+fish_win_data = odfw_data %>%
   mutate(Crew = 'ODFW') %>%
-  bind_rows(qciData) %>%
+  bind_rows(qci_data) %>%
   mutate_at(vars(ChUnitNumber),
             list(as.character)) %>%
-  bind_rows(wdfwData %>%
+  bind_rows(wdfw_data %>%
               mutate(PercentIceCover = NA)) %>%
   select(Stream, SiteName, SiteUnit, ChUnitNumber, 
          Crew, SurveyType, DCEtype,
@@ -493,28 +493,28 @@ fishWinDf = odfwData %>%
             list(as.factor))
 
 # save as csv file
-write_csv(fishWinDf,
-          'data/prepped/QRFwinterDataPrepped.csv')
+write_csv(fish_win_data,
+          'data/prepped/fish_data_winter_prepped.csv')
 
 # save to use as data
-use_data(fishWinDf,
+use_data(fish_win_data,
          version = 2,
          overwrite = T)
 
 #------------------------------------------------------
 # anything missing?
-fishWinDf %>%
+fish_win_data %>%
   summarise_at(vars(everything()),
                list(~sum(is.na(.)) / length(.))) %>%
   gather(variable, percNA) %>%
   arrange(desc(percNA))
 
-xtabs(~ is.na(Pass2_C) + is.na(Pass1_M), fishWinDf)
+xtabs(~ is.na(Pass2_C) + is.na(Pass1_M), fish_win_data)
 
-fishWinDf %>%
+fish_win_data %>%
   filter(is.na(Pass1_M)) %>%
   xtabs(~ SurveyType, .)
 
-fishWinDf %>%
+fish_win_data %>%
   filter(is.na(count)) %>%
   xtabs(~ SurveyType, .)
