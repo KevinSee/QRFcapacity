@@ -274,3 +274,36 @@ use_data(champ_site_2011_17, champ_site_2011_17_avg, champ_cu, hab_dict_2017,
 #-----------------------------------------------------------------
 # DASH metrics at CHaMP sites
 #-----------------------------------------------------------------
+champ_dash = read_csv('data/raw/habitat/CHaMP_DASH/CHaMP_Recalculated.csv') %>%
+  rename(Site = SiteName,
+         Watershed = WatershedName,
+         Panel = PanelName) %>%
+  select(-ProgramSiteID, -WatershedID,
+         -VisitDate) %>%
+  mutate_at(vars(SampleDate),
+            list(mdy)) %>%
+  select(Watershed, Site, SampleDate, 
+         VisitID, Panel, VisitYear, 
+         everything())
+
+use_data(champ_dash,
+         overwrite = T,
+         version = 2)
+
+champ_dash = champ_dash %>%
+  left_join(champ_site_2011_17 %>%
+              select(Watershed:MeanU) %>%
+              distinct())  %>%
+  select(one_of(names(champ_site_2011_17)),
+         everything())
+
+xtabs(~ VisitYear, champ_dash) %>%
+  addmargins()
+
+champ_dash %>%
+  filter(is.na(Protocol)) %>%
+  left_join(champ_site_2011_17 %>%
+              select(VisitID) %>%
+              mutate(visited = T)) %>%
+  filter(!is.na(visited))
+  xtabs(~ is.na(visited), .)
