@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep the data collected by various outfits
 # Created: 5/16/2019
-# Last Modified: 9/17/2019
+# Last Modified: 9/19/2019
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -17,13 +17,21 @@ library(measurements)
 #-----------------------------------------------------------------
 # Bring in some CHaMP habitat data at the channel unit scale, to fill in blank Tier 1 classifications.
 data(champ_cu)
+data(champ_site_2011_17)
+
 cu_data = champ_cu %>%
   select(VisitID, SiteName = Site, ChUnitNumber, Tier1) %>%
   mutate(Tier1 = recode(Tier1,
                         'Fast-NonTurbulent/Glide' = 'Run',
                         'Fast-Turbulent' = 'Riffle',
                         'Slow/Pool' = 'Pool',
-                        'Small Side Channel' = 'SC'))
+                        'Small Side Channel' = 'SC')) %>%
+  left_join(champ_site_2011_17 %>%
+              select(SiteName = Site,
+                     VisitID,
+                     Watershed) %>%
+              distinct()) %>%
+  select(VisitID, SiteName, Watershed, ChUnitNumber, Tier1)
 
 #-----------------------------------------------------------------
 # Read in fish data from ODFW, QCI and WDFW.
@@ -445,6 +453,7 @@ wdfw_data = wdfw_snork %>%
   left_join(cu_data %>%
               mutate_at(vars(ChUnitNumber),
                         list(as.character)) %>%
+              select(-Watershed) %>%
               bind_rows(cu_data %>%
                           filter(VisitID == 4816,
                                  ChUnitNumber %in% c(7,8)) %>%
@@ -465,6 +474,7 @@ wdfw_data = wdfw_snork %>%
 
 #------------------------------------------------------
 # Combine everything and save as a .csv file.
+
 fish_win_data = odfw_data %>%
   mutate(Crew = 'ODFW') %>%
   bind_rows(qci_data) %>%
@@ -472,8 +482,32 @@ fish_win_data = odfw_data %>%
             list(as.character)) %>%
   bind_rows(wdfw_data %>%
               mutate(PercentIceCover = NA)) %>%
-  select(Stream, SiteName, SiteUnit, ChUnitNumber, 
-         Crew, SurveyType, DCEtype,
+  # make stream names match CHaMP stream names
+  mutate(Stream = recode(Stream,
+                         'Yankee Fork River' = 'Yankee Fork',
+                         'Chewuch' = 'Chewuch River',
+                         'Chikamin' = 'Chikamin Creek',
+                         'Chiwawa' = 'Chiwawa River',
+                         'Entiat' = 'Entiat River',
+                         'Little Wenatchee' = 'Little Wenatchee River',
+                         'Mad' = 'Mad River',
+                         'Methow' = 'Methow River',
+                         'Napeequa' = 'Napeequa River',
+                         'Nason' = 'Nason Creek',
+                         'Stormy' = 'Stormy Creek',
+                         'Twisp' = 'Twisp River',
+                         'White' = 'White River')) %>%
+  mutate(Stream = if_else(SiteName == 'CBW05583-087698',
+                          'Secesh River',
+                          Stream)) %>%
+  left_join(cu_data %>%
+              select(SiteName, Watershed) %>%
+              distinct()) %>%
+  select(Site = SiteName, 
+         Watershed, Stream,
+         SiteUnit, ChUnitNumber, 
+         FishCrew = Crew,
+         SurveyType, DCEtype,
          Date,
          Tier1, Tier2, Discharge, Temp, PercentIceCover,
          everything()) %>%
@@ -489,8 +523,26 @@ fish_win_data = odfw_data %>%
                           'CH' = 'Chinook',
                           'OM' = 'Steelhead',
                           'BT' = 'BrookTrout')) %>%
-  mutate_at(vars(Stream, Crew, Tier1, Tier2, Species),
-            list(as.factor))
+  # rename some columns to better match summer data
+  rename(Method = DCEtype,
+         Pass1.M = Pass1_M,
+         Pass2.C = Pass2_C,
+         Pass3.R = Pass3_R) %>%
+  mutate(Method = recode(Method,
+                         'MarkRecap' = 'Mark Recapture'),
+         Method = if_else(Method == 'Count',
+                          if_else(SurveyType == 'Snorkeling', 
+                                  'Snorkel',
+                                  'Single Pass'),
+                          Method),
+         Watershed = if_else(is.na(Watershed) & Stream == 'Lemhi River',
+                             'Lemhi',
+                             as.character(Watershed)),
+         Watershed = if_else(is.na(Watershed) & grepl('^DSGN4', Site),
+                             'Upper Grande Ronde',
+                             as.character(Watershed))) %>%
+  mutate_at(vars(Watershed, Stream, Method, SurveyType, FishCrew, Tier1, Tier2, Species),
+            list(fct_drop))
 
 # save as csv file
 write_csv(fish_win_data,
