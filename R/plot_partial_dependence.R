@@ -6,6 +6,7 @@
 #'
 #' @param rf_mod the \code{quantregForest} model 
 #' @param data the data.frame used to fit the \code{rf_mod}
+#' @param data_dict data.frame containing columns \code{}
 #' @param type whether to predict a particular quantile, or the mean
 #' @param pred_quantile if \code{type} is "quantile", which quantile to predict, between 0 and 1? The default value is 0.9
 #' @param n_pts how many points to use in predictions? 
@@ -19,13 +20,17 @@
 
 plot_partial_dependence = function(rf_mod,
                                    data,
+                                   data_dict = NULL,
                                    type = c('quantile', 'mean'),
                                    pred_quantile = 0.9,
                                    n_pts = 200,
                                    log_transform = T,
                                    log_offset = 0.005) {
   
-  data(hab_dict)
+  if(is.null(data_dict)) {
+    data(hab_dict_2017)
+    data_dict = hab_dict_2017
+  }
   
   type = match.arg(type)
   
@@ -113,7 +118,7 @@ plot_partial_dependence = function(rf_mod,
   
   # get covariate labels
   pdp_df = pdp_df %>%
-    left_join(hab_dict %>%
+    left_join(data_dict %>%
               select(Metric = ShortName, covar_label = Name)) %>%
     # put covariates in order by relative importance
     left_join(rel_imp %>%
@@ -128,7 +133,7 @@ plot_partial_dependence = function(rf_mod,
   rug_df = data %>%
     select(Watershed, one_of(as.character(covars))) %>%
     gather(Metric, value, one_of(as.character(covars))) %>%
-    left_join(hab_dict %>%
+    left_join(data_dict %>%
                 select(Metric = ShortName, 
                        covar_label = Name)) %>%
     # put covariates in order by relative importance
