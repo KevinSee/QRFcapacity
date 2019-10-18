@@ -20,14 +20,14 @@ estimate_MIC = function(data,
                dplyr::select(one_of(covars)),
              y = data %>%
                pull(response),
-               # dplyr::mutate(fish_dens = log(fish_dens + 0.01)) %>%
-               # dplyr::pull(fish_dens),
              use = 'pairwise.complete.obs') %>%
     as_tibble() %>%
-    mutate(Metric = covars[covars %in% names(data)]) %>%
-    select(Metric, everything()) %>%
+    mutate(Metric = data %>%
+             dplyr::select(one_of(covars)) %>%
+             names()) %>%
+    dplyr::select(Metric, everything()) %>%
     left_join(data %>%
-                select(one_of(covars)) %>%
+                dplyr::select(one_of(covars)) %>%
                 gather(Metric, value) %>%
                 group_by(Metric) %>%
                 summarise(var = var(value, na.rm = T),
@@ -39,7 +39,7 @@ estimate_MIC = function(data,
                           perc_non0 = non_0 / n()),
               by = 'Metric') %>%
     ungroup() %>%
-    select(Metric, var:perc_non0, everything())
+    dplyr::select(Metric, var:perc_non0, everything())
   
   return(res)
 }
