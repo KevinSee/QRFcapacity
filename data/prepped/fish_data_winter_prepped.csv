@@ -1196,6 +1196,628 @@ CBW05583-029539,Lemhi,Lemhi River,CBW05583-029539_5,5,QCI,Electrofishing,Mark Re
 CBW05583-029539,Lemhi,Lemhi River,CBW05583-029539_5,5,QCI,Electrofishing,Mark Recapture,2018-02-19T00:00:00Z,Pool,Scour Pool,8.466003,0,5,Steelhead,NA,0,NA,NA
 CBW05583-029539,Lemhi,Lemhi River,CBW05583-029539_6,6,QCI,Electrofishing,Mark Recapture,2018-02-19T00:00:00Z,SSC,Side Channel,8.466003,0,20,Chinook,NA,1,NA,NA
 CBW05583-029539,Lemhi,Lemhi River,CBW05583-029539_6,6,QCI,Electrofishing,Mark Recapture,2018-02-19T00:00:00Z,SSC,Side Channel,8.466003,0,20,Steelhead,NA,0,NA,NA
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_1,1,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.051992,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_1,1,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.051992,NA,NA,Steelhead,NA,15,17,10
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_2,2,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.051992,NA,NA,Chinook,NA,6,8,6
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_2,2,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.051992,NA,NA,Steelhead,NA,28,18,8
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_3,3,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.051992,NA,NA,Chinook,NA,1,0,0
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_3,3,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.051992,NA,NA,Steelhead,NA,3,9,4
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_4,4,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.051992,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_4,4,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.051992,NA,NA,Steelhead,NA,7,2,1
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_5,5,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.051992,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_5,5,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.051992,NA,NA,Steelhead,NA,2,1,0
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_6,6,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.051992,NA,NA,Chinook,NA,1,1,1
+LEM00001-Big0Springs-1,Lemhi,Big Springs Creek,LEM00001-Big0Springs-1_6,6,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.051992,NA,NA,Steelhead,NA,7,1,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_1,1,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.024023,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_1,1,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.024023,NA,NA,Steelhead,NA,1,1,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_2,2,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.024023,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_2,2,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.024023,NA,NA,Steelhead,NA,0,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_3,3,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.024023,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_3,3,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.024023,NA,NA,Steelhead,NA,1,3,1
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_4,4,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.024023,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_4,4,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.024023,NA,NA,Steelhead,NA,0,1,1
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_5,5,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,SSC,SC,1.024023,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_5,5,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,SSC,SC,1.024023,NA,NA,Steelhead,NA,1,1,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_6,6,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.024023,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_6,6,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Pool,Pool,1.024023,NA,NA,Steelhead,NA,0,2,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_7,7,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.024023,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_7,7,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Riffle,Riffle,1.024023,NA,NA,Steelhead,NA,3,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_8,8,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Run,FNT,1.024023,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-5,Lemhi,Big Springs Creek,LEM00001-Big0Springs-5_8,8,QCI,Electrofishing,Mark Recapture,2019-01-23T00:00:00Z,Run,Run,1.024023,NA,NA,Steelhead,NA,6,4,2
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_1,1,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Run,FNT,0.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_1,1,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Run,Run,0.72927665,NA,NA,Steelhead,NA,5,3,1
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_3,3,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,1.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_3,3,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Steelhead,NA,0,1,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_4,4,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_4,4,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Steelhead,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_5,5,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_5,5,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Steelhead,NA,2,2,1
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_6,6,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Run,FNT,0.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_6,6,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Run,Run,0.72927665,NA,NA,Steelhead,NA,2,2,2
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_7,7,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_7,7,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Steelhead,NA,2,1,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_8,8,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Run,FNT,0.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_8,8,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Run,Run,0.72927665,NA,NA,Steelhead,NA,5,5,1
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_9,9,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_9,9,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Steelhead,NA,6,4,3
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_10,10,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_10,10,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Pool,Pool,0.72927665,NA,NA,Steelhead,NA,1,1,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_11,11,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Riffle,Riffle,0.72927665,NA,NA,Chinook,NA,0,0,0
+LEM00001-Big0Springs-6,Lemhi,Big Springs Creek,LEM00001-Big0Springs-6_11,11,QCI,Electrofishing,Mark Recapture,2019-01-22T00:00:00Z,Riffle,Riffle,0.72927665,NA,NA,Steelhead,NA,2,1,1
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_1,1,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Run,Run,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_1,1,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Run,Run,0.508374,NA,NA,Steelhead,NA,0,1,1
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_2,2,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_2,2,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_3,3,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Run,Run,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_3,3,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Run,Run,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_4,4,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_4,4,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_5,5,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_5,5,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_6,6,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_6,6,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_7,7,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_7,7,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_8,8,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_8,8,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,1,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_9,9,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Chinook,NA,1,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_9,9,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_10,10,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,1,1
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_10,10,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_11,11,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_11,11,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Steelhead,NA,1,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_12,12,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_12,12,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_13,13,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Run,Run,0.508374,NA,NA,Chinook,NA,1,1,1
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_13,13,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Run,Run,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_14,14,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,1,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_14,14,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_15,15,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_15,15,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_16,16,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,5,2,1
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_16,16,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_17,17,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Run,Run,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_17,17,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Run,Run,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_18,18,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_18,18,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_19,19,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_19,19,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_20,20,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_20,20,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_21,21,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,1,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_21,21,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_22,22,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_22,22,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Riffle,Riffle,0.508374,NA,NA,Steelhead,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_23,23,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,1,1,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_23,23,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,2,2,2
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_24,24,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_24,24,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,1,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_25,25,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Chinook,NA,0,0,0
+Lake2019_WinterQRF,NA,Lake Creek,Lake2019_WinterQRF_25,25,QCI,Electrofishing,Mark Recapture,2019-01-16T00:00:00Z,Pool,Pool,0.508374,NA,NA,Steelhead,NA,0,0,0
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_1,1,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_1,1,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_2,2,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_2,2,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_3,3,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_3,3,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_4,4,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_4,4,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_5,5,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_5,5,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_6,6,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_6,6,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_7,7,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_7,7,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_8,8,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_8,8,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Steelhead,NA,1,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_9,9,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Run,FNT,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_9,9,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Run,Run,3.44666,NA,NA,Steelhead,NA,1,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_10,10,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_10,10,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_11,11,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_11,11,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Steelhead,NA,1,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_12,12,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_12,12,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,1,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_13,13,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_13,13,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,1,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_14,14,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_14,14,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_15,15,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Run,FNT,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_15,15,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Run,Run,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_16,16,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_16,16,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_17,17,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_17,17,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Riffle,Riffle,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_18,18,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Chinook,NA,0,NA,NA
+CBW05583-00EVR2,Lemhi,Lemhi River,CBW05583-00EVR2_18,18,QCI,Electrofishing,Single Pass,2019-02-12T00:00:00Z,Pool,Pool,3.44666,NA,NA,Steelhead,NA,0,NA,NA
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_1,1,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Chinook,NA,8,6,2
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_1,1,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Steelhead,NA,20,19,7
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_2,2,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Chinook,NA,0,0,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_2,2,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Steelhead,NA,3,2,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_3,3,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Chinook,NA,2,3,1
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_3,3,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Steelhead,NA,21,24,7
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_4,4,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Chinook,NA,0,1,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_4,4,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Steelhead,NA,14,7,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_5,5,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Chinook,NA,2,1,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_5,5,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Steelhead,NA,17,7,6
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_6,6,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Chinook,NA,0,0,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_6,6,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Steelhead,NA,11,12,2
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_7,7,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Chinook,NA,4,4,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_7,7,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Steelhead,NA,9,5,3
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_8,8,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Chinook,NA,0,0,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_8,8,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Steelhead,NA,3,4,2
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_9,9,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Chinook,NA,0,0,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_9,9,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Steelhead,NA,12,8,4
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_10,10,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Rapid,Rapid,0.93228155,NA,NA,Chinook,NA,0,0,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_10,10,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Rapid,Rapid,0.93228155,NA,NA,Steelhead,NA,2,2,1
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_11,11,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,SSC,SC,0.93228155,NA,NA,Chinook,NA,1,0,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_11,11,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,SSC,SC,0.93228155,NA,NA,Steelhead,NA,19,12,6
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_12,12,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Chinook,NA,1,1,1
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_12,12,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Pool,Pool,0.93228155,NA,NA,Steelhead,NA,21,13,7
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_13,13,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Run,Run,0.93228155,NA,NA,Chinook,NA,1,1,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_13,13,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Run,Run,0.93228155,NA,NA,Steelhead,NA,12,12,5
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_14,14,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Chinook,NA,0,0,0
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_14,14,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Riffle,Riffle,0.93228155,NA,NA,Steelhead,NA,13,9,1
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_15,15,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Run,Run,0.93228155,NA,NA,Chinook,NA,0,1,1
+CBW05583-029103,Lemhi,Hayden Creek,CBW05583-029103_15,15,QCI,Electrofishing,Mark Recapture,2019-02-13T00:00:00Z,Run,Run,0.93228155,NA,NA,Steelhead,NA,13,7,5
+CBW05583-045487,Lemhi,Hayden Creek,CBW05583-045487_1,1,QCI,Electrofishing,Mark Recapture,2019-02-11T00:00:00Z,Riffle,Riffle,0.403825,NA,NA,Chinook,NA,5,2,1
+CBW05583-045487,Lemhi,Hayden Creek,CBW05583-045487_1,1,QCI,Electrofishing,Mark Recapture,2019-02-11T00:00:00Z,Riffle,Riffle,0.403825,NA,NA,Steelhead,NA,41,43,15
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_1,1,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Run,FNT,2.5150756,NA,NA,Chinook,NA,0,1,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_1,1,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Run,Run,2.5150756,NA,NA,Steelhead,NA,7,11,1
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_2,2,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_2,2,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Steelhead,NA,3,4,2
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_3,3,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_3,3,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Steelhead,NA,0,5,2
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_4,4,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_4,4,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Steelhead,NA,2,4,2
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_5,5,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Riffle,Riffle,2.5150756,NA,NA,Chinook,NA,0,2,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_5,5,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Riffle,Riffle,2.5150756,NA,NA,Steelhead,NA,7,10,1
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_6,6,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,SSC,SC,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_6,6,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,SSC,SC,2.5150756,NA,NA,Steelhead,NA,9,7,4
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_7,7,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Chinook,NA,1,2,1
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_7,7,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Steelhead,NA,4,2,1
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_8,8,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_8,8,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Steelhead,NA,0,1,1
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_9,9,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_9,9,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Steelhead,NA,11,8,5
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_10,10,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_10,10,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Steelhead,NA,5,3,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_11,11,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Run,FNT,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_11,11,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Run,Run,2.5150756,NA,NA,Steelhead,NA,1,1,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_12,12,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_12,12,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Pool,Pool,2.5150756,NA,NA,Steelhead,NA,8,4,1
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_13,13,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Riffle,Riffle,2.5150756,NA,NA,Chinook,NA,0,0,0
+CBW05583-452047,Lemhi,Lemhi River,CBW05583-452047_13,13,QCI,Electrofishing,Mark Recapture,2019-01-24T00:00:00Z,Riffle,Riffle,2.5150756,NA,NA,Steelhead,NA,6,1,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_1,1,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_1,1,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Steelhead,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_2,2,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_2,2,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Steelhead,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_3,3,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_3,3,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Steelhead,NA,0,3,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_4,4,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_4,4,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Steelhead,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_5,5,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Chinook,NA,0,1,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_5,5,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Steelhead,NA,1,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_6,6,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_6,6,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Steelhead,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_7,7,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_7,7,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Steelhead,NA,1,1,1
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_8,8,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_8,8,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Steelhead,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_9,9,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_9,9,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Steelhead,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_10,10,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_10,10,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Steelhead,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_11,11,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Run,FNT,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_11,11,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Run,Run,0.429605,NA,NA,Steelhead,NA,0,1,1
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_12,12,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_12,12,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Steelhead,NA,1,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_13,13,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_13,13,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Steelhead,NA,0,1,1
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_14,14,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_14,14,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Steelhead,NA,1,1,1
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_15,15,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_15,15,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Steelhead,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_16,16,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_16,16,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Pool,Pool,0.429605,NA,NA,Steelhead,NA,1,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_17,17,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Chinook,NA,0,0,0
+LEM00002-LittleSprings1,Lemhi,Little Springs Creek,LEM00002-LittleSprings1_17,17,QCI,Electrofishing,Mark Recapture,2019-02-14T00:00:00Z,Riffle,Riffle,0.429605,NA,NA,Steelhead,NA,1,1,1
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_1,1,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_1,1,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,5,8,2
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_2,2,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_2,2,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,1,1,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_3,3,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_3,3,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,2,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_5,5,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Run,Run,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_5,5,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Run,Run,0.3040884,NA,NA,Steelhead,NA,9,14,1
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_6,6,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_6,6,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_7,7,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_7,7,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_8,8,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Run,Run,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_8,8,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Run,Run,0.3040884,NA,NA,Steelhead,NA,0,2,1
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_9,9,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,1,1,1
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_9,9,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,7,5,2
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_10,10,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_10,10,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,1,2,1
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_11,11,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Run,Run,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_11,11,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Run,Run,0.3040884,NA,NA,Steelhead,NA,3,4,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_12,12,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_12,12,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,0,2,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_13,13,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_13,13,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,9,10,6
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_14,14,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_14,14,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,5,3,1
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_15,15,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_15,15,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Steelhead,NA,0,1,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_16,16,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_16,16,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,5,7,1
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_17,17,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_17,17,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,9,10,5
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_18,18,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_18,18,QCI,Electrofishing,Mark Recapture,2019-01-31T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,16,8,4
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_19,19,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_19,19,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,9,20,3
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_20,20,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_20,20,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,2,3,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_21,21,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_21,21,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Steelhead,NA,4,3,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_22,22,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_22,22,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,5,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_23,23,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_23,23,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,0,7,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_24,24,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_24,24,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,5,2,1
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_25,25,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_25,25,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,4,6,2
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_26,26,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_26,26,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,9,16,3
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_27,27,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_27,27,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Steelhead,NA,3,7,2
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_28,28,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_28,28,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,8,15,2
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_29,29,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,1,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_29,29,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,14,21,7
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_30,30,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,2,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_30,30,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,16,20,6
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_31,31,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_31,31,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Steelhead,NA,0,3,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_32,32,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,3,1,1
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_32,32,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,23,27,5
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_33,33,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_33,33,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Pool,Pool,0.3040884,NA,NA,Steelhead,NA,8,4,2
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_34,34,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_34,34,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Rapid,Rapid,0.3040884,NA,NA,Steelhead,NA,3,2,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_35,35,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Chinook,NA,0,0,0
+CBW05583-181535,South Fork Salmon,Lick Creek,CBW05583-181535_35,35,QCI,Electrofishing,Mark Recapture,2019-02-04T00:00:00Z,Riffle,Riffle,0.3040884,NA,NA,Steelhead,NA,0,1,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_1,1,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_1,1,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Steelhead,NA,4,15,2
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_2,2,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_2,2,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Steelhead,NA,9,7,2
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_3,3,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_3,3,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Steelhead,NA,8,4,1
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_4,4,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_4,4,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Steelhead,NA,6,5,2
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_5,5,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_5,5,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Steelhead,NA,6,3,1
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_6,6,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_6,6,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Steelhead,NA,5,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_7,7,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_7,7,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Steelhead,NA,16,4,2
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_8,8,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_8,8,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Steelhead,NA,8,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_9,9,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_9,9,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Steelhead,NA,0,6,1
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_10,10,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_10,10,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Steelhead,NA,17,5,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_11,11,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_11,11,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Steelhead,NA,2,9,2
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_12,12,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_12,12,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Steelhead,NA,12,11,5
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_13,13,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_13,13,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Rapid,Rapid,0.1723092,NA,NA,Steelhead,NA,6,9,3
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_14,14,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_14,14,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Steelhead,NA,12,7,4
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_15,15,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_15,15,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Steelhead,NA,3,10,2
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_16,16,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_16,16,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Steelhead,NA,7,8,4
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_17,17,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_17,17,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Riffle,Riffle,0.1723092,NA,NA,Steelhead,NA,11,4,3
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_18,18,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Chinook,NA,0,0,0
+CBW05583-273695,South Fork Salmon,Lick Creek,CBW05583-273695_18,18,QCI,Electrofishing,Mark Recapture,2019-02-02T00:00:00Z,Pool,Pool,0.1723092,NA,NA,Steelhead,NA,4,2,2
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_1,1,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Riffle,Riffle,0.43365735,NA,NA,Chinook,NA,0,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_1,1,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Riffle,Riffle,0.43365735,NA,NA,Steelhead,NA,3,16,3
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_2,2,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Chinook,NA,0,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_2,2,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Steelhead,NA,6,5,1
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_3,3,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Rapid,Rapid,0.43365735,NA,NA,Chinook,NA,0,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_3,3,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Rapid,Rapid,0.43365735,NA,NA,Steelhead,NA,3,4,2
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_4,4,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Chinook,NA,0,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_4,4,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Steelhead,NA,3,6,3
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_5,5,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Rapid,Rapid,0.43365735,NA,NA,Chinook,NA,0,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_5,5,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Rapid,Rapid,0.43365735,NA,NA,Steelhead,NA,2,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_6,6,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Chinook,NA,0,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_6,6,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Steelhead,NA,11,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_7,7,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Chinook,NA,0,1,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_7,7,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Steelhead,NA,6,7,1
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_8,8,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Rapid,Rapid,0.43365735,NA,NA,Chinook,NA,0,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_8,8,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Rapid,Rapid,0.43365735,NA,NA,Steelhead,NA,4,4,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_9,9,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Chinook,NA,0,0,0
+CBW05583-312607,South Fork Salmon,Lick Creek,CBW05583-312607_9,9,QCI,Electrofishing,Mark Recapture,2019-02-01T00:00:00Z,Pool,Pool,0.43365735,NA,NA,Steelhead,NA,8,13,3
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_138,138,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Steelhead,NA,0,3,1
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_138,138,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_139,139,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Steelhead,NA,6,2,1
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_139,139,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_140,140,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Steelhead,NA,12,6,3
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_140,140,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Chinook,NA,2,2,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_141,141,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Steelhead,NA,0,1,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_141,141,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_142,142,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Steelhead,NA,1,4,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_142,142,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Chinook,NA,1,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_143,143,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Steelhead,NA,7,8,3
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_143,143,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_144,144,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Steelhead,NA,0,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_144,144,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_145,145,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Steelhead,NA,13,4,2
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_145,145,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Chinook,NA,1,1,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_146,146,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Steelhead,NA,6,4,1
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_146,146,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Chinook,NA,4,3,1
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_147,147,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Steelhead,NA,1,5,1
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_147,147,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Chinook,NA,1,2,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_148,148,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Steelhead,NA,9,7,4
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_148,148,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Chinook,NA,1,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_149,149,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Steelhead,NA,1,5,1
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_149,149,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_150,150,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Steelhead,NA,8,13,3
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_150,150,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Pool,Pool,2.2437365,NA,NA,Chinook,NA,1,1,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_151,151,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Steelhead,NA,3,0,0
+UpperLemhiMRA01,Lemhi,Lemhi River,UpperLemhiMRA01_151,151,QCI,Electrofishing,Mark Recapture,2018-12-10T00:00:00Z,Riffle,Riffle,2.2437365,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_131,131,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Riffle,Riffle,2.5955314,NA,NA,Steelhead,NA,8,0,0
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_131,131,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Riffle,Riffle,2.5955314,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_132,132,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Steelhead,NA,16,13,9
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_132,132,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Chinook,NA,1,0,0
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_133,133,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Riffle,Riffle,2.5955314,NA,NA,Steelhead,NA,29,15,5
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_133,133,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Riffle,Riffle,2.5955314,NA,NA,Chinook,NA,4,3,3
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_134,134,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Steelhead,NA,11,3,1
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_134,134,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Chinook,NA,4,3,0
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_135,135,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Steelhead,NA,2,0,0
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_135,135,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Chinook,NA,0,1,1
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_136,136,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Steelhead,NA,8,4,3
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_136,136,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Chinook,NA,1,0,0
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_137,137,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Steelhead,NA,14,9,1
+UpperLemhiMRA02,Lemhi,Lemhi River,UpperLemhiMRA02_137,137,QCI,Electrofishing,Mark Recapture,2018-12-11T00:00:00Z,Pool,Pool,2.5955314,NA,NA,Chinook,NA,4,4,2
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_120,120,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,Riffle,1.6197775,NA,NA,Steelhead,NA,27,28,10
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_120,120,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,Riffle,1.6197775,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_121,121,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,LSC Riffle,1.6197775,NA,NA,Steelhead,NA,4,2,1
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_121,121,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,LSC Riffle,1.6197775,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_123,123,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Pool,LSC Pool,1.6197775,NA,NA,Steelhead,NA,2,5,0
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_123,123,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Pool,LSC Pool,1.6197775,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_124,124,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Pool,Pool,1.6197775,NA,NA,Steelhead,NA,28,17,12
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_124,124,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Pool,Pool,1.6197775,NA,NA,Chinook,NA,4,4,3
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_125,125,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Pool,Pool,1.6197775,NA,NA,Steelhead,NA,12,7,2
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_125,125,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Pool,Pool,1.6197775,NA,NA,Chinook,NA,1,1,0
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_126,126,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,Riffle,1.6197775,NA,NA,Steelhead,NA,6,16,6
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_126,126,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,Riffle,1.6197775,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_127,127,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,Riffle,1.6197775,NA,NA,Steelhead,NA,1,0,0
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_127,127,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,Riffle,1.6197775,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_128,128,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,LSC Riffle,1.6197775,NA,NA,Steelhead,NA,7,6,4
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_128,128,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Riffle,LSC Riffle,1.6197775,NA,NA,Chinook,NA,2,2,1
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_129,129,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Pool,Pool,1.6197775,NA,NA,Steelhead,NA,6,4,1
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_129,129,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Pool,Pool,1.6197775,NA,NA,Chinook,NA,1,1,1
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_130,130,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Run,Run,1.6197775,NA,NA,Steelhead,NA,9,10,5
+UpperLemhiMRA03,Lemhi,Lemhi River,UpperLemhiMRA03_130,130,QCI,Electrofishing,Mark Recapture,2018-12-12T00:00:00Z,Run,Run,1.6197775,NA,NA,Chinook,NA,3,2,1
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_113,113,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,8,4,2
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_113,113,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,3,1,0
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_114,114,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,18,18,8
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_114,114,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_115,115,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Steelhead,NA,26,14,9
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_115,115,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Chinook,NA,2,1,0
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_116,116,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Steelhead,NA,1,1,0
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_116,116,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_117,117,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,5,3,0
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_117,117,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_118,118,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,1,0,0
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_118,118,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_119,119,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,5,3,2
+UpperLemhiMRA04,Lemhi,Lemhi River,UpperLemhiMRA04_119,119,QCI,Electrofishing,Mark Recapture,2018-12-13T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_96,96,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,8,8,1
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_96,96,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,1,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_97,97,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,9,3,1
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_97,97,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_98,98,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,7,3,1
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_98,98,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_99,99,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,16,14,5
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_99,99,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_100,100,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,7,5,3
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_100,100,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,2,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_101,101,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,5,5,1
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_101,101,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_102,102,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,23,17,10
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_102,102,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,3,1,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_103,103,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,2,6,1
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_103,103,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_104,104,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,12,16,4
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_104,104,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_105,105,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,6,7,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_105,105,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,1,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_106,106,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Steelhead,NA,2,3,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_106,106,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_107,107,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,10,14,1
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_107,107,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,1,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_108,108,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,5,8,1
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_108,108,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_109,109,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,15,12,4
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_109,109,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,3,1,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_111,111,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,2,4,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_111,111,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_112,112,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,12,5,4
+UpperLemhiMRA05,Lemhi,Lemhi River,UpperLemhiMRA05_112,112,QCI,Electrofishing,Mark Recapture,2018-12-17T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_86,86,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,3,0,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_86,86,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_87,87,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,3,2,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_87,87,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,1,1,1
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_88,88,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,11,3,3
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_88,88,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_89,89,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,5,1,1
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_89,89,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_90,90,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,17,7,2
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_90,90,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_91,91,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,12,8,4
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_91,91,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_92,92,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,14,11,2
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_92,92,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_93,93,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,SSC,OCA,2.3241545,NA,NA,Steelhead,NA,7,4,2
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_93,93,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,SSC,OCA,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_94,94,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,9,7,3
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_94,94,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,1,1,1
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_95,95,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,42,36,18
+UpperLemhiMRA06,Lemhi,Lemhi River,UpperLemhiMRA06_95,95,QCI,Electrofishing,Mark Recapture,2018-12-18T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,3,2,2
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_62,62,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Steelhead,NA,59,31,18
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_62,62,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_70,70,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,11,7,2
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_70,70,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_71,71,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,1,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_71,71,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_72,72,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,SSC,OCA,2.3241545,NA,NA,Steelhead,NA,0,1,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_72,72,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,SSC,OCA,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_73,73,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_73,73,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_74,74,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,6,1,1
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_74,74,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_75,75,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,9,7,3
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_75,75,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,2,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_76,76,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,3,2,2
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_76,76,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_77,77,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Steelhead,NA,0,2,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_77,77,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_78,78,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,4,7,2
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_78,78,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_79,79,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,11,14,2
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_79,79,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_80,80,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,9,9,2
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_80,80,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_81,81,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,1,4,1
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_81,81,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_82,82,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,1,2,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_82,82,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_83,83,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,10,2,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_83,83,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_84,84,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,SSC,OCA,2.3241545,NA,NA,Steelhead,NA,8,9,3
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_84,84,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,SSC,OCA,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_85,85,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,19,13,7
+UpperLemhiMRA07,Lemhi,Lemhi River,UpperLemhiMRA07_85,85,QCI,Electrofishing,Mark Recapture,2018-12-19T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_54,54,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Steelhead,NA,12,11,6
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_54,54,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_56,56,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,2,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_56,56,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_57,57,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,9,12,4
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_57,57,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_58,58,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,15,8,3
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_58,58,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_59,59,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,2,1,1
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_59,59,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,1,1,1
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_60,60,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,9,9,2
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_60,60,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_61,61,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,10,7,2
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_61,61,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_63,63,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,1,2,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_63,63,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_64,64,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,10,8,1
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_64,64,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_65,65,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,4,5,3
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_65,65,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_66,66,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,2,3,1
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_66,66,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_67,67,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,13,12,7
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_67,67,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_68,68,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Steelhead,NA,3,2,1
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_68,68,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,SSC,SSC,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_69,69,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,4,5,2
+UpperLemhiMRA08,Lemhi,Lemhi River,UpperLemhiMRA08_69,69,QCI,Electrofishing,Mark Recapture,2018-12-20T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_1,1,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,16,16,2
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_1,1,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,1,1,1
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_2,2,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Run,Run,2.3241545,NA,NA,Steelhead,NA,0,2,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_2,2,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Run,Run,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_3,3,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,8,8,1
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_3,3,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_4,4,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,2,1,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_4,4,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_5,5,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,5,4,1
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_5,5,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_6,6,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,2,2,1
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_6,6,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_7,7,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Steelhead,NA,3,6,3
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_7,7,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Riffle,Riffle,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_8,8,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Steelhead,NA,0,1,0
+UpperLemhiMRA09,Lemhi,Lemhi River,UpperLemhiMRA09_8,8,QCI,Electrofishing,Mark Recapture,2019-01-03T00:00:00Z,Pool,Pool,2.3241545,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_44,44,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,5,4,2
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_44,44,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_45,45,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Run,Run,2.42041,NA,NA,Steelhead,NA,37,35,13
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_45,45,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Run,Run,2.42041,NA,NA,Chinook,NA,2,1,1
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_46,46,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,LSC Pool,2.42041,NA,NA,Steelhead,NA,2,1,0
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_46,46,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,LSC Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_47,47,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,LSC Pool,2.42041,NA,NA,Steelhead,NA,7,2,2
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_47,47,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,LSC Pool,2.42041,NA,NA,Chinook,NA,2,0,0
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_48,48,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,17,7,3
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_48,48,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,3,2,1
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_49,49,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Steelhead,NA,4,6,2
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_49,49,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Chinook,NA,0,1,1
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_50,50,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,1,0,0
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_50,50,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_51,51,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Steelhead,NA,33,23,13
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_51,51,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Chinook,NA,1,0,0
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_52,52,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,8,6,3
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_52,52,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_53,53,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Steelhead,NA,4,4,1
+UpperLemhiMRA10,Lemhi,Lemhi River,UpperLemhiMRA10_53,53,QCI,Electrofishing,Mark Recapture,2019-01-08T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_34,34,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Steelhead,NA,4,8,3
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_34,34,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_35,35,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,13,5,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_35,35,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_36,36,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Run,Run,2.42041,NA,NA,Steelhead,NA,14,11,6
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_36,36,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Run,Run,2.42041,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_37,37,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,SSC,SSC,2.42041,NA,NA,Steelhead,NA,0,0,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_37,37,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,SSC,SSC,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_38,38,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,SSC,SSC,2.42041,NA,NA,Steelhead,NA,17,12,6
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_38,38,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,SSC,SSC,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_39,39,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Steelhead,NA,18,11,3
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_39,39,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Chinook,NA,1,1,1
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_40,40,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,6,9,3
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_40,40,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_41,41,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,1,1,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_41,41,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_42,42,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,SSC,SSC,2.42041,NA,NA,Steelhead,NA,21,22,9
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_42,42,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,SSC,SSC,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_43,43,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Steelhead,NA,7,7,0
+UpperLemhiMRA11,Lemhi,Lemhi River,UpperLemhiMRA11_43,43,QCI,Electrofishing,Mark Recapture,2019-01-09T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_20,20,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,6,4,1
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_20,20,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_21,21,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,13,8,1
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_21,21,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,1,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_22,22,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Steelhead,NA,0,4,2
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_22,22,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_23,23,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,7,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_23,23,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_24,24,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Steelhead,NA,8,3,1
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_24,24,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_25,25,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,LSC Pool,2.42041,NA,NA,Steelhead,NA,5,1,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_25,25,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,LSC Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_26,26,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,1,4,2
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_26,26,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_27,27,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Run,Run,2.42041,NA,NA,Steelhead,NA,2,2,1
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_27,27,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Run,Run,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_28,28,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_28,28,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_29,29,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Run,Run,2.42041,NA,NA,Steelhead,NA,20,14,5
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_29,29,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Run,Run,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_30,30,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,8,7,1
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_30,30,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,1,1,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_31,31,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Steelhead,NA,18,12,5
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_31,31,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Riffle,Riffle,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_32,32,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,5,3,3
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_32,32,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,0,0
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_33,33,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Steelhead,NA,0,6,1
+UpperLemhiMRA12,Lemhi,Lemhi River,UpperLemhiMRA12_33,33,QCI,Electrofishing,Mark Recapture,2019-01-10T00:00:00Z,Pool,Pool,2.42041,NA,NA,Chinook,NA,0,1,0
 CBW05583-009049,Methow,Chewuch River,CBW05583-009049_1,1,WDFW,Snorkeling,Snorkel,2017-11-21T17:45:00Z,Run,FNT,1.1806577094108417,1,NA,BrookTrout,0,NA,NA,NA
 CBW05583-009049,Methow,Chewuch River,CBW05583-009049_1,1,WDFW,Snorkeling,Snorkel,2017-11-21T17:45:00Z,Run,FNT,1.1806577094108417,1,NA,Chinook,33,NA,NA,NA
 CBW05583-009049,Methow,Chewuch River,CBW05583-009049_1,1,WDFW,Snorkeling,Snorkel,2017-11-21T17:45:00Z,Run,FNT,1.1806577094108417,1,NA,Steelhead,27,NA,NA,NA

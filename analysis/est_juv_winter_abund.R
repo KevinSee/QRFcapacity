@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Estimate abundance of winter juvenile fish
 # Created: 9/12/2019
-# Last Modified: 9/23/19
+# Last Modified: 10/17/19
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -35,7 +35,7 @@ fish_data = fish_win_data %>%
   mutate_at(vars(Nmethod),
             list(as.character))
 
-xtabs(~ Year, fish_data)
+xtabs(~ FishCrew + Year, fish_data)
 
 #-----------------------------------------------------------------
 # Estimate abundance for all depletion / removal surveys
@@ -315,7 +315,7 @@ sp_covar_means = sp_calib %>%
   summarise_at(vars(value),
                list(mean = mean,
                     sd = sd))
-  
+
 sp_mod_df = sp_calib %>%
   gather(covar, value, one_of(sp_covar_means$covar)) %>%
   left_join(sp_covar_means) %>%
@@ -323,32 +323,34 @@ sp_mod_df = sp_calib %>%
             list(~ (. - mean) / sd)) %>%
   select(-mean, -sd) %>%
   spread(covar, value) %>%
-  select(Species, N, Pass1.M, Tier1, Discharge, Temp) %>%
+  select(Species, N, Pass1.M, Tier1, Discharge) %>% #, Temp) %>%
   split(list(.$Species)) %>%
   map_df(.f = function(x) {
     
     x %>%
       group_by(Species) %>%
-      summarise(binom_full = list(glm(cbind(Pass1.M, N - Pass1.M) ~ -1 + (Tier1 + Discharge + Temp)^2,
+      # summarise(binom_full = list(glm(cbind(Pass1.M, N - Pass1.M) ~ -1 + (Tier1 + Discharge + Temp)^2,
+      summarise(binom_full = list(glm(cbind(Pass1.M, N - Pass1.M) ~ -1 + (Tier1 + Discharge)^2,
                                       data = .,
                                       family = binomial,
                                       na.action = na.fail)),
                 binom_dd = list(dredge(binom_full)),
                 binom_best = list(get.models(binom_dd,
                                              subset = delta == 0)[[1]]),
-                binom_avg = list(model.avg(binom_dd,
-                                           subset = cumsum(weight) < 0.95,
-                                           fit = T)),
-                lin_full = list(lm(N ~ -1 + Pass1.M + Pass1.M:(Tier1 + Discharge + Temp),
+                binom_avg = list(try(model.avg(binom_dd,
+                                               # subset = cumsum(weight) < 0.95,
+                                               fit = T))),
+                # lin_full = list(lm(N ~ -1 + Pass1.M + Pass1.M:(Tier1 + Discharge + Temp),
+                lin_full = list(lm(N ~ -1 + Pass1.M + Pass1.M:(Tier1 + Discharge),
                                    data = .,
                                    na.action = na.fail)),
                 lin_dd = list(dredge(lin_full,
-                                     fixed = 'count')),
+                                     fixed = 'Pass1.M')),
                 lin_best = list(get.models(lin_dd,
                                            subset = delta == 0)[[1]]),
-                lin_avg = list(model.avg(lin_dd,
-                                         subset = cumsum(weight) < 0.95,
-                                         fit = T)))
+                lin_avg = list(try(model.avg(lin_dd,
+                                             # subset = cumsum(weight) < 0.95,
+                                             fit = T))))
   })
 
 head(sp_mod_df$binom_dd[[1]])
@@ -363,6 +365,8 @@ sp_preds = fish_data %>%
             (Method == 'Mark Recapture' & is.na(N))),
          Species %in% unique(sp_calib$Species),
          Tier1 %in% unique(sp_calib$Tier1)) %>%
+  # no Rapid channel units in Chinook model data
+  filter(!(Species == 'Chinook' & Tier1 == 'Rapid')) %>%
   mutate_at(vars(Species, Tier1),
             list(fct_drop)) %>%
   select(-(Pass2.C:Nmethod)) %>%
@@ -410,10 +414,70 @@ fish_data %>%
   xtabs(~ Method + Nmethod, .) %>%
   addmargins()
 
+# save a csv of all data with abundance estimates
+write_csv(fish_data,
+          'data/prepped/fish_data_winter_all_estimates.csv')
+
+#----------------------------------------------
+# deal with duplicate channel unit surveys
+#----------------------------------------------
+fish_data %<>%
+  filter(SurveyType != 'Calibration',
+         Species != 'BrookTrout') %>%
+  mutate(id = paste(Species, Year, SiteUnit, sep = '_'))
+
+fish_data %>%
+  filter(id %in% id[duplicated(id)]) %>% 
+  arrange(id) %>%
+  group_by(FishCrew) %>%
+  summarise(nSurv = n(),
+            nID = n_distinct(id),
+            nCU = n_distinct(SiteUnit))
+
+# for WDFW, there are 6 channel units sampled on consecutive nights.
+# I'm going to keep the one with a higher abundance estimate
+fish_data %>%
+  anti_join(fish_data %>%
+              filter(id %in% id[duplicated(id)],
+                     FishCrew == 'WDFW')) %>%
+  bind_rows(fish_data %>%
+              filter(id %in% id[duplicated(id)],
+                     FishCrew == 'WDFW') %>%
+              group_by(id) %>%
+              filter(N == max(N)) %>%
+              slice(1) %>%
+              ungroup()) %>%
+  arrange(id) -> fish_data
+
+# for QCI, there were 27 channel units sampled more than once
+fish_data %>%
+  filter(id %in% id[duplicated(id)],
+         FishCrew == 'QCI') %>%
+  arrange(id) %>%
+  select(SiteUnit, Species, SampleDate, Method, count:Nmethod) %>%
+  xtabs(~ Species + (N > 0), .)
+
+# Most of these resulted in 0 Chinook anyways. For the ones that didn't, I'll keep which ever sample resulted in the higher N (and for the 0s, I'll keep the last sample)
+fish_data %>%
+  anti_join(fish_data %>%
+              filter(id %in% id[duplicated(id)],
+                     FishCrew == 'QCI')) %>%
+  bind_rows(fish_data %>%
+              filter(id %in% id[duplicated(id)],
+                     FishCrew == 'QCI') %>%
+              group_by(id) %>%
+              filter(N == max(N)) %>%
+              filter(SampleDate == max(SampleDate)) %>%
+              ungroup()) %>%
+  arrange(id) -> fish_data
+
 #----------------------------------------------
 # Save estimates
 #----------------------------------------------
-fish_win_est = fish_data
+fish_win_est = fish_data %>%
+  select(-id) %>%
+  mutate_at(vars(Watershed, Stream, FishCrew, SurveyType, Method, Tier1),
+            list(fct_drop))
 
 use_data(fish_win_est,
          version = 2,

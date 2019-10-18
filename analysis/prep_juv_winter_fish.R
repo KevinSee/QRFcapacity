@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep the data collected by various outfits
 # Created: 5/16/2019
-# Last Modified: 9/19/2019
+# Last Modified: 10/17/2019
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -169,7 +169,7 @@ odfw_data %>%
 #-----------------------------------------------------------------
 # QCI
 #-----------------------------------------------------------------
-qci_data = read_excel('data/raw/fish/winter/QCI_winterQRF_capture.xlsx') %>%
+qci_2018 = read_excel('data/raw/fish/winter/QCI_winterQRF_capture.xlsx') %>%
   rename(ChUnitNumber = ChUnitNum,
          Stream = StreamName,
          Date = SurveyDateTime,
@@ -199,12 +199,12 @@ qci_data = read_excel('data/raw/fish/winter/QCI_winterQRF_capture.xlsx') %>%
   select(SiteUnit:Discharge, PercentIceCover, Tier2, everything())
 
 # for surveys with missing discharge data, use discharge from other surveys at the same site
-qci_discharge = qci_data %>%
+qci_discharge = qci_2018 %>%
   select(Date, Stream, SiteName, SurveyType, Discharge) %>%
   mutate(Date = floor_date(Date, unit = 'day')) %>%
   distinct()
 
-qci_data %<>%
+qci_2018 %<>%
   left_join(qci_discharge %>%
               group_by(Stream, SiteName) %>%
               summarise(nTot = n_distinct(Date),
@@ -227,12 +227,73 @@ qci_data %<>%
   select(-meanDis)
 
 # # what's missing?
-# qci_data %>%
+# qci_2018 %>%
 #   summarise_at(vars(everything()),
 #                list(~sum(is.na(.)) / length(.))) %>%
 #   gather(variable, percNA)
 # 
-# xtabs(~ DCEtype + SurveyType + is.na(count), qci_data)
+# xtabs(~ DCEtype + SurveyType + is.na(count), qci_2018)
+
+
+# get QCI/ABS data from 2018-2019
+qci_2019 = read_excel('data/raw/fish/winter/winterQRF_18to19_capture.xlsx') %>%
+  rename(ChUnitNumber = HabitatUnit,
+         Stream = StreamName,
+         Date = SampledDate,
+         Tier2 = HabitatType,
+         species = Species,
+         SurveyType = CaptureMethod,
+         Pass1_M = M,
+         Pass2_C = C,
+         Pass3_R = R) %>%
+  mutate_at(vars(ChUnitNumber, starts_with('Pass')),
+            list(as.numeric)) %>%
+  mutate(SiteName = str_remove(SiteName, '_QRF2018$'),
+         SiteName = str_remove(SiteName, '_QRF2019$'),
+         SiteName = str_replace(SiteName,
+                                '^LEM-',
+                                'CBW05583-'),
+         SiteName = str_replace(SiteName,
+                                '^SFS-',
+                                'CBW05583-'),
+         SiteName = if_else(SiteName == 'LittleSprings1',
+                            paste0('LEM00002-', SiteName),
+                            SiteName),
+         SiteName = if_else(grepl('Big0Springs', SiteName),
+                            paste0('LEM00001-', SiteName),
+                            SiteName),
+         SiteName = if_else(grepl('CBW05583-181535', SiteName),
+                            'CBW05583-181535',
+                            SiteName)) %>%
+  mutate(SiteUnit = paste(SiteName, ChUnitNumber, sep = '_'),
+         Crew = 'QCI',
+         DCEtype = if_else(is.na(Pass2_C),
+                           'Count',
+                           'MarkRecap'),
+         species = recode(species,
+                          'Chinook' = 'CH',
+                          'Steelhead' = 'OM'),
+         Tier1 = ifelse(Tier2 %in% c('Fast Non-turbulent', 'FNT', 'Run'),
+                        'Run',
+                        ifelse(Tier2 %in% c('Riffle', 'LSC Riffle'),
+                               'Riffle',
+                               ifelse(Tier2 == 'Rapid',
+                                      'Rapid',
+                                      ifelse(Tier2 %in% c('OCA', 'SC', 'SSC'),
+                                             'Small Side Channel',
+                                             'Pool'))))) %>%
+  select(one_of(names(odfw_data)), Tier2) %>%
+  select(SiteUnit:Discharge, Tier2, everything())
+
+qci_2019 %>%
+  select(Site = SiteName, Date) %>%
+  distinct() %>%
+  anti_join(champ_site_2011_17 %>%
+              select(Site) %>%
+              distinct())
+
+qci_data = qci_2018 %>%
+  bind_rows(qci_2019)
 
 #-----------------------------------------------------------------
 # WDFW
@@ -523,6 +584,7 @@ fish_win_data = odfw_data %>%
                           'CH' = 'Chinook',
                           'OM' = 'Steelhead',
                           'BT' = 'BrookTrout')) %>%
+  filter(Species != 'No Data') %>%
   # rename some columns to better match summer data
   rename(Method = DCEtype,
          Pass1.M = Pass1_M,
@@ -561,10 +623,14 @@ fish_win_data %>%
   gather(variable, percNA) %>%
   arrange(desc(percNA))
 
-xtabs(~ is.na(Pass2_C) + is.na(Pass1_M), fish_win_data)
+xtabs(~ is.na(Pass2.C) + is.na(Pass1.M), fish_win_data)
+
+xtabs(~ is.na(count) + is.na(Pass1.M), fish_win_data)
+
+xtabs(~ is.na(Temp) + FishCrew, fish_win_data)
 
 fish_win_data %>%
-  filter(is.na(Pass1_M)) %>%
+  filter(is.na(Pass1.M)) %>%
   xtabs(~ SurveyType, .)
 
 fish_win_data %>%
