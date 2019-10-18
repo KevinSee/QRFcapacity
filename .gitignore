@@ -6,5 +6,9 @@
 .DS_Store
 data/raw
 data/prepped/outgoing
+data/prepped/NorWeST_temps.dbf
+data/prepped/NorWeST_temps.prj
+data/prepped/NorWeST_temps.shp
+data/prepped/NorWeST_temps.shx
 RepoDesign.txt
 inst/doc
