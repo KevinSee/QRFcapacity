@@ -1,0 +1,235 @@
+---
+title: "Habitat Metric Selection"
+author: "Kevin See^[Biomark Inc.]"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  rmarkdown::html_vignette:
+    fig_caption: yes
+    fig_height: 8
+    fig_width: 8
+    toc: yes
+    toc_depth: 1
+vignette: >
+  %\VignetteIndexEntry{Habitat_Metric_Selection}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+csl: /Users/kevin/Dropbox/Bibliography/StyleFiles/ecology.csl
+bibliography:
+- /Users/kevin/Dropbox/Bibliography/Research.bib
+- /Users/kevin/Dropbox/Bibliography/SoftwareCitations.bib
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+library(knitr)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+
+library(pander)
+# options for table formatting
+panderOptions('big.mark', ',')
+# panderOptions('digits', 3)
+# panderOptions('round', 3)
+panderOptions('keep.trailing.zeros', FALSE)
+panderOptions('table.split.table', Inf)
+
+library(captioner)
+tab_nums = captioner(prefix = 'Table')
+fig_nums = captioner()
+
+
+# load packages for analysis
+library(QRFcapacity)
+library(tidyverse)
+library(magrittr)
+library(minerva)
+library(sf)
+library(corrr)
+library(ggpubr)
+
+# set default theme for ggplot
+theme_set(theme_bw())
+```
+
+# Goal
+
+The goal of this vignette is to help a user select habitat metrics to match with fish densities prior to fitting a quantile regression forest (QRF) model. Random forest models naturally incorporate interactions between correlated covariates, which is essential since nearly all habitat variables are considered correlated to one degree or another. However, we aimed to avoid overly redundant variables (i.e., variables that measure similar aspects of the habitat). Further, including too many covariates can result in overfitting of the model (e.g., including as many covariates as data points).
+
+# Methods
+
+We used the Maximal Information-Based Nonparametric Exploration (MINE) class of statistics (@Reshef2011) to determine those habitat characteristics (covariates) most highly associated with observed parr densities. We calculated the maximal information coefficient (MIC), using the R package `minerva` (@Albanese2013), to measure the strength of the linear or non-linear association between two variables (@Reshef2011). The MIC value between each of the measured habitat characteristics and the response variable, juvenile fish density (fish/m), was used to inform decisions on which habitat covariates to include in the QRF parr capacity model. 
+
+Habitat metrics were first grouped into broad categories that included channel unit, complexity, cover, disturbance, riparian, size, substrate, temperature, water quality, and woody debris. Within each category, metrics were ranked according to their MIC value. Our strategy was to select one or two variables with the highest MIC score within each category so that covariates describe different aspects of rearing habitat (e.g., substrate, temperature, etc.). 
+
+We also investigated the correlation between various habitat metrics. Although random forest models can accomodate correlated covariates, we felt it was redundant to include metrics that were too highly correlated with each other.
+
+```{r MINE_stats}
+# look at densities (juveniles and redds) at the site scale
+
+data(hab_dict_2017)
+data(champ_site_2011_17_avg)
+data(fh_sum_champ_2017)
+data(fh_redds_champ_2017)
+
+# what are some possible habitat covariates?
+poss_hab_mets = hab_dict_2017 %>%
+  filter(MetricCategory != 'Categorical') %>%
+  filter(ShortName %in% names(champ_site_2011_17_avg)) %>%
+  pull(ShortName)
+
+
+mine_df = fh_sum_champ_2017 %>%
+  mutate(Lifestage = 'Summer') %>%
+  select(Species, Lifestage, Site, Watershed, Year, fish_dens, one_of(poss_hab_mets)) %>%
+  bind_rows(fh_redds_champ_2017 %>%
+              rename(Year = maxYr) %>%
+              mutate(Lifestage = 'Redd'))
+
+
+# unique(hab_dict$MetricCategory[hab_dict$MetricCategory != 'Categorical']) %>%
+#   str_replace('WaterQuality', 'Water Quality') %>%
+#   str_replace('ChannelUnit', 'Channel Unit') %>%
+#   str_to_lower() %>%
+#   sort() %>%
+#   paste(collapse = ', ')
+
+
+
+mine_res = mine_df %>%
+  # use log of fish density as response
+  mutate(fish_dens = log(fish_dens + 0.005)) %>%
+  split(list(.$Species, .$Lifestage)) %>%
+  map_df(.id = 'model',
+         .f = function(x) {
+           
+           estimate_MIC(data = x,
+                        covars = poss_hab_mets,
+                        response = 'fish_dens') %>%
+             left_join(hab_dict_2017 %>%
+                         select(Metric = ShortName,
+                                MetricCategory,
+                                Name),
+                       by = 'Metric') %>%
+             # put the metric names in descending order by MIC
+             mutate_at(vars(Metric, Name),
+                       list(~ fct_reorder(., .x = MIC))) %>%
+             select(MetricCategory, Metric, everything())
+         }) %>%
+  mutate(Species = str_split(model, '\\.', simplify = T)[,1],
+         Lifestage = str_split(model, '\\.', simplify = T)[,2]) %>%
+  select(Species, Lifestage, MetricCategory, Metric, Name,
+         everything(),
+         -model) %>%
+  arrange(Species, Lifestage, Metric)
+
+# pull out subset of results for plotting
+mine_plot_df = mine_res #%>%
+  # filter out some metrics with too many NAs or 0s
+  # filter((perc_NA < 0.2 & non_0 > 100) | MetricCategory == 'Temperature') %>%
+  # # filter out metrics with very low variance
+  # filter(var < 0.1) %>% select(1:11)
+  # # filter out area and volume metrics
+  # filter(!grepl('Area', Metric),
+  #        !grepl('Vol', Metric),
+  #        Metric != 'Lgth_Wet')
+
+
+```
+
+
+# Results
+
+```{r}
+mine_lfstg_p = mine_plot_df %>%
+  split(list(.$Lifestage)) %>%
+  map(.f = function(x) {
+    x %>%
+      mutate_at(vars(Metric, Name),
+                list(~ fct_reorder(., .x = MIC))) %>%
+      ggplot(aes(x = Name,
+                 y = MIC,
+                 fill = Species)) +
+      geom_col(position = position_dodge(1)) +
+      coord_flip() +
+      facet_wrap(~ MetricCategory,
+                 scales = 'free_y',
+                 ncol = 3) +
+      scale_fill_brewer(palette = 'Set1',
+                        guide = guide_legend(nrow = 1)) +
+      theme(legend.position = 'bottom',
+            axis.text = element_text(size = 5)) +
+      labs(x = 'Metric',
+           title = unique(x$Lifestage))
+  })
+  
+mine_lfstg_p[[1]]
+mine_lfstg_p[[2]]
+
+
+mine_spp_lfstg_p = mine_plot_df %>%
+  split(list(.$Species, .$Lifestage)) %>%
+  map(.f = function(x) {
+    x %>%
+      mutate_at(vars(Metric, Name),
+                list(~ fct_reorder(., .x = MIC))) %>%
+      ggplot(aes(x = Name,
+                 y = MIC)) +
+      geom_col(position = position_dodge(1),
+               aes(fill = MetricCategory)) +
+      scale_fill_brewer(palette = 'Set3') +
+      coord_flip() +
+      # facet_wrap(~ MetricCategory,
+      #            scales = 'free_y',
+      #            ncol = 3) +
+      labs(x = 'Metric',
+           title = paste(x$Species[1], x$Lifestage[1]))
+  })
+
+# mine_spp_lfstg_p[[3]]
+
+ggarrange(plotlist = mine_spp_lfstg_p,
+          ncol = 2,
+          nrow = 2)
+
+```
+
+```{r}
+#----------------------------------------------
+# Look at correlations between habitat metrics
+#----------------------------------------------
+# top metrics
+sel_mets = poss_hab_mets
+sel_mets = mine_plot_df %>%
+  group_by(Species, Lifestage) %>%
+  arrange(desc(MIC)) %>%
+  slice(1:10) %>%
+  ungroup() %>%
+  pull(Metric) %>%
+  unique() %>%
+  as.character()
+
+
+corr_mat = avgHab_v2 %>%
+  select(one_of(sel_mets)) %>%
+  corrr::correlate()
+
+corr_mat %>%
+  rearrange(absolute = F) %>%
+  shave(upper = T) %>% 
+  stretch() %>%
+  filter(!is.na(r)) %>%
+  arrange(desc(abs(r)))
+  filter(abs(r) > 0.5)
+
+corr_mat %>%
+  # rearrange(absolute = F) %>%
+  shave(upper = T) %>% 
+  rplot(legend = T,
+        print_cor = T)
+
+network_plot(corr_mat)
+
+```
+
