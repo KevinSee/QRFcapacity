@@ -17,7 +17,7 @@ library(readxl)
 #-----------------------------------------------------------------
 # get globally available attributes from all master sample points
 #-----------------------------------------------------------------
-gaa = read_csv('data/raw/masterSamplePts/IC_Sites_withMetrics_20151016.csv') %>%
+gaa = read_csv('data/raw/master_sample_pts/IC_Sites_withMetrics_20151016.csv') %>%
   rename(Site = Site_ID, 
          Lon = LON_DD,
          Lat = LAT_DD)
@@ -31,7 +31,7 @@ use_data(gaa,
 gaa_locs = gaa %>%
   select(Site, Lon, Lat)
 
-gaa_meta = readxl::read_excel('data/raw/masterSamplePts/GAA_Metadata_20150506.xlsx') %>%
+gaa_meta = readxl::read_excel('data/raw/master_sample_pts/GAA_Metadata_20150506.xlsx') %>%
   select(ShortName = GlossaryTermName,
          Name = DisplayName,
          DescriptiveText = Description,
