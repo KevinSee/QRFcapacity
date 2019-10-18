@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Combine fish and habitat data
 # Created: 9/11/2019
-# Last Modified: 9/13/19
+# Last Modified: 9/23/19
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -12,57 +12,150 @@ library(magrittr)
 library(sf)
 
 #-----------------------------------------------------------------
-# summer juvenile data
+# summer juvenile data 2011-2014
 #-----------------------------------------------------------------
-data(fishSumEst)
-data(site_data)
-# data(chnkDomain)
-# data(sthdDomain)
+data(fish_sum_est)
+data(champ_site_2011_14)
 
+fh_sum_champ_2014 = fish_sum_est %>%
+  filter(Valid) %>%
+  filter(Year <= 2014) %>%
+  filter(!is.na(FishSiteLength)) %>%
+  rename(fishSampDate = SampleDate) %>%
+  select(-Stream) %>%
+  inner_join(champ_site_2011_14 %>%
+               rename(habSampDate = SampleDate,
+                      Year = VisitYear) %>%
+               filter(`Primary Visit` == 'Yes',
+                      VisitStatus == 'Released to Public')) %>%
+  mutate(siteSppYr = paste(Site, Species, Year, sep = '_')) %>%
+  mutate(time_diff = difftime(fishSampDate, habSampDate, units = 'days'),
+         time_diff = abs(as.integer(time_diff))) %>%
+  mutate(fish_dens = N / FishSiteLength) %>%
+  group_by(siteSppYr) %>%
+  filter(fish_dens == max(fish_dens, na.rm = T)) %>%
+  filter(time_diff == min(time_diff, na.rm = T)) %>%
+  ungroup()
 
-fish_hab_sum = fishSumEst %>%
+# for each site, pull out the year with the highest fish density
+fh_sum_champ_2014 %<>%
+  mutate(siteSpp = paste(Site, Species)) %>%
+  group_by(siteSpp) %>%
+  filter(fish_dens == max(fish_dens, na.rm = T)) %>%
+  slice(1) %>%
+  ungroup() %>%
+  select(-siteSppYr, -siteSpp, -time_diff)
+
+use_data(fh_sum_champ_2014,
+         version = 2,
+         overwrite = T)
+
+#-----------------------------------------------------------------
+# summer juvenile data 2011-2017
+#-----------------------------------------------------------------
+data(fish_sum_est)
+data(champ_site_2011_17)
+
+fh_sum_champ_2017 = fish_sum_est %>%
   filter(Valid) %>%
   filter(!is.na(FishSiteLength)) %>%
   rename(fishSampDate = SampleDate) %>%
   select(-Stream) %>%
-  inner_join(site_data %>%
+  inner_join(champ_site_2011_17 %>%
                rename(habSampDate = SampleDate,
                       Year = VisitYear) %>%
                filter(VisitObjective == 'Primary Visit',
                       VisitStatus == 'Released to Public')) %>%
   mutate(siteSppYr = paste(Site, Species, Year, sep = '_')) %>%
-  mutate(timeDiff = difftime(fishSampDate, habSampDate, units = 'days'),
-         timeDiff = abs(as.integer(timeDiff))) %>%
-  mutate(fishDens = N / FishSiteLength) %>%
+  mutate(time_diff = difftime(fishSampDate, habSampDate, units = 'days'),
+         time_diff = abs(as.integer(time_diff))) %>%
+  mutate(fish_dens = N / FishSiteLength) %>%
   group_by(siteSppYr) %>%
-  filter(fishDens == max(fishDens, na.rm = T)) %>%
-  filter(timeDiff == min(timeDiff, na.rm = T)) %>%
+  filter(fish_dens == max(fish_dens, na.rm = T)) %>%
+  filter(time_diff == min(time_diff, na.rm = T)) %>%
   ungroup()
 
 # for each site, pull out the year with the highest fish density
-fish_hab_sum %<>%
+fh_sum_champ_2017 %<>%
   mutate(siteSpp = paste(Site, Species)) %>%
   group_by(siteSpp) %>%
-  filter(fishDens == max(fishDens, na.rm = T)) %>%
+  filter(fish_dens == max(fish_dens, na.rm = T)) %>%
   slice(1) %>%
   ungroup() %>%
-  select(-siteSppYr, -siteSpp, -timeDiff)
+  select(-siteSppYr, -siteSpp, -time_diff)
 
-use_data(fish_hab_sum,
+use_data(fh_sum_champ_2017,
          version = 2,
          overwrite = T)
 
 #-----------------------------------------------------------------
-# redd data
+# redd data, using CHaMP 2011-2014
 #-----------------------------------------------------------------
 # use habitat data averaged across all CHaMP surveys
 
-data(maxRedds)
-data(avgHab_v2)
+data(redds_site_max)
+data(champ_site_2011_14)
+data(champ_site_2011_14_avg)
 
-# fish_hab_redd = maxRedds %>%
+# 
+# # match year with max redds with CHaMP survey in closest year
+# fh_redds_champ_2014 = redds_site_max %>%
 #   mutate(fishSampDate = ymd(paste0(maxYr, '0715'))) %>%
-#   inner_join(site_data %>%
+#   inner_join(champ_site_2011_14 %>%
+#                rename(habSampDate = SampleDate,
+#                       Year = VisitYear,
+#                       Site = SiteName,
+#                       Watershed = WatershedName) %>%
+#                filter(`Primary Visit` == 'Yes',
+#                       VisitStatus == 'Released to Public'),
+#              by = c('Site',
+#                     'Watershed')) %>%
+#   mutate(siteSpp = paste(Site, Species, sep = '_')) %>%
+#   mutate(time_diff = difftime(fishSampDate, habSampDate, units = 'days'),
+#          time_diff = abs(as.integer(time_diff))) %>%
+#   group_by(siteSpp) %>%
+#   filter(time_diff == min(time_diff, na.rm = T)) %>%
+#   ungroup()
+# 
+# fh_redds_champ_2014 %>%
+#   group_by(Species, maxYr) %>%
+#   summarise(nSurv = n(),
+#             nDiffYr = sum(maxYr != year(habSampDate))) %>%
+#   filter(nDiffYr < nSurv)
+# 
+# redds_site_max %>%
+#   anti_join(fh_redds_champ_2014)
+
+
+# match year with max redds to average CHaMP values
+fh_redds_champ_2014 = redds_site_max %>%
+  inner_join(champ_site_2011_14_avg %>%
+               rename(Site = SiteName,
+                      Watershed = WatershedName)) %>%
+  mutate(fish_dens = maxReddsPerKm / 1000)
+
+redds_site_max %>%
+  anti_join(fh_redds_champ_2014)
+
+# save as R data object
+use_data(fh_redds_champ_2014,
+         version = 2,
+         overwrite = T)
+
+#-----------------------------------------------------------------
+# redd data, using CHaMP 2011-2017
+#-----------------------------------------------------------------
+# use habitat data averaged across all CHaMP surveys
+
+data(redds_site_max)
+data(champ_site_2011_17)
+data(champ_site_2011_17_avg)
+
+
+# # match year with max redds with CHaMP survey in closest year
+# fh_redds_champ_2017 = redds_site_max %>%
+#   mutate(fishSampDate = ymd(paste0(maxYr, '0715'))) %>%
+#   inner_join(champ_site_2011_17 %>%
 #                rename(habSampDate = SampleDate,
 #                       Year = VisitYear) %>%
 #                filter(VisitObjective == 'Primary Visit',
@@ -70,27 +163,32 @@ data(avgHab_v2)
 #              by = c('Site',
 #                     'Watershed')) %>%
 #   mutate(siteSpp = paste(Site, Species, sep = '_')) %>%
-#   mutate(timeDiff = difftime(fishSampDate, habSampDate, units = 'days'),
-#          timeDiff = abs(as.integer(timeDiff))) %>%
+#   mutate(time_diff = difftime(fishSampDate, habSampDate, units = 'days'),
+#          time_diff = abs(as.integer(time_diff))) %>%
 #   group_by(siteSpp) %>%
-#   filter(timeDiff == min(timeDiff, na.rm = T)) %>%
+#   filter(time_diff == min(time_diff, na.rm = T)) %>%
 #   ungroup()
-#   
-#   rename(Year = maxYr)
 # 
-# fish_hab_redd %>%
-#   filter(timeDiff > 180) %>%
-#   xtabs(~ maxYr, .)
-#   
-# maxRedds %>%
-#   anti_join(fish_hab_redd) %>%
-#   xtabs(~ maxYr, .)
+# fh_redds_champ_2017 %>%
+#   group_by(Species, maxYr) %>%
+#   summarise(nSurv = n(),
+#             nDiffYr = sum(maxYr != year(habSampDate))) %>%
+#   filter(nDiffYr < nSurv)
+# 
+# redds_site_max %>%
+#   anti_join(fh_redds_champ_2017)
 
-fish_hab_redd = maxRedds %>%
-  inner_join(avgHab_v2) %>%
+
+# match year with max redds to average CHaMP values
+fh_redds_champ_2017 = redds_site_max %>%
+  inner_join(champ_site_2011_17_avg) %>%
   mutate(fish_dens = maxReddsPerKm / 1000)
 
-use_data(fish_hab_redd,
+redds_site_max %>%
+  anti_join(fh_redds_champ_2017)
+
+# save as R data object
+use_data(fh_redds_champ_2017,
          version = 2,
          overwrite = T)
 
@@ -98,23 +196,49 @@ use_data(fish_hab_redd,
 #-----------------------------------------------------------------
 # winter juvenile data
 #-----------------------------------------------------------------
-data(fishWinEst)
+data(fish_win_est)
+data(champ_cu)
+data(champ_site_2011_17)
 
-fish_hab_win = fishWinEst %>%
-  filter(Valid) %>%
-  filter(!is.na(FishSiteLength)) %>%
-  rename(fishSampDate = SampleDate) %>%
+# focus on latest channel unit data
+# make some things match the fish data
+cu_df = champ_cu %>%
+  mutate(Tier1 = recode(Tier1,
+                        'Fast-NonTurbulent/Glide' = 'Run',
+                        'Fast-Turbulent' = 'Riffle',
+                        'Slow/Pool' = 'Pool',
+                        'Small Side Channel' = 'SSC')) %>%
+  left_join(champ_site_2011_17 %>%
+              filter(VisitObjective == 'Primary Visit',
+                     VisitStatus == 'Released to Public') %>%
+              select(VisitID, 
+                     Site, 
+                     Watershed,
+                     SampleDate,
+                     SubD50,
+                     Sin,
+                     CU_Freq)) %>%
+  group_by(Site, ChUnitNumber) %>%
+  filter(SampleDate == max(SampleDate, na.rm = T)) %>%
+  ungroup() %>%
+  mutate(FishCovAll = 100 - FishCovNone,
+         UcutArea_Pct = UcutArea_Pct * 100) %>%
+  # add cobble and boulder substrate together
+  mutate(SubEstCandBldr = SubEstCbl + SubEstBldr)
+
+
+fh_win_champ_2017 = fish_win_est %>%
+  rename(fishSampDate = SampleDate,
+         Tier1_fish = Tier1,
+         Tier2_fish = Tier2) %>%
   select(-Stream) %>%
-  inner_join(site_data %>%
-               rename(habSampDate = SampleDate,
-                      Year = VisitYear) %>%
-               filter(VisitObjective == 'Primary Visit',
-                      VisitStatus == 'Released to Public')) %>%
-  mutate(siteSppYr = paste(Site, Species, Year, sep = '_')) %>%
-  mutate(timeDiff = difftime(fishSampDate, habSampDate, units = 'days'),
-         timeDiff = abs(as.integer(timeDiff))) %>%
-  mutate(fishDens = N / FishSiteLength) %>%
-  group_by(siteSppYr) %>%
-  filter(fishDens == max(fishDens, na.rm = T)) %>%
-  filter(timeDiff == min(timeDiff, na.rm = T)) %>%
-  ungroup()
+  inner_join(cu_df %>%
+               rename(habSampDate = SampleDate) %>%
+               mutate_at(vars(ChUnitNumber),
+                         list(as.character))) %>%
+  mutate(fish_dens = N / AreaTotal)
+
+
+use_data(fh_win_champ_2017,
+         version = 2,
+         overwrite = T)
