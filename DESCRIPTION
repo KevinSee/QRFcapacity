@@ -9,9 +9,9 @@ Depends:
   tidyverse(>= 1.2.1),
   sf(>= 0.7-4)
 License: GPL-2
-Imports:
+Imports: tidyverse, sf, quantregForest
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
-Suggests: knitr, rmarkdown
+Suggests: knitr, rmarkdown, minerva
 VignetteBuilder: knitr

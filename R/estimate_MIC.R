@@ -16,6 +16,11 @@ estimate_MIC = function(data,
                         covars,
                         response) {
   
+  if (!requireNamespace("minerva", quietly = TRUE)) {
+    stop("Package \"minerva\" needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
+  
   res = minerva::mine(x = data %>%
                dplyr::select(one_of(covars)),
              y = data %>%
