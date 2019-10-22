@@ -14,8 +14,8 @@ library(sf)
 #-----------------------------------------------------------------
 # summer juvenile data 2011-2014
 #-----------------------------------------------------------------
-data(fish_sum_est)
-data(champ_site_2011_14)
+data("fish_sum_est")
+data("champ_site_2011_14")
 
 fh_sum_champ_2014 = fish_sum_est %>%
   filter(Valid) %>%
@@ -53,8 +53,8 @@ use_data(fh_sum_champ_2014,
 #-----------------------------------------------------------------
 # summer juvenile data 2011-2017
 #-----------------------------------------------------------------
-data(fish_sum_est)
-data(champ_site_2011_17)
+data("fish_sum_est")
+data("champ_site_2011_17")
 
 fh_sum_champ_2017 = fish_sum_est %>%
   filter(Valid) %>%
@@ -93,9 +93,9 @@ use_data(fh_sum_champ_2017,
 #-----------------------------------------------------------------
 # use habitat data averaged across all CHaMP surveys
 
-data(redds_site_max)
-data(champ_site_2011_14)
-data(champ_site_2011_14_avg)
+data("redds_site_max")
+data("champ_site_2011_14")
+data("champ_site_2011_14_avg")
 
 # 
 # # match year with max redds with CHaMP survey in closest year
@@ -147,9 +147,9 @@ use_data(fh_redds_champ_2014,
 #-----------------------------------------------------------------
 # use habitat data averaged across all CHaMP surveys
 
-data(redds_site_max)
-data(champ_site_2011_17)
-data(champ_site_2011_17_avg)
+data("redds_site_max")
+data("champ_site_2011_17")
+data("champ_site_2011_17_avg")
 
 
 # # match year with max redds with CHaMP survey in closest year
@@ -196,9 +196,9 @@ use_data(fh_redds_champ_2017,
 #-----------------------------------------------------------------
 # winter juvenile data
 #-----------------------------------------------------------------
-data(fish_win_est)
-data(champ_cu)
-data(champ_site_2011_17)
+data("fish_win_est")
+data("champ_cu")
+data("champ_site_2011_17")
 
 # focus on latest channel unit data
 # make some things match the fish data
