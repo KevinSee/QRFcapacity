@@ -239,6 +239,9 @@ fish_obs = tbl(elr_conn, 'fld_FishObservation') %>%
   mutate(PitTagCaptureType = recode(PitTagCaptureType,
                                     'Efficiency Recapture' = 'Non-Efficiency Recapture'))
 
+# disconnect
+DBI::dbDisconnect(elr_conn)
+
 # depletion data
 elr_depl = dce %>%
   left_join(fish_pass) %>%
@@ -686,10 +689,17 @@ fish_sum_data %<>%
 data(champ_site_2011_17)
 data(champ_site_2011_17_avg)
 data(gaa)
+# get lat/long from GAA, but only use sites that have some kind of strata attached to them
 gaa_locs = gaa %>%
   select(Site, 
          LON_DD = Lon, 
-         LAT_DD = Lat)
+         LAT_DD = Lat,
+         matches('Strat')) %>%
+  gather(strata, value, -(Site:LAT_DD)) %>%
+  filter(!is.na(value)) %>%
+  select(-strata, -value) %>%
+  distinct()
+
 
 fish_sum_data %<>%
   left_join(champ_site_2011_17 %>%
@@ -720,7 +730,9 @@ fish_sum_data %<>%
          Lon = if_else(is.na(Lon),
                        LON_DD,
                        Lon)) %>%
-  select(-LON_DD, -LAT_DD)
+  select(-LON_DD, -LAT_DD) %>%
+  # drop sites with no lat/long (should only be a few sites)
+  filter(!is.na(Lat))
   
 
 # add site length and area where missing
