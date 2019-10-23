@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Combine fish and habitat data
 # Created: 9/11/2019
-# Last Modified: 9/23/19
+# Last Modified: 10/22/19
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -10,12 +10,15 @@ library(tidyverse)
 library(lubridate)
 library(magrittr)
 library(sf)
+library(maptools)
 
 #-----------------------------------------------------------------
 # summer juvenile data 2011-2014
 #-----------------------------------------------------------------
 data("fish_sum_est")
 data("champ_site_2011_14")
+# for temperature metrics
+data("int_crb_temp")
 
 fh_sum_champ_2014 = fish_sum_est %>%
   filter(Valid) %>%
@@ -36,6 +39,57 @@ fh_sum_champ_2014 = fish_sum_est %>%
   filter(fish_dens == max(fish_dens, na.rm = T)) %>%
   filter(time_diff == min(time_diff, na.rm = T)) %>%
   ungroup()
+
+fh_sf = fh_sum_champ_2014 %>%
+  select(Site, Year, Watershed, FishSite, Lon, Lat) %>%
+  distinct() %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(st_crs(int_crb_temp))
+
+ggplot(fh_sf) +
+  geom_sf(data = int_crb_temp,
+          color = 'lightblue') +
+  geom_sf(aes(color = Watershed)) +
+  theme_bw() +
+  theme(axis.text = element_blank())
+
+
+temp_spatial = int_crb_temp %>%
+  mutate(id = 1:n()) %>%
+  as_Spatial()
+
+fh_sf = fh_sf %>%
+  as_Spatial() %>%
+  snapPointsToLines(lines = temp_spatial,
+                    maxDist = 1000,
+                    idField = 'id') %>%
+  st_as_sf()
+
+qplot(snap_dist, data = fh_sf)
+
+fh_sf %<>%
+  rename(id = nearest_line_id) %>%
+  left_join(int_crb_temp %>%
+              mutate(id = 1:n()) %>%
+              as_tibble() %>%
+              select(id, CANOPY, NorWeST_area, Flow_Aug:S36_2015))
+
+fh_temp = fh_sf %>%
+  as_tibble() %>%
+  select(Site:FishSite,
+         S21_2011, S33_2012:S36_2015) %>%
+  gather(scenario, Aug_temp, -(Site:FishSite)) %>%
+  mutate(temp_yr = str_sub(scenario, -4)) %>%
+  mutate_at(vars(temp_yr),
+            list(as.numeric)) %>%
+  filter(Year == temp_yr) %>%
+  select(Site:FishSite, Aug_temp)
+
+fh_sum_champ_2014 %>%
+  left_join(fh_temp) %>%
+  filter(!is.na(Aug_temp)) %>%
+  tabyl(Watershed, Year)
 
 # for each site, pull out the year with the highest fish density
 fh_sum_champ_2014 %<>%
