@@ -54,11 +54,24 @@ theme_set(theme_bw())
 
 ```{r}
 # determine which set of fish/habitat data to use
-data("fish_hab_sum")
+data("fh_sum_champ_2017")
 
-fish_hab = fish_hab_sum %>%
+fish_hab = fh_sum_champ_2017 %>%
   mutate_at(vars(Watershed, Year),
             list(as.factor))
+
+# and the appropriate habitat dictionrary to go with it
+data(hab_dict_2017)
+
+hab_dict = hab_dict_2017
+
+# all the related habitat data
+data("champ_site_2011_17")
+data("champ_site_2011_17_avg")
+
+hab_data = champ_site_2011_17
+hab_avg = champ_site_2011_17_avg
+
 ```
 
 
@@ -75,7 +88,7 @@ Many sites were sampled in multiple years. To avoid any chance of pseudo-replica
 ```{r, eval = F}
 library(maptools)
 
-data("chnkDomain")
+data("chnk_domain")
 
 # which sites were sampled for Chinook? 
 chnk_samps = fish_hab %>%
@@ -84,7 +97,7 @@ chnk_samps = fish_hab %>%
   distinct() %>%
   st_as_sf(coords = c('Lon', 'Lat'),
            crs = 4326) %>%
-  st_transform(st_crs(chnkDomain))
+  st_transform(st_crs(chnk_domain))
 
 # set snap distance (in meters)
 st_crs(chnk_samps)
@@ -93,7 +106,7 @@ snap_dist = 1000
 # which of those sites are in Chinook domain?
 chnk_sites = chnk_samps %>%
   as_Spatial() %>%
-  maptools::snapPointsToLines(chnkDomain %>%
+  maptools::snapPointsToLines(chnk_domain %>%
                                 mutate(id = 1:n()) %>%
                                 select(id, MPG) %>%
                                 as_Spatial(),
@@ -111,12 +124,22 @@ fish_hab %<>%
 After matching up the fish abundances with sites where we have habitat data, we are left with the following number of sites.
 
 ```{r}
-
 fish_hab %>%
   xtabs(~ Watershed + Species + Year, .) %>%
   addmargins(margin = c(1, 3)) %>%
   pander()
+```
 
+```{r}
+fish_hab %>%
+  tabyl(Watershed, Year, Species) %>%
+  adorn_totals(c('row', 'col')) %>%
+  adorn_percentages('col') %>%
+  adorn_pct_formatting(digits = 0,
+                       rounding = 'half up') %>%
+  adorn_ns %>%
+  adorn_title %>%
+  knitr::kable()
 
 ```
 
@@ -130,15 +153,6 @@ We used the Maximal Information-Based Nonparametric Exploration (MINE) class of 
 	Habitat metrics were first grouped into broad categories that included channel unit, complexity, cover, disturbance, riparian, size, substrate, temperature, water quality, and woody debris. Within each category, metrics were ranked according to their MIC value (Figure 1). Our strategy was to select one or two variables with the highest MIC score within each category so that covariates describe different aspects of rearing habitat (e.g., substrate, temperature, etc.). 
 
 ```{r MINE_stats}
-data(hab_dict)
-
-
-# unique(hab_dict$MetricCategory[hab_dict$MetricCategory != 'Categorical']) %>%
-#   str_replace('WaterQuality', 'Water Quality') %>%
-#   str_replace('ChannelUnit', 'Channel Unit') %>%
-#   str_to_lower() %>%
-#   sort() %>%
-#   paste(collapse = ', ')
 
 # what are some possible habitat covariates?
 poss_hab_mets = hab_dict %>%
@@ -178,6 +192,7 @@ mine_plot_df = mine_res #%>%
 ```
 
 ```{r hab_mets_correlation}
+
 library(corrr)
 #----------------------------------------------
 # Look at correlations between habitat metrics
@@ -193,7 +208,7 @@ sel_mets = mine_plot_df %>%
   as.character()
 
 
-corr_mat = avgHab_v2 %>%
+corr_mat = hab_avg %>%
   select(one_of(sel_mets)) %>%
   corrr::correlate()
 
