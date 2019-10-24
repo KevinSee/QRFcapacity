@@ -143,6 +143,44 @@ use_data(fh_sum_champ_2017,
          overwrite = T)
 
 #-----------------------------------------------------------------
+# summer juvenile data with DASH metrics 2014-2017
+#-----------------------------------------------------------------
+data("fish_sum_est")
+data("champ_dash")
+
+fh_sum_dash_2014_17 = fish_sum_est %>%
+  filter(Valid) %>%
+  filter(!is.na(FishSiteLength)) %>%
+  rename(fishSampDate = SampleDate) %>%
+  select(-Stream) %>%
+  inner_join(champ_dash %>%
+               rename(habSampDate = SampleDate,
+                      Year = VisitYear) %>%
+               filter(VisitObjective == 'Primary Visit',
+                      VisitStatus == 'Released to Public')) %>%
+  mutate(siteSppYr = paste(Site, Species, Year, sep = '_')) %>%
+  mutate(time_diff = difftime(fishSampDate, habSampDate, units = 'days'),
+         time_diff = abs(as.integer(time_diff))) %>%
+  mutate(fish_dens = N / FishSiteLength) %>%
+  group_by(siteSppYr) %>%
+  filter(fish_dens == max(fish_dens, na.rm = T)) %>%
+  filter(time_diff == min(time_diff, na.rm = T)) %>%
+  ungroup()
+
+# for each site, pull out the year with the highest fish density
+fh_sum_dash_2014_17 %<>%
+  mutate(siteSpp = paste(Site, Species)) %>%
+  group_by(siteSpp) %>%
+  filter(fish_dens == max(fish_dens, na.rm = T)) %>%
+  slice(1) %>%
+  ungroup() %>%
+  select(-siteSppYr, -siteSpp, -time_diff)
+
+use_data(fh_sum_dash_2014_17,
+         version = 2,
+         overwrite = T)
+
+#-----------------------------------------------------------------
 # redd data, using CHaMP 2011-2014
 #-----------------------------------------------------------------
 # use habitat data averaged across all CHaMP surveys
