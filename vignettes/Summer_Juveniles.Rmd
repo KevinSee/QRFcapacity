@@ -43,6 +43,7 @@ fig_nums = captioner()
 # load packages for analysis
 library(QRFcapacity)
 library(tidyverse)
+library(janitor)
 library(magrittr)
 library(minerva)
 library(sf)
@@ -160,6 +161,13 @@ poss_hab_mets = hab_dict %>%
   filter(ShortName %in% names(fish_hab)) %>%
   pull(ShortName)
 
+# pull from which CHaMP metrics could be generated from DASH
+poss_hab_mets = read_csv('data/hab_dict_champ_dash.csv') %>%
+  select(-starts_with('X')) %>%
+  filter(DASH_gen) %>%
+  pull(ShortName)
+
+
 mine_res = fish_hab %>%
   split(list(.$Species)) %>%
   map_df(.id = 'Species',
@@ -180,9 +188,9 @@ mine_res = fish_hab %>%
   select(Species, MetricCategory, Metric, everything()) %>%
   arrange(Species, MetricCategory, desc(MIC))
 
-mine_plot_df = mine_res #%>%
+mine_plot_df = mine_res %>%
   # filter out some metrics with too many NAs or 0s
-  # filter((perc_NA < 0.2 & non_0 > 100) | MetricCategory == 'Temperature') %>%
+  filter((perc_NA < 0.2 & non_0 > 100) | MetricCategory == 'Temperature') #%>%
   # # filter out metrics with very low variance
   # filter(var < 0.1) %>% select(1:11)
   # # filter out area and volume metrics
@@ -287,6 +295,11 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                    'Cond',
                                    'LWFreq_Wet'))
 
+
+sel_hab_mets = crossing(Species = c('Chinook', 
+                                    'Steelhead'),
+                        Metric = poss_hab_mets)
+
 ```
 
 
@@ -363,6 +376,7 @@ rel_imp_p = qrf_mods %>%
       mutate_at(vars(Metric, Name),
                 list(~ fct_reorder(., relImp))) %>%
       arrange(Metric) %>%
+      distinct() %>%
       ggplot(aes(x = Name,
                  y = relImp)) +
       geom_col(fill = 'gray40') +
