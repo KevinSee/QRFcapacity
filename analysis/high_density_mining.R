@@ -46,8 +46,15 @@ ch_df = ch_sum_champ_2017 %>%
   mutate(log_fish_dens = log(fish_dens + 0.005),
          dens_cat = cut_number(log_fish_dens, 6,
                                labels = c('very low', 'low', 'mod low', 'mod high', 'high', 'very high'))) %>%
+  mutate(plot_cat = recode(dens_cat, 'very low' = 'low', 
+                                     'low' = 'mod',
+                                     'mod low' = 'mod',
+                                     'mod high' = 'mod',
+                                     'high' = 'mod',
+                                     'very high' = 'high')) %>%
+  filter(plot_cat != 'mod') %>%
   select(Watershed, Year, StreamName, Channel_Type, Lat, Lon,          # site
-         N, fish_dens, log_fish_dens, dens_cat,                        # fish abundance/density
+         N, fish_dens, log_fish_dens, dens_cat, plot_cat,              # fish abundance/density
          FishSiteLength, FishWettedArea, CUMDRAINAG, MeanU, Q,         # size
          WetWdth_Int, WetBraid, WetWdth_Avg, DpthThlwg_Avg,
          DistPrin1, NatPrin1, NatPrin2,                                # PCA
@@ -65,7 +72,7 @@ ch_df = ch_sum_champ_2017 %>%
          LWFreq_Wet, 
          Ucut_Area,  UcutLgth_Pct, UcutArea_Pct,                       # undercuts
          FishCovLW, FishCovTVeg, FishCovArt, FishCovNone, FishCovAqVeg,# fish cover
-         FishCovTotal)
+         FishCovTotal) 
 
 # lists of metric categories
 size = c("FishSiteLength", "FishWettedArea", "CUMDRAINAG", "MeanU", "Q", "WetWdth_Int", "WetBraid", "WetWdth_Avg", 
@@ -84,10 +91,38 @@ large_wood = c("LWVol_Wet", "LWVol_WetSlow", "LWVol_WetFstTurb", "LWVol_WetFstNT
 undercuts = c("Ucut_Area",  "UcutLgth_Pct", "UcutArea_Pct")
 fish_cover = c("FishCovLW", "FishCovTVeg", "FishCovArt", "FishCovNone", "FishCovAqVeg", "FishCovTotal")
          
-         
-         
-  
+# start plotting
+hab_p = ch_df %>%
+  select(plot_cat, one_of(size)) %>%
+  gather(variable, value, -plot_cat) %>%
+  ggplot(aes(x = value, 
+                   color = plot_cat,
+                   fill = plot_cat)) +
+  # geom_histogram() +
+  geom_density(alpha = 0.3) +
+  theme_classic() +
+  theme(axis.text.x = element_text(color = 'black', size = 10),
+        axis.text.y = element_text(color = 'black', size = 10)) +
+  facet_wrap(~ variable,
+             scales = 'free')
+hab_p
 
+plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, other, riparian_cover, large_wood, undercuts, fish_cover) %>%
+  # rlang::set_names(nm = c('size', 'pca', 'channel_unit', 'complexity')) %>%
+  map(.f = function(x) {
+    ch_df %>%
+      select(plot_cat, one_of(x)) %>%
+      gather(variable, value, -plot_cat) %>%
+      ggplot(aes(x = value, 
+                 color = plot_cat,
+                 fill = plot_cat)) +
+      #geom_histogram(position = 'dodge') +
+      geom_density(alpha = 0.3) +
+      theme_classic() +
+      theme(axis.text.x = element_text(color = 'black', size = 10),
+            axis.text.y = element_text(color = 'black', size = 10)) +
+      facet_wrap(~ variable,
+                 scales = 'free')
+  })
 
-
-
+plot_list[[11]]
