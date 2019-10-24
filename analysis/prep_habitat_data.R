@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep habitat data
 # Created: 5/14/2019
-# Last Modified: 9/17/19
+# Last Modified: 10/24/19
 # Notes: some data downloaded from CHaMP webpage on 9/16/2015
 # final champ dataset downloaded on 3/8/2018
 
@@ -273,37 +273,39 @@ use_data(champ_site_2011_17, champ_site_2011_17_avg, champ_cu, hab_dict_2017,
 
 #-----------------------------------------------------------------
 # DASH metrics at CHaMP sites
+# covers 2014-2017 (after CHaMP protocol was stabalized)
+# Richie re-calculated these from CHaMP measurements, following the DASH methods
 #-----------------------------------------------------------------
-champ_dash = read_csv('data/raw/habitat/CHaMP_DASH/CHaMP_Recalculated.csv') %>%
-  rename(Site = SiteName,
-         Watershed = WatershedName,
-         Panel = PanelName) %>%
-  select(-ProgramSiteID, -WatershedID,
-         -VisitDate) %>%
-  mutate_at(vars(SampleDate),
-            list(mdy)) %>%
+data("champ_site_2011_17")
+
+champ_dash = read_csv('data/raw/habitat/CHaMP_DASH/ChaMP_Dash_Met.csv') %>%
+  select(-starts_with('X')) %>%
+  rename(Ucut_Area = UcutArea) %>%
+  # add some info from CHaMP
+  left_join(champ_site_2011_17 %>%
+              select(VisitID, 
+                     Panel,
+                     Protocol,
+                     Crew,
+                     Stream,
+                     VisitObjective,
+                     VisitStatus,
+                     Elev_M,
+                     OwnerType:HUC6,
+                     Ppt,
+                     NatClass,
+                     DistClass,
+                     FstNT_Area,
+                     Geo_Cond)) %>%
+  select(one_of(names(champ_site_2011_17)),
+         everything()) %>%
   select(Watershed, Site, SampleDate, 
-         VisitID, Panel, VisitYear, 
+         VisitID, Panel, VisitYear,
          everything())
+  
+names(champ_site_2011_17)[!names(champ_site_2011_17) %in% names(champ_dash)] %>%
+  sort()
 
 use_data(champ_dash,
          overwrite = T,
          version = 2)
-
-champ_dash = champ_dash %>%
-  left_join(champ_site_2011_17 %>%
-              select(Watershed:MeanU) %>%
-              distinct())  %>%
-  select(one_of(names(champ_site_2011_17)),
-         everything())
-
-xtabs(~ VisitYear, champ_dash) %>%
-  addmargins()
-
-champ_dash %>%
-  filter(is.na(Protocol)) %>%
-  left_join(champ_site_2011_17 %>%
-              select(VisitID) %>%
-              mutate(visited = T)) %>%
-  filter(!is.na(visited))
-  xtabs(~ is.na(visited), .)
