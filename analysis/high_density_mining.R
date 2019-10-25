@@ -1,4 +1,4 @@
-# Author: Kevin See
+# Author: Mike Ackerman & Kevin See
 # Purpose: Examine abundance/densities and explore preferred or target habitat conditions in identified high density areas
 # Created: 10/24/2019
 # Last Modified: 10/24/2019
@@ -42,15 +42,16 @@ ch_sum_p = ggplot(ch_sum_dens, aes(x = log_fish_dens, fill = Watershed)) +
 ch_sum_p
 
 ch_df = ch_sum_champ_2017 %>%
+  filter(Watershed == "Lemhi") %>%
   filter(fish_dens > 0) %>%
   mutate(log_fish_dens = log(fish_dens + 0.005),
          dens_cat = cut_number(log_fish_dens, 6,
                                labels = c('very low', 'low', 'mod low', 'mod high', 'high', 'very high'))) %>%
   mutate(plot_cat = recode(dens_cat, 'very low' = 'low', 
-                                     'low' = 'mod',
-                                     'mod low' = 'mod',
-                                     'mod high' = 'mod',
-                                     'high' = 'mod',
+                                     'low' = 'low',
+                                     'mod low' = 'low',
+                                     'mod high' = 'high',
+                                     'high' = 'high',
                                      'very high' = 'high')) %>%
   filter(plot_cat != 'mod') %>%
   select(Watershed, Year, StreamName, Channel_Type, Lat, Lon,          # site
