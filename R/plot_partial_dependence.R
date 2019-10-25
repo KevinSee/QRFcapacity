@@ -12,6 +12,7 @@
 #' @param n_pts how many points to use in predictions? 
 #' @param log_transform was the response log transformed? 
 #' @param log_offset if an offset was used before log transforming, enter it here.
+#' @param scales ggplot facet_wrap argument \code{scales} for facetting
 #' @param ... other arguements to be passed to \code{ggplot}
 #'
 #' @import dplyr tidyr purrr ggplot2 quantregForest
@@ -25,7 +26,8 @@ plot_partial_dependence = function(rf_mod,
                                    pred_quantile = 0.9,
                                    n_pts = 200,
                                    log_transform = T,
-                                   log_offset = 0.005) {
+                                   log_offset = 0.005,
+                                   scales = 'free') {
   
   if(is.null(data_dict)) {
     data(hab_dict_2017)
@@ -126,7 +128,7 @@ plot_partial_dependence = function(rf_mod,
     mutate_at(vars(Metric, covar_label),
               list(~ fct_reorder(., relImp))) %>%
     mutate_at(vars(Metric, covar_label),
-              list(~ fct_rev))
+              list(fct_rev))
   
   
   # create data.frame for rug ticks
@@ -142,7 +144,7 @@ plot_partial_dependence = function(rf_mod,
     mutate_at(vars(Metric, covar_label),
               list(~ fct_reorder(., relImp))) %>%
     mutate_at(vars(Metric, covar_label),
-              list(~ fct_rev)) %>%
+              list(fct_rev)) %>%
     select(Metric, covar_label, Watershed, value)
   
   
@@ -163,7 +165,7 @@ plot_partial_dependence = function(rf_mod,
          x = 'Covariate Value',
          color = 'Watershed') +
     facet_wrap(~ covar_label,
-               scales = 'free')
+               scales = scales)
   
   return(my_p)
   

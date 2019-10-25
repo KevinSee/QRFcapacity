@@ -6,7 +6,7 @@
 \usage{
 plot_partial_dependence(rf_mod, data, data_dict = NULL,
   type = c("quantile", "mean"), pred_quantile = 0.9, n_pts = 200,
-  log_transform = T, log_offset = 0.005)
+  log_transform = T, log_offset = 0.005, scales = "free")
 }
 \arguments{
 \item{rf_mod}{the \code{quantregForest} model}
@@ -24,6 +24,8 @@ plot_partial_dependence(rf_mod, data, data_dict = NULL,
 \item{log_transform}{was the response log transformed?}
 
 \item{log_offset}{if an offset was used before log transforming, enter it here.}
+
+\item{scales}{ggplot facet_wrap argument \code{scales} for facetting}
 
 \item{...}{other arguements to be passed to \code{ggplot}}
 }
