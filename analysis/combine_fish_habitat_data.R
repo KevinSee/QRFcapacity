@@ -10,7 +10,8 @@ library(tidyverse)
 library(lubridate)
 library(magrittr)
 library(sf)
-library(maptools)
+library(QRFcapacity)
+# library(maptools)
 
 #-----------------------------------------------------------------
 # summer juvenile data 2011-2014
@@ -18,7 +19,7 @@ library(maptools)
 data("fish_sum_est")
 data("champ_site_2011_14")
 # for temperature metrics
-data("int_crb_temp")
+data("champ_temps")
 
 fh_sum_champ_2014 = fish_sum_est %>%
   filter(Valid) %>%
@@ -31,7 +32,7 @@ fh_sum_champ_2014 = fish_sum_est %>%
                       Year = VisitYear) %>%
                filter(`Primary Visit` == 'Yes',
                       VisitStatus == 'Released to Public')) %>%
-  mutate(siteSppYr = paste(Site, Species, Year, sep = '_')) %>%
+  unite(siteSppYr, Site, Species, Year, remove = F) %>%
   mutate(time_diff = difftime(fishSampDate, habSampDate, units = 'days'),
          time_diff = abs(as.integer(time_diff))) %>%
   mutate(fish_dens = N / FishSiteLength) %>%
@@ -40,67 +41,31 @@ fh_sum_champ_2014 = fish_sum_est %>%
   filter(time_diff == min(time_diff, na.rm = T)) %>%
   ungroup()
 
-fh_sf = fh_sum_champ_2014 %>%
-  select(Site, Year, Watershed, FishSite, Lon, Lat) %>%
-  distinct() %>%
-  st_as_sf(coords = c('Lon', 'Lat'),
-           crs = 4326) %>%
-  st_transform(st_crs(int_crb_temp))
+# add some temperature data
+fh_sum_champ_2014 %<>%
+  left_join(fh_sum_champ_2014 %>%
+              select(VisitID, Year) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(VisitID, avg_aug_temp = S2_02_11))) %>%
+  left_join(fh_sum_champ_2014 %>%
+              select(VisitID, Year) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(Site:VisitID, S1_93_11:S36_2015) %>%
+                          gather(scenario, aug_temp, S1_93_11:S36_2015) %>%
+                          mutate(Year = str_sub(scenario, -4)) %>%
+                          mutate_at(vars(Year),
+                                    list(as.numeric)) %>%
+                          filter(!is.na(Year)) %>%
+                          select(Site:VisitID, Year, aug_temp)))
 
-ggplot(fh_sf) +
-  geom_sf(data = int_crb_temp,
-          color = 'lightblue') +
-  geom_sf(aes(color = Watershed)) +
-  theme_bw() +
-  theme(axis.text = element_blank())
-
-
-# temp_spatial = int_crb_temp %>%
-#   mutate(id = 1:n()) %>%
-#   as_Spatial()
-# 
-# fh_sf = fh_sf %>%
-#   as_Spatial() %>%
-#   snapPointsToLines(lines = temp_spatial,
-#                     maxDist = 1000,
-#                     idField = 'id') %>%
-#   st_as_sf()
-# 
-# qplot(snap_dist, data = fh_sf)
-# 
-# fh_sf %<>%
-#   rename(id = nearest_line_id) %>%
-#   left_join(int_crb_temp %>%
-#               mutate(id = 1:n()) %>%
-#               as_tibble() %>%
-#               select(id, CANOPY, NorWeST_area, Flow_Aug:S36_2015))
-
-# fh_sf2 = fh_sf %>%
-#   st_snap(int_crb_temp,
-#           tolerance = units::as_units(100, 'm'))
-#   st_join(int_crb_temp %>%
-#             st_buffer())
-
-
-# fh_temp = fh_sf %>%
-#   as_tibble() %>%
-#   select(Site:FishSite,
-#          S21_2011, S33_2012:S36_2015) %>%
-#   gather(scenario, Aug_temp, -(Site:FishSite)) %>%
-#   mutate(temp_yr = str_sub(scenario, -4)) %>%
-#   mutate_at(vars(temp_yr),
-#             list(as.numeric)) %>%
-#   filter(Year == temp_yr) %>%
-#   select(Site:FishSite, Aug_temp)
-# 
-# fh_sum_champ_2014 %>%
-#   left_join(fh_temp) %>%
-#   filter(!is.na(Aug_temp)) %>%
-#   tabyl(Watershed, Year)
 
 # for each site, pull out the year with the highest fish density
 fh_sum_champ_2014 %<>%
-  mutate(siteSpp = paste(Site, Species)) %>%
+  unite(siteSpp, Site, Species, remove = F) %>%
   group_by(siteSpp) %>%
   filter(fish_dens == max(fish_dens, na.rm = T)) %>%
   slice(1) %>%
@@ -116,6 +81,8 @@ use_data(fh_sum_champ_2014,
 #-----------------------------------------------------------------
 data("fish_sum_est")
 data("champ_site_2011_17")
+# for temperature metrics
+data("champ_temps")
 
 fh_sum_champ_2017 = fish_sum_est %>%
   filter(Valid) %>%
@@ -127,7 +94,7 @@ fh_sum_champ_2017 = fish_sum_est %>%
                       Year = VisitYear) %>%
                filter(VisitObjective == 'Primary Visit',
                       VisitStatus == 'Released to Public')) %>%
-  mutate(siteSppYr = paste(Site, Species, Year, sep = '_')) %>%
+  unite(siteSppYr, Site, Species, Year, remove = F) %>%
   mutate(time_diff = difftime(fishSampDate, habSampDate, units = 'days'),
          time_diff = abs(as.integer(time_diff))) %>%
   mutate(fish_dens = N / FishSiteLength) %>%
@@ -136,9 +103,31 @@ fh_sum_champ_2017 = fish_sum_est %>%
   filter(time_diff == min(time_diff, na.rm = T)) %>%
   ungroup()
 
+# add some temperature data
+fh_sum_champ_2017 %<>%
+  left_join(fh_sum_champ_2017 %>%
+              select(VisitID, Year) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(VisitID, avg_aug_temp = S2_02_11))) %>%
+  left_join(fh_sum_champ_2017 %>%
+              select(VisitID, Year) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(Site:VisitID, S1_93_11:S36_2015) %>%
+                          gather(scenario, aug_temp, S1_93_11:S36_2015) %>%
+                          mutate(Year = str_sub(scenario, -4)) %>%
+                          mutate_at(vars(Year),
+                                    list(as.numeric)) %>%
+                          filter(!is.na(Year)) %>%
+                          select(Site:VisitID, Year, aug_temp)))
+  
+
 # for each site, pull out the year with the highest fish density
 fh_sum_champ_2017 %<>%
-  mutate(siteSpp = paste(Site, Species)) %>%
+  unite(siteSpp, Site, Species, remove = F) %>%
   group_by(siteSpp) %>%
   filter(fish_dens == max(fish_dens, na.rm = T)) %>%
   slice(1) %>%
@@ -154,10 +143,13 @@ use_data(fh_sum_champ_2017,
 #-----------------------------------------------------------------
 data("fish_sum_est")
 data("champ_dash")
+# for temperature metrics
+data("champ_temps")
 
 fh_sum_dash_2014_17 = fish_sum_est %>%
   filter(Valid) %>%
   filter(!is.na(FishSiteLength)) %>%
+  filter(Year >= 2014) %>%
   rename(fishSampDate = SampleDate) %>%
   select(-Stream) %>%
   inner_join(champ_dash %>%
@@ -165,7 +157,7 @@ fh_sum_dash_2014_17 = fish_sum_est %>%
                       Year = VisitYear) %>%
                filter(VisitObjective == 'Primary Visit',
                       VisitStatus == 'Released to Public')) %>%
-  mutate(siteSppYr = paste(Site, Species, Year, sep = '_')) %>%
+  unite(siteSppYr, Site, Species, Year, remove = F) %>%
   mutate(time_diff = difftime(fishSampDate, habSampDate, units = 'days'),
          time_diff = abs(as.integer(time_diff))) %>%
   mutate(fish_dens = N / FishSiteLength) %>%
@@ -174,23 +166,45 @@ fh_sum_dash_2014_17 = fish_sum_est %>%
   filter(time_diff == min(time_diff, na.rm = T)) %>%
   ungroup()
 
-# join with NorWeST temperature data
-temp_df = read_csv('data/prepped/VisitID_Norwest.csv') %>%
-  select(-starts_with('X')) %>%
-  rename(NorWeST_area = NrWST_r) %>%
-  select(-c(FID_2:TAILWAT, Y_COORD:BFI, GNIS_NA:COMID))
-# correct some names that ArcGIS messed up
-names(temp_df)[-c(1:9, 46)] = names(int_crb_temp)[c(19:54)]
+# # join with NorWeST temperature data
+# temp_df = read_csv('data/prepped/VisitID_Norwest.csv') %>%
+#   select(-starts_with('X')) %>%
+#   rename(NorWeST_area = NrWST_r) %>%
+#   select(-c(FID_2:TAILWAT, Y_COORD:BFI, GNIS_NA:COMID))
+# # correct some names that ArcGIS messed up
+# names(temp_df)[-c(1:9, 46)] = names(int_crb_temp)[c(19:54)]
+# 
+# fh_sum_dash_2014_17 %<>%
+#   left_join(temp_df %>%
+#               inner_join(champ_dash %>%
+#                            select(VisitID, Site, VisitYear)) %>%
+#               select(VisitID, Site, VisitYear, Avg_aug_temp = S2_02_11))
 
+# add some temperature data
 fh_sum_dash_2014_17 %<>%
-  left_join(temp_df %>%
-              inner_join(champ_dash %>%
-                           select(VisitID, Site, VisitYear)) %>%
-              select(VisitID, Site, VisitYear, Avg_aug_temp = S2_02_11))
+  left_join(fh_sum_dash_2014_17 %>%
+              select(VisitID, Year) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(VisitID, avg_aug_temp = S2_02_11))) %>%
+  left_join(fh_sum_dash_2014_17 %>%
+              select(VisitID, Year) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(Site:VisitID, S1_93_11:S36_2015) %>%
+                          gather(scenario, aug_temp, S1_93_11:S36_2015) %>%
+                          mutate(Year = str_sub(scenario, -4)) %>%
+                          mutate_at(vars(Year),
+                                    list(as.numeric)) %>%
+                          filter(!is.na(Year)) %>%
+                          select(Site:VisitID, Year, aug_temp)))
+
 
 # for each site, pull out the year with the highest fish density
 fh_sum_dash_2014_17 %<>%
-  mutate(siteSpp = paste(Site, Species)) %>%
+  unite(siteSpp, Site, Species, remove = F) %>%
   group_by(siteSpp) %>%
   filter(fish_dens == max(fish_dens, na.rm = T)) %>%
   slice(1) %>%
@@ -250,6 +264,16 @@ fh_redds_champ_2014 = redds_site_max %>%
 redds_site_max %>%
   anti_join(fh_redds_champ_2014)
 
+# add average august temperature data
+fh_redds_champ_2014 %<>%
+  left_join(fh_redds_champ_2014 %>%
+              select(Site, Watershed) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(Site, Watershed, avg_aug_temp = S2_02_11) %>%
+                          distinct()))
+
 # save as R data object
 use_data(fh_redds_champ_2014,
          version = 2,
@@ -299,6 +323,17 @@ fh_redds_champ_2017 = redds_site_max %>%
 
 redds_site_max %>%
   anti_join(fh_redds_champ_2017)
+
+# add average august temperature data
+fh_redds_champ_2017 %<>%
+  left_join(fh_redds_champ_2017 %>%
+              select(Site, Watershed) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(Site, Watershed, avg_aug_temp = S2_02_11) %>%
+                          distinct()))
+
 
 # save as R data object
 use_data(fh_redds_champ_2017,

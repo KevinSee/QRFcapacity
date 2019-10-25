@@ -15,32 +15,32 @@ theme_set(theme_bw())
 
 #-----------------------------------------------------------------
 # set projection we'd like to use consistently
-myCRS = 5070
+my_crs = 5070
 
 #-----------------------------------------------------------------
 # read in shapefiles with mean aug temperature predictions from NorWeST
 int_crb_temp = read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_Salmon/NorWeST_PredictedStreamTempLines_Salmon.shp') %>%
-  st_transform(crs = myCRS) %>%
+  st_transform(crs = my_crs) %>%
   mutate(NorWeST_area = 'Salmon') %>%
   select(OBSPRED_ID:BFI, NorWeST_area, GNIS_NAME, COMID, Air_Aug, Flow_Aug, everything()) %>%
   rbind(read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_Clearwater/NorWeST_PredictedStreamTempLines_Clearwater.shp') %>%
-          st_transform(crs = myCRS) %>%
+          st_transform(crs = my_crs) %>%
           mutate(NorWeST_area = 'Clearwater') %>%
           select(one_of(names(.)))) %>%
   rbind(read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_MidColumbia_MWMT/NorWeST_PredictedStreamTempLines_MidColumbia_MWMT.shp') %>%
-          st_transform(crs = myCRS) %>%
+          st_transform(crs = my_crs) %>%
           mutate(NorWeST_area = 'MidColumbia_MWMT') %>%
           rename(Air_Aug = Air_Temp,
                  Flow_Aug = Flow) %>%
           select(one_of(names(.)))) %>%
   rbind(read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_UpperColumbiaYakima_MWMT/NorWeST_PredictedStreamTempLines_UpperColumbiaYakima_MWMT.shp') %>%
-          st_transform(crs = myCRS) %>%
+          st_transform(crs = my_crs) %>%
           mutate(NorWeST_area = 'UpperColumbiaYakima_MWMT') %>%
           rename(Air_Aug = Air_Temp,
                  Flow_Aug = Flow) %>%
           select(one_of(names(.)))) %>%
   rbind(read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_MiddleSnake/NorWeST_PredictedStreamTempLines_MiddleSnake.shp') %>%
-          st_transform(crs = myCRS) %>%
+          st_transform(crs = my_crs) %>%
           mutate(NorWeST_area = 'MiddleSnake') %>%
           add_column(S33_2012 = NA,
                      S34_2013 = NA,
@@ -88,3 +88,18 @@ int_crb_temp_long %>%
 int_crb_temp %>%
   select(S2_02_11, S36_2015) %>%
   plot()
+
+#-----------------------------------------------------------------
+# Richie joined the CHaMP 2011-2017 points to this temperature file
+champ_temps = st_read('data/prepped/CHaMP_NorW.shp') %>%
+  st_transform(crs = my_crs) %>%
+  rename(NorWeST_area = NrWST_r,
+         Flow_Aug = Flow_Ag) %>%
+  select(-c(FID_1, FID_2:TAILWAT, Y_COORD:BFI, COMID))
+# correct some names that ArcGIS messed up
+names(champ_temps)[c(13:48)] = names(int_crb_temp)[c(19:54)]
+
+use_data(champ_temps,
+         version = 2,
+         compress = "xz",
+         overwrite = T)

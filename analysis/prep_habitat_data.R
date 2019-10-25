@@ -5,7 +5,6 @@
 # Notes: some data downloaded from CHaMP webpage on 9/16/2015
 # final champ dataset downloaded on 3/8/2018
 
-
 #-----------------------------------------------------------------
 # load needed libraries
 library(tidyverse)
@@ -13,6 +12,7 @@ library(lubridate)
 library(magrittr)
 library(WriteXLS)
 library(readxl)
+library(QRFcapacity)
 
 #-----------------------------------------------------------------
 # get globally available attributes from all master sample points
@@ -27,7 +27,11 @@ use_data(gaa,
          version = 2,
          overwrite = T)
 
+#------------------------------------
 # pull out lats/longs for use below
+#------------------------------------
+data("gaa")
+
 gaa_locs = gaa %>%
   select(Site, Lon, Lat)
 
@@ -36,7 +40,8 @@ gaa_meta = readxl::read_excel('data/raw/master_sample_pts/GAA_Metadata_20150506.
          Name = DisplayName,
          DescriptiveText = Description,
          FieldName,
-         UnitOfMeasureAbbrv = Units)
+         UnitOfMeasureAbbrv = Units) %>%
+  mutate(ShortName = str_remove(ShortName, '_TB$'))
 
 #-----------------------------------------------------------------
 # get CHaMP data from 2011 - 2014
@@ -154,12 +159,14 @@ hab_dict_2014 %<>%
                                        NA, NA),
                    UnitOfMeasure = NA,
                    UnitOfMeasureAbbrv = NA,
+                   MetricGroupName = c(rep('GAA', 3), 'Visit Metric', 'GAA', rep('Visit Metric', 2)),
                    MetricCategory = c(rep('Land Classification', 3), 'Temperature', 'Size', 'Complexity', 'ChannelUnit'))) %>%
   bind_rows(tibble(ShortName = c('VisitYear', 'ValleyClass', 'ChannelType', 'Ppt', 'MeanU', 'SiteLength', 'AverageBFWidth'),
                    Name = c('Year', 'Valley Class', 'Beechie Channel Type', 'Precipitation', 'Mean Annual Discharge', 'Site Length', 'Average Bankfull Width'),
                    DescriptiveText = NA,
                    UnitOfMeasure = NA,
                    UnitOfMeasureAbbrv = NA,
+                   MetricGroupName = c('Visit Metric', rep('GAA', 6)),
                    MetricCategory = c(rep('Categorical', 3), rep('Size', 4)))) %>%
   bind_rows(tibble(ShortName = c('CU_Ct', 'CU_Freq', 'MeanTemp', 'MaxMeanTemp'),
                    Name = c('Channel Unit Count', 'Channel Unit Frequency', 'Mean Summer Temperature', 'Max Mean Weekly Summer Temperature'),
@@ -167,6 +174,7 @@ hab_dict_2014 %<>%
                    DescriptiveText = c('Number of channel units.',
                                        'Number of channel units per 100 meters.',
                                        rep(NA, 2)),
+                   MetricGroupName = 'Visit Metric',
                    MetricCategory = rep(c('ChannelUnit', 'Temperature'), each = 2))) %>%
   # filter(!is.na(MetricCategory))
   select(ShortName, Name, MetricEngineName, MetricGroupName, DescriptiveText, UnitOfMeasure, UnitOfMeasureAbbrv, MetricCategory) %>%
@@ -205,6 +213,8 @@ champ_site_2011_17 = siteData %<>%
   # add one more metric related to cnt and freq of channel units
   mutate(CU_Ct = SlowWater_Ct + FstTurb_Ct + FstNT_Ct,
          CU_Freq = CU_Ct / (Lgth_Wet / 100)) %>%
+  #
+  mutate(Sin_CL = Sin) %>%
   # get any missing lat/longs from GAA data
   left_join(gaa_locs) %>%
   mutate(LON_DD = if_else(is.na(LON_DD), Lon, LON_DD),
@@ -223,7 +233,8 @@ champ_site_2011_17_avg = champ_site_2011_17 %>%
   group_by(Watershed, Site) %>%
   summarise_at(vars(LAT_DD,
                     LON_DD,
-                    SlowWater_Area:CU_Freq),
+                    SlowWater_Area:CU_Freq,
+                    Sin_CL),
                list(median),
                na.rm = T) %>%
   ungroup() %>%
@@ -265,7 +276,19 @@ hab_dict_2017 = read_csv('data/raw/habitat/CHaMP_FinalMetrics_20180308/Definitio
   left_join(hab_catg %>%
               select(ShortName, MetricCategory)) %>%
   bind_rows(hab_dict_2014 %>%
-              filter(is.na(MetricGroupName)))
+              filter(is.na(MetricEngineName))) %>%
+  # add some temperature metrics from NorWeST
+  bind_rows(tibble(ShortName = c('aug_temp',
+                                 'avg_aug_temp'),
+                   Name = c('August Temperature',
+                            'Avg. August Temperature'),
+                   MetricEngineName = 'NorWeST',
+                   MetricGroupName = 'Visit Metric',
+                   DescriptiveText = c('Average predicted daily August temperature from NorWest for a particular year.',
+                                       'Average predicted daily August temperature from NorWest, averaged across the years 2002-2011.'),
+                   UnitOfMeasure = 'Degree (Celsius)',
+                   UnitOfMeasureAbbrv = "°C",
+                   MetricCategory = 'Temperature'))
 
 use_data(champ_site_2011_17, champ_site_2011_17_avg, champ_cu, hab_dict_2017,
          overwrite = T,
@@ -280,7 +303,8 @@ data("champ_site_2011_17")
 
 champ_dash = read_csv('data/raw/habitat/CHaMP_DASH/ChaMP_Dash_Met.csv') %>%
   select(-starts_with('X')) %>%
-  rename(Ucut_Area = UcutArea) %>%
+  rename(Ucut_Area = UcutArea,
+         Sin_CL = Sin) %>%
   # add some info from CHaMP
   left_join(champ_site_2011_17 %>%
               select(VisitID, 
