@@ -55,23 +55,29 @@ theme_set(theme_bw())
 
 ```{r}
 # determine which set of fish/habitat data to use
-data("fh_sum_champ_2017")
-
-fish_hab = fh_sum_champ_2017 %>%
+data("fh_sum_dash_2014_17")
+fish_hab = fh_sum_dash_2014_17 %>%
   mutate_at(vars(Watershed, Year),
             list(as.factor))
 
-# and the appropriate habitat dictionrary to go with it
-data(hab_dict_2017)
+# data("fh_sum_champ_2017")
+# fish_hab = fh_sum_champ_2017 %>%
+#   mutate_at(vars(Watershed, Year),
+#             list(as.factor))
 
-hab_dict = hab_dict_2017
+# and the appropriate habitat dictionrary to go with it
+# data("hab_dict_2017")
+# hab_dict = hab_dict_2017
 
 # all the related habitat data
-data("champ_site_2011_17")
-data("champ_site_2011_17_avg")
+data('champ_dash')
+hab_data = champ_dash
 
-hab_data = champ_site_2011_17
-hab_avg = champ_site_2011_17_avg
+# data("champ_site_2011_17")
+# hab_data = champ_site_2011_17
+# 
+# data("champ_site_2011_17_avg")
+# hab_avg = champ_site_2011_17_avg
 
 ```
 
@@ -94,7 +100,7 @@ data("chnk_domain")
 # which sites were sampled for Chinook? 
 chnk_samps = fish_hab %>%
   filter(Species == 'Chinook') %>%
-  select(Site:Lon) %>%
+  select(Site:Lon, N) %>%
   distinct() %>%
   st_as_sf(coords = c('Lon', 'Lat'),
            crs = 4326) %>%
@@ -114,12 +120,23 @@ chnk_sites = chnk_samps %>%
                               maxDist = snap_dist,
                               withAttrs = T,
                               idField = 'id') %>%
-  as('sf')
+  as('sf') %>%
+  select(-nearest_line_id, -snap_dist) %>%
+  # include some sites in the John Day where Chinook were found (or seemed to be close to sites where Chinook were found)
+  rbind(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp') %>%
+          st_transform(st_crs(chnk_domain)) %>%
+          select(-in_range))
+
+# ggplot() +
+#   geom_sf(data = chnk_samps,
+#           aes(color = 'Sampled')) +
+#   geom_sf(data = chnk_sites,
+#           aes(color = 'In Chnk Range')) +
+#   theme(axis.text = element_blank())
 
 fish_hab %<>%
   filter(Species == 'Steelhead' |
            (Species == 'Chinook' & Site %in% chnk_sites$Site))
-
 ```
 
 After matching up the fish abundances with sites where we have habitat data, we are left with the following number of sites.
@@ -155,18 +172,20 @@ We used the Maximal Information-Based Nonparametric Exploration (MINE) class of 
 
 ```{r MINE_stats}
 
-# what are some possible habitat covariates?
-poss_hab_mets = hab_dict %>%
-  filter(MetricCategory != 'Categorical') %>%
-  filter(ShortName %in% names(fish_hab)) %>%
-  pull(ShortName)
+# # what are some possible habitat covariates?
+# poss_hab_mets = hab_dict %>%
+#   filter(MetricCategory != 'Categorical') %>%
+#   filter(ShortName %in% names(fish_hab)) %>%
+#   pull(ShortName)
 
 # pull from which CHaMP metrics could be generated from DASH
 poss_hab_mets = read_csv('data/hab_dict_champ_dash.csv') %>%
   select(-starts_with('X')) %>%
   filter(DASH_gen) %>%
-  pull(ShortName)
-
+  filter(MetricCategory != 'Categorical') %>%
+  pull(ShortName) %>%
+  unique()
+poss_hab_mets = c(poss_hab_mets, 'aug_avg_temp', 'avg_aug_temp')
 
 mine_res = fish_hab %>%
   split(list(.$Species)) %>%
@@ -178,6 +197,7 @@ mine_res = fish_hab %>%
                           response = 'fish_dens')
          }) %>%
   left_join(hab_dict %>%
+              filter(MetricGroupName == 'Visit Metric') %>%
               select(Metric = ShortName,
                      MetricCategory,
                      Name),
@@ -188,9 +208,9 @@ mine_res = fish_hab %>%
   select(Species, MetricCategory, Metric, everything()) %>%
   arrange(Species, MetricCategory, desc(MIC))
 
-mine_plot_df = mine_res %>%
+mine_plot_df = mine_res #%>%
   # filter out some metrics with too many NAs or 0s
-  filter((perc_NA < 0.2 & non_0 > 100) | MetricCategory == 'Temperature') #%>%
+  # filter((perc_NA < 0.2 & non_0 > 100) | MetricCategory == 'Temperature') #%>%
   # # filter out metrics with very low variance
   # filter(var < 0.1) %>% select(1:11)
   # # filter out area and volume metrics
@@ -300,6 +320,28 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                     'Steelhead'),
                         Metric = poss_hab_mets)
 
+sel_hab_mets = crossing(Species = c('Chinook', 
+                                    'Steelhead'),
+                        Metric = c('UcutArea_Pct',
+                                   'FishCovNone',
+                                   'SubEstGrvl',
+                                   'FstTurb_Freq',
+                                   'FstNT_Freq',
+                                   'CU_Freq',
+                                   'SlowWater_Pct',
+                                   'NatPrin1',
+                                   'DistPrin1',
+                                   'avg_aug_temp',
+                                   'Sin_CL',
+                                   'WetWdth_CV',
+                                   'WetBraid',
+                                   'WetSC_Pct',
+                                   'Discharge',
+                                   'WetWdth_Int',
+                                   'LWFreq_Wet',
+                                   'LWVol_WetFstTurb'))
+
+
 ```
 
 
@@ -388,13 +430,64 @@ rel_imp_p = qrf_mods %>%
 
 ggpubr::ggarrange(plotlist = rel_imp_p,
                   nrow = 1,
-                  ncol = 2)
+                  ncol = 2,
+                  labels = names(qrf_mods))
+
+```
+
+```{r partial_dependence_plots}
+
+plot_partial_dependence(qrf_mods[[1]],
+                        qrf_mod_df %>%
+                          filter(Species == 'Chinook'),
+                        hab_dict,
+                        scales = 'free_x')
+
+
+plot_partial_dependence(qrf_mods[[2]],
+                        qrf_mod_df %>%
+                          filter(Species == 'Steelhead'),
+                        hab_dict,
+                        scales = 'free_x')
+
 
 ```
 
 
-
 # Predict at Habitat Sites
+
+```{r}
+
+wtsd = "Lemhi"
+wtsd = 'Upper Grande Ronde'
+wtsd = c('Upper Grande Ronde', 'Minam')
+# wtsd = 'John Day'
+qrf_mod_df %>%
+  filter(Species == 'Chinook',
+         Watershed %in% wtsd) %>%
+  left_join(champ_dash %>%
+              filter(Watershed %in% wtsd) %>%
+              group_by(Site, StreamName) %>%
+              summarise_at(vars(Lgth_Wet, Area_Wet),
+                           list(mean))) %>%
+  mutate(pred_cap = predict(qrf_mods[[1]],
+                            newdata = select(., one_of(unique(sel_hab_mets$Metric))),
+                            what = 0.9)) %>%
+  mutate(pred_cap = exp(pred_cap) - 0.005,
+         pred_cap = pred_cap * Lgth_Wet / Area_Wet) %>%
+  st_as_sf(coords = c('LON_DD', 'LAT_DD'),
+           crs = 4326) %>%
+  st_transform(crs = 5070) %>%
+  ggplot() +
+  geom_sf(aes(color = pred_cap)) +
+  scale_color_viridis_c(direction = -1) +
+  theme(axis.text = element_blank()) +
+  labs(color = expression(Parr / m^2),
+       title = paste(wtsd, collapse = ' '))
+
+```
+
+
 
 ## Methods
 
