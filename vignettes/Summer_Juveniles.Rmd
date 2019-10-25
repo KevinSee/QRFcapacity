@@ -298,27 +298,27 @@ mine_p2
 In the end, we decided to use the same metrics for both species, and chose the following metrics:
 
 ```{r}
-sel_hab_mets = crossing(Species = c('Chinook', 
-                                    'Steelhead'),
-                        Metric = c('CU_Freq',
-                                   'DpthThlwg_UF_CV',
-                                   'WetWDRat_Avg',
-                                   'FishCovTotal',
-                                   'DistPrin1',
-                                   'RipCovGrnd',
-                                   'DpthThlwg_Avg',
-                                   'SubEstGrvl',
-                                   'SubD50',
-                                   'SubLT6',
-                                   'AvgHourly',
-                                   'Max7dAM',
-                                   'Cond',
-                                   'LWFreq_Wet'))
-
-
-sel_hab_mets = crossing(Species = c('Chinook', 
-                                    'Steelhead'),
-                        Metric = poss_hab_mets)
+# sel_hab_mets = crossing(Species = c('Chinook', 
+#                                     'Steelhead'),
+#                         Metric = c('CU_Freq',
+#                                    'DpthThlwg_UF_CV',
+#                                    'WetWDRat_Avg',
+#                                    'FishCovTotal',
+#                                    'DistPrin1',
+#                                    'RipCovGrnd',
+#                                    'DpthThlwg_Avg',
+#                                    'SubEstGrvl',
+#                                    'SubD50',
+#                                    'SubLT6',
+#                                    'AvgHourly',
+#                                    'Max7dAM',
+#                                    'Cond',
+#                                    'LWFreq_Wet'))
+# 
+# 
+# sel_hab_mets = crossing(Species = c('Chinook', 
+#                                     'Steelhead'),
+#                         Metric = poss_hab_mets)
 
 sel_hab_mets = crossing(Species = c('Chinook', 
                                     'Steelhead'),
