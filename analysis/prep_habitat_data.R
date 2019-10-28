@@ -25,7 +25,7 @@ gaa = read_csv('data/raw/master_sample_pts/IC_Sites_withMetrics_20151016.csv') %
   mutate(ChanlType = recode(ChanlType,
                             'braided' = 'island_braided')) %>%
   # mark some crazy values as NAs
-  mutate_at(vars(GDD, MAVELV, TRange), 
+  mutate_at(vars(GDD, MAVELV, Elev_M, TRange, Precip), 
             list(~ if_else(. < 0, as.numeric(NA), .))) %>%
   mutate_at(vars(Slp_NHD_v1), 
             list(~ if_else(. > 2, as.numeric(NA), .))) %>%
