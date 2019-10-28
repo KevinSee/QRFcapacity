@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep habitat data
 # Created: 5/14/2019
-# Last Modified: 10/24/19
+# Last Modified: 10/28/19
 # Notes: some data downloaded from CHaMP webpage on 9/16/2015
 # final champ dataset downloaded on 3/8/2018
 
@@ -327,9 +327,73 @@ champ_dash = read_csv('data/raw/habitat/CHaMP_DASH/ChaMP_Dash_Met.csv') %>%
          VisitID, Panel, VisitYear,
          everything())
   
+# filter out some sites with no DASH metrics attached to them
+# data.frame with how many DASH metrics were computed
+n_dash_mets = champ_dash %>%
+  select(Site, Watershed, VisitID, VisitYear) %>%
+  bind_cols(champ_dash %>%
+              select(SlowWater_Area:LWcnt_Wet,
+                     -Geo_Cond) %>%
+              transmute(n_NA = rowSums(is.na(.)))) %>%
+  arrange(desc(n_NA))
+
+xtabs(~ Watershed + VisitYear + (n_NA > 50), 
+      n_dash_mets) %>%
+  addmargins()
+
+# champ_dash %<>%
+#   anti_join(n_dash_mets %>%
+#               filter(n_dash_mets < 50))
+
 names(champ_site_2011_17)[!names(champ_site_2011_17) %in% names(champ_dash)] %>%
   sort()
 
-use_data(champ_dash,
+# average metrics across years for each site
+champ_dash_avg = champ_dash %>%
+  filter(VisitObjective == 'Primary Visit',
+         VisitStatus == 'Released to Public') %>%
+  select(-Geo_Cond) %>%
+  group_by(Watershed, Site) %>%
+  summarise_at(vars(LAT_DD,
+                    LON_DD,
+                    SlowWater_Area:CU_Freq,
+                    Sin_CL:LWcnt_Wet),
+               list(median),
+               na.rm = T) %>%
+  ungroup() %>%
+  left_join(champ_dash %>%
+              filter(VisitObjective == 'Primary Visit',
+                     VisitStatus == 'Released to Public') %>%
+              select(Watershed, Site,
+                     Stream:MeanU,
+                     Geo_Cond) %>%
+              distinct() %>%
+              arrange(Watershed, Site) %>%
+              gather(metric, value, -Watershed, -Site) %>%
+              filter(!is.na(value)) %>%
+              distinct() %>%
+              spread(metric, value, fill = NA) %>%
+              distinct() %>%
+              mutate_at(vars(CUMDRAINAG, DistPrin1,
+                             Elev_M, 
+                             HUC4:HUC6,
+                             MeanU,
+                             NatPrin1:NatPrin2,
+                             Ppt:Strah),
+                        list(as.numeric))) %>%
+  mutate(VisitObjective = 'Primary Visit',
+         VisitStatus = 'Released to Public',
+         VisitYear = 'All') %>%
+  select(one_of(names(champ_dash))) %>%
+  mutate_at(vars(Site, Watershed),
+            list(fct_explicit_na))
+
+n_dash_mets %>%
+  anti_join(champ_dash_avg %>%
+              select(-VisitYear)) %>%
+  arrange(n_NA)
+
+
+use_data(champ_dash, champ_dash_avg,
          overwrite = T,
          version = 2)
