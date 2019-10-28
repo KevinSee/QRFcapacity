@@ -20,7 +20,17 @@ library(QRFcapacity)
 gaa = read_csv('data/raw/master_sample_pts/IC_Sites_withMetrics_20151016.csv') %>%
   rename(Site = Site_ID, 
          Lon = LON_DD,
-         Lat = LAT_DD)
+         Lat = LAT_DD) %>%
+  # fix one issue with Beechie classification (hardly any "braided" channels)
+  mutate(ChanlType = recode(ChanlType,
+                            'braided' = 'island_braided')) %>%
+  # mark some crazy values as NAs
+  mutate_at(vars(GDD, MAVELV, TRange), 
+            list(~ if_else(. < 0, as.numeric(NA), .))) %>%
+  mutate_at(vars(Slp_NHD_v1), 
+            list(~ if_else(. > 2, as.numeric(NA), .))) %>%
+  mutate_at(vars(Site, CHaMPsheds),
+            list(as.factor))
 
 # make available like a package, by calling "data()"
 use_data(gaa,
