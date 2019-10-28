@@ -91,7 +91,8 @@ impute_missing_data = function(data = NULL,
       filter(row_num %in% keep_rows) %>%
       select(one_of(all_cols)) %>%
       as.data.frame() %>%
-      missForest::missForest(variablewise = T,
+      missForest::missForest(xmis = .,
+                             variablewise = T,
                              verbose = F,
                              mtry = 10,
                              ntree = ntree, ...)
