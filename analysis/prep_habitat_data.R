@@ -461,3 +461,15 @@ n_dash_mets %>%
 use_data(champ_dash, champ_dash_avg,
          overwrite = T,
          version = 2)
+
+#-----------------------------------------------------------------
+# prep CHaMP frame
+#-----------------------------------------------------------------
+# read in entire CHaMP frame (Secesh was modified by Jean Olson to correct extent of spring Chinook)
+champ_frame = st_read('data/raw/habitat/CHaMP_Frames_All_20151019_CHNKSu_Secesh/CHaMP_Frames_All_20151019_CHNKSu_Secesh.shp') %>%
+  st_zm()
+
+# save as CSV file for later use, and to make it faster to run (reading in the shapefile takes a LOOOONG time)
+champ_frame %>%
+  as_tibble() %>%
+  write_csv('data/prepped/champ_frame_data.csv')
