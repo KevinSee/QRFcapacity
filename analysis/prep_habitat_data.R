@@ -4,6 +4,7 @@
 # Last Modified: 10/28/19
 # Notes: some data downloaded from CHaMP webpage on 9/16/2015
 # final champ dataset downloaded on 3/8/2018
+# Richie joined the NorWeST temperature data to the master sample points
 
 #-----------------------------------------------------------------
 # load needed libraries
@@ -30,7 +31,41 @@ gaa = read_csv('data/raw/master_sample_pts/IC_Sites_withMetrics_20151016.csv') %
   mutate_at(vars(Slp_NHD_v1), 
             list(~ if_else(. > 2, as.numeric(NA), .))) %>%
   mutate_at(vars(Site, CHaMPsheds),
-            list(as.factor))
+            list(as.factor)) %>%
+  # bring in some temperature data from NorWeST
+  left_join(read_csv('data/prepped/mast_samp_norw.csv') %>%
+              select(-c(X1:Field1, FID_2, COMID)) %>%
+              filter(Distance < 100) %>%
+              rename(FLow_Aug = Flow_Ag,
+                     S2_02_11 = S2_02_1,
+                     S30_2040D = S30_204,
+                     S32_2080D = S32_208))
+
+comp_df = gaa %>%
+  select(Site, 
+         ELEV, 
+         SLOPE, 
+         PRECIP,
+         CUMDRAI) %>%
+  gather(variable, NorWeST, -Site) %>%
+  left_join(gaa %>%
+              select(Site, 
+                     ELEV = Elev_M, 
+                     SLOPE = Slp_NHD_v1, 
+                     PRECIP = Precip,
+                     CUMDRAI = SrtCumDrn) %>%
+              mutate(CUMDRAI = CUMDRAI^2) %>%
+              gather(variable, MSS, -Site))
+
+comp_df %>%
+  ggplot(aes(x = MSS,
+             y = NorWeST)) +
+  geom_point() +
+  geom_abline(color = 'red') +
+  facet_wrap(~ variable,
+             scales = 'free') +
+  theme_bw()
+
 
 # make available like a package, by calling "data()"
 use_data(gaa,
