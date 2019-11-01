@@ -42,22 +42,27 @@ gaa = read_csv('data/raw/master_sample_pts/IC_Sites_withMetrics_20151016.csv') %
                      S32_2080D = S32_208))
 
 comp_df = gaa %>%
-  select(Site, 
+  filter(steel == 'Yes' | chnk == 'Yes') %>%
+  select(Site,
+         CHaMPsheds,
          ELEV, 
          SLOPE, 
          PRECIP,
          CUMDRAI) %>%
-  gather(variable, NorWeST, -Site) %>%
+  gather(variable, NorWeST, -Site, -CHaMPsheds) %>%
   left_join(gaa %>%
+              filter(steel == 'Yes' | chnk == 'Yes') %>%
               select(Site, 
+                     CHaMPsheds,
                      ELEV = Elev_M, 
                      SLOPE = Slp_NHD_v1, 
                      PRECIP = Precip,
                      CUMDRAI = SrtCumDrn) %>%
               mutate(CUMDRAI = CUMDRAI^2) %>%
-              gather(variable, MSS, -Site))
+              gather(variable, MSS, -Site, -CHaMPsheds))
 
 comp_df %>%
+  filter(CHaMPsheds == 'Lemhi') %>%
   ggplot(aes(x = MSS,
              y = NorWeST)) +
   geom_point() +
@@ -65,6 +70,20 @@ comp_df %>%
   facet_wrap(~ variable,
              scales = 'free') +
   theme_bw()
+
+# comp_df %>%
+#   filter(CHaMPsheds == 'Lemhi') %>%
+#   left_join(gaa %>%
+#               select(Site, Lon, Lat)) %>%
+#   st_as_sf(coords = c('Lon', 'Lat'),
+#            crs = 4326) %>%
+#   st_transform(crs = 5070) %>%
+#   gather(source, value, NorWeST, MSS) %>%
+#   filter(variable == 'ELEV') %>%
+#   ggplot() +
+#   geom_sf(aes(color = value)) +
+#   facet_wrap(~ source) +
+#   theme(axis.text = element_blank())
 
 
 # make available like a package, by calling "data()"
