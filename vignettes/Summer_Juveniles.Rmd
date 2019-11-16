@@ -350,7 +350,7 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                    'WetWdth_CV',
                                    'WetBraid',
                                    'WetSC_Pct',
-                                   # 'Discharge',
+                                   'Q',
                                    'WetWdth_Int',
                                    'LWFreq_Wet',
                                    'LWVol_WetFstTurb'))
@@ -719,7 +719,7 @@ gaa_all = gaa %>%
   rename(Channel_Type = ChanlType)
 
 # possible covariates from among the GAAs
-gaa_covars = c('TRange', 'GDD', 'Precip', 'Elev_M', 'CHaMPsheds', 'NatPrin1', 'NatPrin2', 'DistPrin1', 'BFW_M', 'SrtCumDrn', 'StrmPwr', 'Slp_NHD_v1', 'Channel_Type', 'MAVELV', 'WIDE_BF')
+gaa_covars = c('TRange', 'GDD', 'Precip', 'Elev_M', 'CHaMPsheds', 'NatPrin1', 'NatPrin2', 'DistPrin1', 'BFW_M', 'SrtCumDrn', 'StrmPwr', 'Slp_NHD_v1', 'Channel_Type', 'MAVELV', 'WIDE_BF', 'S2_02_11')
 
 # what type of covariate is each GAA?
 gaa_class = gaa_all %>%
@@ -803,6 +803,7 @@ corr_mat = corr_df %>%
   as.matrix() 
 rownames(corr_mat) = corr_df$rowname
 
+library(ggcorrplot)
 ggcorrplot(corr_mat,
            lab = T,
            lab_size = 2,
@@ -829,7 +830,8 @@ gaa_covars = c('TRange',
                'Slp_NHD_v1', 
                'Channel_Type', 
                # 'MAVELV', 
-               'WIDE_BF')
+               'WIDE_BF',
+               'S2_02_11')
 
 # what type of covariate is each GAA?
 gaa_class = gaa_all %>%
@@ -896,6 +898,25 @@ mod_data %<>%
   mutate_at(vars(Watershed, CHaMPsheds, Channel_Type),
             list(fct_drop)) 
 
+
+# where do we want to make extrapolation predictions?
+gaa_pred = gaa_all %>%
+  # filter out a few areas
+  filter(!HUC6NmNRCS %in% c('Upper Sacramento', 'Southern Oregon Coastal', 'Puget Sound', 'Northern California Coastal', 'Oregon Closed Basins')) %>%
+  # don't use AEM sites in model
+  filter(!grepl('^AEM', Site)) %>%
+  # don't use non-GRTS sites
+  filter(SiteID_alt != 'NonGRTSSite' | is.na(SiteID_alt)) %>%
+  filter(!grepl('mega', Site, ignore.case = T)) %>%
+  # note which sites have GAAs outside range of CHaMP sites GAAs
+  mutate(inCovarRange = ifelse(Site %in% out_range_sites, F, T)) %>%
+  select(Site, one_of(gaa_covars), Lon, Lat, inCovarRange, HUC6NmNRCS, HUC8NmNRCS, HUC10NmNRC, HUC12NmNRC, chnk) %>%
+  gather(GAA, value, one_of(gaa_num)) %>%
+  left_join(gaa_summ) %>%
+  mutate(norm_value = (value - metric_mean) / metric_sd) %>%
+  select(-(value:metric_sd)) %>%
+  spread(GAA, norm_value)
+
 ```
 
 ```{r}
@@ -936,7 +957,7 @@ surv_design = mod_data_list %>%
 
 ```
 
-```{r}
+```{r with_model_weights}
 full_form = as.formula(paste('log(qrf_cap) ~ -1 + (', paste(gaa_covars, collapse = ' + '), ')'))
 
 model_svy_df = mod_data_weights %>%
@@ -963,13 +984,102 @@ model_svy_df = mod_data_weights %>%
                                      design = x)
                             }))
 
+# predictions within CHaMP watersheds, using the model that includes CHaMPsheds as a covariate
+y = gaa_pred %>%
+  filter(CHaMPsheds %in% unique(model_df$data[[1]]$Watershed)) %>%
+  select(Site, CHaMPsheds, one_of(gaa_covars)) %>%
+  na.omit() %>%
+  left_join(gaa_pred) %>%
+  mutate_at(vars(Channel_Type),
+            list(as.factor))
+
+per_m_preds = predict(model_svy_df$mod_full[[1]],
+                      newdata = y,
+                      se = T,
+                      type = 'response')
+
+per_m2_preds = predict(model_svy_df$mod_full[[2]],
+                      newdata = y,
+                      se = T,
+                      type = 'response')
+
+y %<>%
+  bind_cols(per_m_preds %>%
+              as_tibble() %>%
+              rename(chnk_per_m = response,
+                     chnk_per_m_se = SE)) %>%
+  bind_cols(per_m2_preds %>%
+              as_tibble() %>%
+              rename(chnk_per_m2 = response,
+                     chnk_per_m2_se = SE)) %>%
+  mutate_at(vars(matches('per_m')),
+            list(exp))
+
+rm(per_m_preds, per_m2_preds)
+
+# predictions at all points, using the model without CHaMPsheds as a covariate
+z = gaa_pred %>%
+  select(Site, one_of(gaa_covars), -CHaMPsheds) %>%
+  na.omit() %>%
+  left_join(gaa_pred) %>%
+  mutate_at(vars(Channel_Type),
+            list(as.factor))
+
+per_m_preds = predict(model_svy_df$mod_no_champ[[1]],
+                      newdata = z,
+                      se = T,
+                      type = 'response')
+
+per_m2_preds = predict(model_svy_df$mod_no_champ[[2]],
+                      newdata = z,
+                      se = T,
+                      type = 'response')
+
+z %<>%
+  bind_cols(per_m_preds %>%
+              as_tibble() %>%
+              rename(chnk_per_m = response,
+                     chnk_per_m_se = SE)) %>%
+  bind_cols(per_m2_preds %>%
+              as_tibble() %>%
+              rename(chnk_per_m2 = response,
+                     chnk_per_m2_se = SE)) %>%
+  mutate_at(vars(matches('per_m')),
+            list(exp))
+
+rm(per_m_preds, per_m2_preds)
+
+all_preds = y %>%
+  mutate(model = 'CHaMP') %>%
+  bind_rows(z %>%
+              mutate(model = 'non-CHaMP'))
+
+# quick comparison of capacity predicitons with both models
+all_preds %>%
+  filter(Site %in% Site[duplicated(Site)]) %>%
+  select(Site, CHaMPsheds, Channel_Type, model, chnk_per_m, chnk_per_m2) %>%
+  arrange(CHaMPsheds, Site, model) %>%
+  gather(dens_type, cap, starts_with('chnk_per_m')) %>%
+  spread(model, cap) %>%
+  ggplot(aes(x = CHaMP,
+             y = `non-CHaMP`)) +
+  geom_point() +
+  geom_abline(linetype = 2,
+              color = 'red') +
+  facet_wrap(~ CHaMPsheds + dens_type,
+             scales = 'free')
+
+# for sites in CHaMP watersheds, use predicions from CHaMP extrapolation model
+all_preds %<>%
+  filter((Site %in% Site[duplicated(Site)] & model == 'CHaMP') |
+           !Site %in% Site[duplicated(Site)])
+
 ```
 
 
+```{r no_model_weights, eval = F}
 
-```{r}
-
-full_form = as.formula(paste('log(qrf_cap) ~ -1 + (', paste(gaa_covars, collapse = ' + '), ')'))
+# full_form = as.formula(paste('log(qrf_cap) ~ -1 + (', paste(gaa_covars, collapse = ' + '), ')'))
 # extrap_mods = mod_data_list %>%
 #   map(.f = function(x) {
 #     mod_full = lm(full_form,
@@ -1000,52 +1110,111 @@ model_df = mod_data %>%
                         }))
 
 
+# model_df = model_svy_df
 
-# where do we want to make extrapolation predictions?
-gaa_pred = gaa_all %>%
-  # filter out a few areas
-  filter(!HUC6NmNRCS %in% c('Upper Sacramento', 'Southern Oregon Coastal', 'Puget Sound', 'Northern California Coastal', 'Oregon Closed Basins')) %>%
-  # don't use AEM sites in model
-  filter(!grepl('^AEM', Site)) %>%
-  # don't use non-GRTS sites
-  filter(SiteID_alt != 'NonGRTSSite' | is.na(SiteID_alt)) %>%
-  filter(!grepl('mega', Site, ignore.case = T)) %>%
-  # note which sites have GAAs outside range of CHaMP sites GAAs
-  mutate(inCovarRange = ifelse(Site %in% out_range_sites, F, T)) %>%
-  select(Site, one_of(gaa_covars), Lon, Lat, inCovarRange, HUC6NmNRCS, HUC8NmNRCS, HUC10NmNRC, HUC12NmNRC, chnk) %>%
-  gather(GAA, value, one_of(gaa_num)) %>%
-  left_join(gaa_summ) %>%
-  mutate(norm_value = (value - metric_mean) / metric_sd) %>%
-  select(-(value:metric_sd)) %>%
-  spread(GAA, norm_value)
   
+# predictions within CHaMP watersheds, using the model that includes CHaMPsheds as a covariate
 y = gaa_pred %>%
   filter(CHaMPsheds %in% unique(model_df$data[[1]]$Watershed)) %>%
   select(Site, CHaMPsheds, one_of(gaa_covars)) %>%
   na.omit() %>%
   left_join(gaa_pred) %>%
   mutate_at(vars(Channel_Type),
-            list(as.factor)) %>%
-  bind_cols(predict(model_df$mod_full[[1]],
-                    newdata = .,
-                    se.fit = F,
-                    interval = 'confidence',
-                    type = 'response') %>%
+            list(as.factor))
+
+per_m_preds = predict(model_df$mod_full[[1]],
+                      newdata = y,
+                      se.fit = T,
+                      interval = 'confidence',
+                      type = 'response')
+
+per_m2_preds = predict(model_df$mod_full[[2]],
+                      newdata = y,
+                      se.fit = T,
+                      interval = 'confidence',
+                      type = 'response')
+
+y %<>%
+  bind_cols(per_m_preds$fit %>%
+      as_tibble() %>%
+      mutate(chnk_per_m_se = per_m_preds$se.fit) %>%
+      select(chnk_per_m = fit,
+             chnk_per_m_se,
+             chnk_per_m_lwr = lwr,
+             chnk_per_m_upr = upr)) %>%
+  bind_cols(per_m2_preds$fit %>%
               as_tibble() %>%
-              select(chnk_per_m = fit,
-                     chnk_per_m_lwr = lwr,
-                     chnk_per_m_upr = upr)) %>%
-  bind_cols(predict(model_df$mod_full[[2]],
-                    newdata = .,
-                    se.fit = F,
-                    interval = 'confidence',
-                    type = 'response') %>%
-              as_tibble() %>%
+              mutate(chnk_per_m2_se = per_m2_preds$se.fit) %>%
               select(chnk_per_m2 = fit,
+                     chnk_per_m2_se,
                      chnk_per_m2_lwr = lwr,
                      chnk_per_m2_upr = upr)) %>%
   mutate_at(vars(matches('per_m')),
             list(exp))
+
+# predictions at all points, using the model without CHaMPsheds as a covariate
+z = gaa_pred %>%
+  select(Site, one_of(gaa_covars), -CHaMPsheds) %>%
+  na.omit() %>%
+  left_join(gaa_pred) %>%
+  mutate_at(vars(Channel_Type),
+            list(as.factor))
+
+per_m_preds = predict(model_df$mod_no_champ[[1]],
+                      newdata = z,
+                      se.fit = T,
+                      interval = 'confidence',
+                      type = 'response')
+
+per_m2_preds = predict(model_df$mod_no_champ[[2]],
+                      newdata = z,
+                      se.fit = T,
+                      interval = 'confidence',
+                      type = 'response')
+
+z %<>%
+  bind_cols(per_m_preds$fit %>%
+      as_tibble() %>%
+      mutate(chnk_per_m_se = per_m_preds$se.fit) %>%
+      select(chnk_per_m = fit,
+             chnk_per_m_se,
+             chnk_per_m_lwr = lwr,
+             chnk_per_m_upr = upr)) %>%
+  bind_cols(per_m2_preds$fit %>%
+              as_tibble() %>%
+              mutate(chnk_per_m2_se = per_m2_preds$se.fit) %>%
+              select(chnk_per_m2 = fit,
+                     chnk_per_m2_se,
+                     chnk_per_m2_lwr = lwr,
+                     chnk_per_m2_upr = upr)) %>%
+  mutate_at(vars(matches('per_m')),
+            list(exp))
+
+
+all_preds = y %>%
+  mutate(model = 'CHaMP') %>%
+  bind_rows(z %>%
+              mutate(model = 'non-CHaMP'))
+
+# quick comparison of capacity predicitons with both models
+all_preds %>%
+  filter(Site %in% Site[duplicated(Site)]) %>%
+  select(Site, CHaMPsheds, Channel_Type, model, chnk_per_m, chnk_per_m2) %>%
+  arrange(CHaMPsheds, Site, model) %>%
+  gather(dens_type, cap, starts_with('chnk_per_m')) %>%
+  spread(model, cap) %>%
+  ggplot(aes(x = CHaMP,
+             y = `non-CHaMP`)) +
+  geom_abline(linetype = 2,
+              color = 'red') +
+  geom_point() +
+  facet_wrap(~ CHaMPsheds,
+             scales = 'free')
+
+# for sites in CHaMP watersheds, use predicions from CHaMP extrapolation model
+all_preds %<>%
+  filter((Site %in% Site[duplicated(Site)] & model == 'CHaMP') |
+           !Site %in% Site[duplicated(Site)])
 
 ```
 
@@ -1069,6 +1238,237 @@ y %>%
   labs(color = expression(Parr / m^2),
        title = paste(wtsd, collapse = ' '))
   
+```
+
+# Validation
+
+We can validate Chinook summer parr estimates of capacity with spawner-recruit data from a number of watersheds.
+
+```{r}
+data("chnk_domain")
+# read in trap polygons
+trap_poly = read_sf('data/raw/spawn_rec/trap_regions.shp') %>%
+  # st_transform(crs = 5070)
+  st_transform(st_crs(chnk_domain)) %>%
+  select(-Id)
+
+capacity_pts = all_preds %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326)
+
+qrf_caps = trap_poly %>%
+  split(list(.$trap_name)) %>%
+  map_df(.id = 'Trap',
+         .f = calc_watershed_cap,
+         spp_range = chnk_domain,
+         capacity_pts = capacity_pts,
+         capacity_name = "chnk_per_m",
+         capacity_se_name = 'chnk_per_m_se') %>%
+  mutate(tot_cap_cv = tot_cap_se / tot_cap) %>%
+  mutate(Trap = recode(Trap,
+                       'Minam R.' = 'Minam River',
+                       'Entiat R.' = 'Entiat River',
+                       'Upper Grande Ronde R.' ='Upper Grande Ronde River',
+                       'Toucannon R.' = 'Tucannon River'))
+
+qrf_caps %>%
+  filter(is.na(tot_cap))
+
+```
+
+```{r}
+library(FSA)
+bh1 <- srFuns('BevertonHolt',
+              param = 3)
+
+data("spawn_rec_data")
+# fit Beverton-Holt curve with capacity fixed at QRF capacity prediction
+qrf_params = spawn_recr_data %>%
+  group_by(Population) %>%
+  nest() %>%
+  left_join(qrf_caps,
+            by = c('Population' = 'Trap')) %>%
+  filter(!is.na(tot_cap)) %>%
+  mutate(form = 'QRF',
+         inits = map2(.x = data,
+                      .y = tot_cap,
+                     .f = function(x, y) {
+                       inits = srStarts(Parr ~ Spawners,
+                                        data = x,
+                                        type = 'BevertonHolt',
+                                        param = 3)
+
+                       inits$a = if_else(inits$a < 0, 
+                                         2e-3, 
+                                         inits$a)
+                       inits$b = 1 / y
+                       return(inits)
+                       }),
+         mod_fit = map2(.x = data,
+                        .y = inits,
+                        .f = function(x, y) {
+                          fit = try(nls(log(Parr) ~ log(bh1(Spawners, a, b)),
+                                        data = x,
+                                        start = y,
+                                        algorithm = 'port',
+                                        lower = c(0, y['b']),
+                                        upper = c(Inf, y['b'])))
+                        }),
+         coefs = map(mod_fit,
+                     .f = function(x) {
+                       if(class(x) == 'try-error') {
+                         return(as.numeric(NA))
+                       } else coef(x)
+                       }),
+         preds = map2(.x = data,
+                      .y = mod_fit,
+                      .f = function(x, y) {
+                        if(class(y) != 'try-error') {
+                          tibble(Spawners = 1:max(x$Spawners)) %>%
+                            mutate(Parr = predict(y,
+                                                  newdata = .),
+                                   Parr = exp(Parr))
+                        } else return(tibble(Spawners = NA,
+                                             Parr = NA))
+                      })) %>%
+  rename(est = tot_cap,
+         se = tot_cap_se) %>%
+  select(-c(area:tot_length, tot_cap_cv)) %>%
+  mutate(cv = se / est)
+
+```
+
+
+
+```{r}
+data("spawn_rec_params")
+
+spawn_rec_params %<>%
+  bind_rows(qrf_params)
+
+# pull out estimates of capacity
+cap_tbl = spawn_rec_params %>%
+  select(Population, form, est, se, cv) %>%
+  arrange(Population, form)
+
+# make a few estimates NA (too big)
+cap_tbl %<>%
+  mutate_at(vars(est, se, cv),
+            list(~ if_else(Population %in% c('Entiat River',
+                                             'Marsh Creek',
+                                             'Minam River',
+                                             'Tucannon River') &
+                             form == 'BevertonHolt',
+                           as.numeric(NA), .)))
+
+
+# pull out fitted spawner recruit curves
+curve_fits = spawn_rec_params %>%
+  select(Population, form, preds) %>%
+  unnest() %>%
+  arrange(Population, form)
+
+# define polygons for uncertainty shading
+plot_max = Inf
+plot_max = 5e5
+cap_poly = cap_tbl %>%
+  mutate(lwrCI = est + se * qnorm(0.025),
+         uprCI = est + se * qnorm(0.975)) %>%
+  mutate(lwrCI = if_else(lwrCI < 0, 0, lwrCI),
+         uprCI = if_else(uprCI > plot_max, plot_max, uprCI)) %>%
+  left_join(spawn_rec_params %>%
+              select(Population, data) %>%
+              unnest() %>%
+              group_by(Population) %>%
+              summarise_at(vars(Spawners, Parr),
+                           list(min = min,
+                                max = max),
+                           na.rm = T)) %>%
+  # select(Population, form, ends_with('min'), ends_with('max'), ends_with('CI'))
+  group_by(Population, form) %>%
+  summarise(coords = list(tibble(x = c(0, 0, Spawners_max, Spawners_max),
+                                 y = c(lwrCI, uprCI, uprCI, lwrCI)))) %>%
+  ungroup() %>%
+  unnest()
+
+# which watersheds to plot?
+keep_wtsds = qrf_caps %>%
+  filter(!is.na(tot_cap)) %>%
+  filter(!Trap %in% c('Methow R.')) %>%
+  pull(Trap)
+
+spawn_rec_comp_p = spawn_rec_params %>%
+  # filter out a couple populations with super poor fits
+  filter(Population %in% keep_wtsds) %>%
+  select(Population, data) %>%
+  unnest() %>%
+  distinct() %>%
+  ggplot(aes(x = Spawners,
+             y = Parr)) +
+  geom_polygon(data = cap_poly %>%
+                 # filter out a couple populations with super poor fits
+                 filter(Population %in% keep_wtsds),
+              aes(x = x,
+                  y = y,
+                  fill = form),
+              alpha = 0.2) +
+  geom_line(data = curve_fits %>%
+              # filter out a couple populations with super poor fits
+              filter(Population %in% keep_wtsds),
+            aes(color = form),
+            lwd = 1.5) +
+  geom_hline(data = cap_tbl %>%
+               # filter out a couple populations with super poor fits
+               filter(Population %in% keep_wtsds),
+             aes(yintercept = est,
+                 color = form),
+             linetype = 2) +
+  geom_point(aes(shape = Spawner_type),
+             size = 3) +
+  facet_wrap(~ Population,
+             scales = 'free') +
+  scale_color_brewer(palette = 'Set1',
+                     breaks = c('QRF',
+                                'BevertonHolt',
+                                'Ricker',
+                                'Hockey'),
+                     labels = c('QRF', 
+                                'Beverton Holt',
+                                'Ricker',
+                                'Hockey Stick'),
+                     name = 'Model') +
+  scale_fill_brewer(palette = 'Set1',
+                    breaks = c('QRF',
+                               'BevertonHolt',
+                               'Ricker',
+                               'Hockey'),
+                    labels = c('QRF', 
+                               'Beverton Holt',
+                               'Ricker',
+                               'Hockey Stick'),
+                    name = 'Model') +
+  labs(shape = 'Spawner\nType')
+
+```
+
+```{r}
+spawn_rec_comp_p
+```
+
+# Watershed Capacity Estimates
+
+```{r}
+chnk_pops = st_read('data/raw/domain/CHNK_SPSU_All.shp') %>%
+  st_transform(crs = st_crs(chnk_domain))
+
+lem_cap = chnk_pops %>%
+  filter(grepl('Lemhi', NWR_NAME)) %>%
+  calc_watershed_cap(wtsd_polygon = .,
+                     spp_range = chnk_domain,
+                     capacity_pts = capacity_pts,
+                     by_stream = T)
+lem_cap
+
 ```
 
 
