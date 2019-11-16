@@ -575,6 +575,7 @@ use_data(spawn_rec_params,
 #-----------------------------------
 # try making a plot
 #-----------------------------------
+data("spawn_rec_params")
 # pull out estimates of capacity
 cap_tbl = spawn_rec_params %>%
   select(Population, form, est, se, cv) %>%
