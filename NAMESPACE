@@ -2,11 +2,13 @@
 
 export(calc_watershed_cap)
 export(estimate_MIC)
+export(get_flowlines)
 export(impute_missing_data)
 export(plot_partial_dependence)
 import(dplyr)
 import(forcats)
 import(ggplot2)
+import(httr)
 import(maptools)
 import(minerva)
 import(missForest)
