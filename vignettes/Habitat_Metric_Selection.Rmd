@@ -104,9 +104,14 @@ mine_res = mine_df %>%
   map_df(.id = 'model',
          .f = function(x) {
            
-           estimate_MIC(data = x,
+           mic_df = try(estimate_MIC(data = x,
                         covars = poss_hab_mets,
-                        response = 'fish_dens') %>%
+                        response = 'fish_dens'))
+           if(class(mic_df) == 'try-error') {
+             return(NULL)
+           }
+           
+           mic_df %>%
              left_join(hab_dict_2017 %>%
                          select(Metric = ShortName,
                                 MetricCategory,
@@ -164,8 +169,8 @@ mine_lfstg_p = mine_plot_df %>%
            title = unique(x$Lifestage))
   })
   
-mine_lfstg_p[[1]]
-mine_lfstg_p[[2]]
+# mine_lfstg_p[[1]]
+# mine_lfstg_p[[2]]
 
 
 mine_spp_lfstg_p = mine_plot_df %>%
@@ -210,8 +215,7 @@ sel_mets = mine_plot_df %>%
   unique() %>%
   as.character()
 
-
-corr_mat = avgHab_v2 %>%
+corr_mat = champ_site_2011_17_avg %>%
   select(one_of(sel_mets)) %>%
   corrr::correlate()
 
@@ -220,7 +224,7 @@ corr_mat %>%
   shave(upper = T) %>% 
   stretch() %>%
   filter(!is.na(r)) %>%
-  arrange(desc(abs(r)))
+  arrange(desc(abs(r))) %>%
   filter(abs(r) > 0.5)
 
 corr_mat %>%
