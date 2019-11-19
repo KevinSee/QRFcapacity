@@ -39,9 +39,9 @@ library(captioner)
 tab_nums = captioner(prefix = 'Table')
 fig_nums = captioner()
 
-
 # load packages for analysis
 library(QRFcapacity)
+library(maptools)
 library(tidyverse)
 library(janitor)
 library(magrittr)
@@ -50,6 +50,7 @@ library(sf)
 library(quantregForest)
 library(survey)
 library(MuMIn)
+
 
 # set default theme for ggplot
 theme_set(theme_bw())
@@ -98,6 +99,8 @@ hab_avg %<>%
 
 # Introduction
 
+We used quantile random forests (@Meinshausen2006) for this investigation because random forests allow for non-linear fish-habitat relationships, naturally incorporate any correlation or interactions between habitat covariates, and allow us to examine a predicted quantile (@Cade2003), rather than only the mean of the predicted response. 
+
 # Data
 
 The fish data was collected by various agencies during the summer low-flow season at many of the same sites surveyed using the CHaMP protocol. Survey methods included mark-recapture, three-pass removal sampling, two-pass removal sampling, and single-pass electrofishing, as well as snorkeling. We estimated juvenile fish abundance (and density) at all sites where fish survey data were available. Three-pass removal estimates used the Carle-Strub estimator (@Carle1978), following advice from @Hedger2013. Two-pass removal estimates used the estimator described by @Seber2002. Mark-recapture estimates used Chapman’s modified Lincoln-Peterson estimator (@Chapman1951) and were deemed valid if they met the criteria described in @Robson1964. These estimates were made using the `removal` and `mrClosed` functions from the FSA package (@Ogle2017) in R software (@Rsoftware2015). Snorkel counts were transformed to abundance estimates using paired snorkel-electrofishing sites to calibrate snorkel counts. 
@@ -107,7 +110,7 @@ Many sites were sampled in multiple years. To avoid any chance of pseudo-replica
 ***All sites fell within the range of steelhead, but many of them were outside the range of spring/summer Chinook salmon. However, defining the range of sp/su Chinook is tricky, and it is unclear if the reported data for Chinook salmon includes only sites considered with the range of Chinook, or if we should exclude data from some sites based on our best understanding of the species' range. Currently, we are excluding sites outside the Chinook domain. We created our own list of sites in the John Day that were within a Chinook domain, based on which sites Chinook were found at some point (and downstream of those). ***
 
 ```{r, eval = T}
-library(maptools)
+# library(maptools)
 data("chnk_domain")
 
 # which sites were sampled for Chinook? 
@@ -136,7 +139,8 @@ chnk_sites = chnk_samps %>%
   as('sf') %>%
   select(-nearest_line_id, -snap_dist) %>%
   # include some sites in the John Day where Chinook were found (or seemed to be close to sites where Chinook were found)
-  rbind(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp') %>%
+  rbind(st_read('../data/raw/domain/Chnk_JohnDay_TrueObs.shp',
+                quiet = T) %>%
           st_transform(st_crs(chnk_domain)) %>%
           select(-in_range))
 
@@ -192,7 +196,7 @@ We used the Maximal Information-Based Nonparametric Exploration (MINE) class of 
 #   pull(ShortName)
 
 # pull from which CHaMP metrics could be generated from DASH
-poss_hab_mets = read_csv('data/prepped/hab_dict_champ_dash.csv') %>%
+poss_hab_mets = read_csv('../data/prepped/hab_dict_champ_dash.csv') %>%
   select(-starts_with('X')) %>%
   filter(DASH_gen) %>%
   filter(MetricCategory != 'Categorical') %>%
@@ -258,20 +262,23 @@ corr_mat %>%
   shave(upper = T) %>% 
   stretch() %>%
   filter(!is.na(r)) %>%
-  filter(abs(r) > 0.5)
+  filter(abs(r) > 0.5) %>%
+  kable()
 
-corr_mat %>%
+corr_p1 = corr_mat %>%
   # rearrange(absolute = F) %>%
   shave(upper = T) %>% 
   rplot(legend = T,
         print_cor = T)
 
-network_plot(corr_mat)
+corr_p2 = network_plot(corr_mat)
   
 ```
 
 
 ## Results
+
+The MINE results are shown in the plots below.
 
 ```{r mine_plot}
 # make a plot of MIC values for all species
@@ -358,6 +365,17 @@ sel_hab_mets = crossing(Species = c('Chinook',
 
 ```
 
+```{r}
+sel_hab_mets %>%
+  select(ShortName = Metric) %>%
+  distinct() %>%
+  left_join(hab_dict) %>%
+  select(Catg = MetricCategory, 
+         Metric = Name, 
+         Description = DescriptiveText) %>%
+  pander()
+```
+
 
 # Fit QRF Models
 
@@ -390,7 +408,7 @@ qrf_mod_df = fish_hab %>%
 
 ```
 
-When fitting the QRF model, we would like to accomodate actual 0's so we offset the density by a small positive value. We then log-transformed the resulting fish density, and used that as the response.
+When fitting the QRF model, we would like to accomodate actual 0's so we offset the density by a small positive value. We then log-transformed the resulting fish density, and used that as the response. We then fit a random forest model using the `quantregForest` package (-@Meinshausen2012). 
 
 ```{r fit_qrf_model}
 # set the density offset (to accommodate 0z)
@@ -423,6 +441,8 @@ qrf_mods = qrf_mod_df %>%
 
 ```
 
+The relative importance of each covariate for each species' model is shown below.
+
 ```{r relative_importance plot}
 
 rel_imp_p = qrf_mods %>%
@@ -453,6 +473,8 @@ ggpubr::ggarrange(plotlist = rel_imp_p,
 
 ```
 
+We then created partial dependence plots for each covariate, which show the marginal effect of each covariate on predicted capacities. These plots are made by holding all other metrics fixed at their average value, and allow the one metric to vary across it's range, while making predictions using the random forest model at many points along that gradient. We used the 90th quantile of the predictions at each point as a proxy for carrying capacity
+
 ```{r partial_dependence_plots}
 # for Chinook
 chnk_pdp = plot_partial_dependence(qrf_mods[[1]],
@@ -481,6 +503,12 @@ sthd_pdp
 
 
 # Predict at Habitat Sites
+
+## Methods
+
+Direct estimates of capacity can be made at all the sites for which we have habitat data with the selected QRF covariates. At each site, the random forest model produces a number (e.g. 1000) of predictions of fish density based on those covariates. As a proxy for carrying capacity, we choose to use the 90th quantile of those predictions (@Cade2003). 
+
+## Results
 
 ```{r}
 # what quantile is a proxy for capacity?
@@ -516,16 +544,14 @@ qrf_mod_df %>%
 ```
 
 
-
-## Methods
-
-## Results
-
 # Extrapolation to Other Sites
 
 To estimate watershed capacities, we used QRF predictions at all the sites where we had habitat data, and used those as the response variable in an extrapolation model. The covariates for this model are globally available attributes (GAAs) which are attached to every master sample point.
 
 ```{r}
+# what quantile is a proxy for capacity?
+pred_quant = 0.9
+
 covars = unique(sel_hab_mets$Metric)
 hab_impute = hab_avg %>%
   mutate_at(vars(Watershed, Channel_Type),
@@ -567,14 +593,17 @@ pred_hab_sites_chnk = pred_hab_sites %>%
   as_tibble() %>%
   select(-nearest_line_id, -snap_dist, -geometry) %>%
   # add sites in the John Day
-  bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp') %>%
+  bind_rows(st_read('../data/raw/domain/Chnk_JohnDay_TrueObs.shp',
+                    quiet = T) %>%
               as_tibble() %>%
               select(Site) %>%
               inner_join(pred_hab_sites))
 
 ```
 
-```{r}
+Because most of our habitat data came from CHaMP sites, which were selected through a generalized random tesselation stratified (GRTS) sample design (@Stevens2003), we wanted to incorporate the design weights for each CHaMP site with a predicted carrying capacity. 
+
+```{r survey_design_strata}
 #----------------------------------------
 # pull in survey design related data
 #----------------------------------------
@@ -605,7 +634,7 @@ site_strata = pred_hab_sites_chnk %>%
   select(-site_num)
 
 # read in data from the CHaMP frame
-champ_frame_df = read_csv('data/prepped/champ_frame_data.csv') %>%
+champ_frame_df = read_csv('../data/prepped/champ_frame_data.csv') %>%
   mutate(Target2014 = ifelse(is.na(AStrat2014), 'Non-Target', Target2014)) %>%
   mutate(AStrat2014 = ifelse(AStrat2014 == 'Entiat IMW', paste('EntiatIMW', GeoRchIMW, sep = '_'), AStrat2014)) %>%
   filter(Target2014 == 'Target') %>%
@@ -673,22 +702,21 @@ strata_test = frame_strata %>%
                            as.integer(0),
                            n_sites))
 
-# what frame strata don't have any sites in them?
-strata_test %>%
-  filter(n_sites == 0,
-         !is.na(tot_length_km)) %>%
-  arrange(Watershed, strata) %>%
-  as.data.frame()
+# # what frame strata don't have any sites in them?
+# strata_test %>%
+#   filter(n_sites == 0,
+#          !is.na(tot_length_km)) %>%
+#   arrange(Watershed, strata) %>%
+#   as.data.frame()
 
+# # what strata that we have sites for are not in the frame strata?
+# strata_test %>%
+#   filter(n_sites > 0,
+#          (is.na(tot_length_km) |
+#             tot_length_km == 0)) %>%
+#   as.data.frame()
 
-# what strata that we have sites for are not in the frame strata?
-strata_test %>%
-  filter(n_sites > 0,
-         (is.na(tot_length_km) |
-            tot_length_km == 0)) %>%
-  as.data.frame()
-
-
+# how much of each watershed is not accounted for with current sites / strata?
 strata_test %>%
   group_by(Watershed) %>%
   summarise_at(vars(tot_length_km),
@@ -705,12 +733,16 @@ strata_test %>%
   mutate(perc_missing = missing_length / tot_length_km) %>%
   mutate_at(vars(perc_missing),
             list(~ if_else(is.na(.), 0, .))) %>%
-  arrange(desc(perc_missing))
+  arrange(desc(perc_missing)) %>%
+  pander()
 
 
 
 ```
 
+We then selected a subset of the globally available attributes (GAAs) to use as extrapolation covariates. This was based on minimizing the correlations between the covariates. We also acknowlegdged which prediction sites had GAAs outside the range of values for the CHaMP sites.
+
+We use the log of predicted capacity wherever we could make those predictions as the response variable, and this group of selected GAAs as the covariates. We then fit a linear model that incorporated the survey design weights by using the `survey` pacakge (-@Lumley2014) in R. We fit two main models, one that included CHaMP watershed as a covariate, and one that did not. The former was used to make predictions within all CHaMP watersheds where we had QRF predictions of carrying capacity. The latter was used at all other master sample points. 
 
 ```{r}
 data(gaa)
@@ -792,7 +824,7 @@ corr_df %>%
   arrange(desc(abs(r))) %>%
   filter(abs(r) >= 0.5)
 
-corr_df %>%
+gaa_corr_p1 = corr_df %>%
   shave(upper = T) %>%
   rplot(legend = T,
         colors = c('blue', 'white', 'indianred2'),
@@ -804,7 +836,7 @@ corr_mat = corr_df %>%
 rownames(corr_mat) = corr_df$rowname
 
 library(ggcorrplot)
-ggcorrplot(corr_mat,
+gaa_corr_p2 = ggcorrplot(corr_mat,
            lab = T,
            lab_size = 2,
            hc.order = T,
@@ -919,7 +951,7 @@ gaa_pred = gaa_all %>%
 
 ```
 
-```{r}
+```{r with_model_weights}
 # calculate adjusted weights for all predicted QRF capacity sites
 mod_data_weights = mod_data %>%
   left_join(site_strata) %>%
@@ -930,13 +962,6 @@ mod_data_weights = mod_data %>%
   ungroup() %>%
   mutate(adj_weight = site_weight / sum_weights)
 
-# split by response: per meter or per meter sq
-mod_data_list = mod_data_weights %>%
-  gather(response, qrf_cap, matches('per_m')) %>%
-  select(-(n_sites:sum_weights)) %>%
-  split(list(.$response))
-
-
 #-------------------------------------------------------------
 # Set up the survey design.
 
@@ -946,20 +971,10 @@ mod_data_list = mod_data_weights %>%
 # this centers strata with only 1 site to the sample grand mean; this is conservative
 options(survey.lonely.psu = 'adjust')
 
-surv_design = mod_data_list %>%
-  map(.f = function(x) {
-    svydesign(id = ~ 1,
-              data = x,
-              # strata = ~ Watershed,
-              strata = ~ strata,
-              weights = ~ adj_weight)
-  })
-
-```
-
-```{r with_model_weights}
+# extrapolation model formula
 full_form = as.formula(paste('log(qrf_cap) ~ -1 + (', paste(gaa_covars, collapse = ' + '), ')'))
 
+# fit various models
 model_svy_df = mod_data_weights %>%
   gather(response, qrf_cap, matches('per_m')) %>%
   select(-(n_sites:sum_weights)) %>%
@@ -986,7 +1001,7 @@ model_svy_df = mod_data_weights %>%
 
 # predictions within CHaMP watersheds, using the model that includes CHaMPsheds as a covariate
 y = gaa_pred %>%
-  filter(CHaMPsheds %in% unique(model_df$data[[1]]$Watershed)) %>%
+  filter(CHaMPsheds %in% unique(model_svy_df$data[[1]]$Watershed)) %>%
   select(Site, CHaMPsheds, one_of(gaa_covars)) %>%
   na.omit() %>%
   left_join(gaa_pred) %>%
@@ -1055,7 +1070,7 @@ all_preds = y %>%
               mutate(model = 'non-CHaMP'))
 
 # quick comparison of capacity predicitons with both models
-all_preds %>%
+comp_pred_p = all_preds %>%
   filter(Site %in% Site[duplicated(Site)]) %>%
   select(Site, CHaMPsheds, Channel_Type, model, chnk_per_m, chnk_per_m2) %>%
   arrange(CHaMPsheds, Site, model) %>%
@@ -1078,8 +1093,14 @@ all_preds %<>%
 
 
 ```{r no_model_weights, eval = F}
+# split by response: per meter or per meter sq
+# mod_data_list = mod_data_weights %>%
+#   gather(response, qrf_cap, matches('per_m')) %>%
+#   select(-(n_sites:sum_weights)) %>%
+#   split(list(.$response))
 
-# full_form = as.formula(paste('log(qrf_cap) ~ -1 + (', paste(gaa_covars, collapse = ' + '), ')'))
+# extrapolation model formula
+full_form = as.formula(paste('log(qrf_cap) ~ -1 + (', paste(gaa_covars, collapse = ' + '), ')'))
 # extrap_mods = mod_data_list %>%
 #   map(.f = function(x) {
 #     mod_full = lm(full_form,
@@ -1218,7 +1239,7 @@ all_preds %<>%
 
 ```
 
-```{r}
+```{r, eval = F}
 wtsd = 'Lemhi'
 wtsd = 'South Fork Salmon'
 wtsd = 'Lower Snake-Tucannon'
@@ -1242,12 +1263,14 @@ y %>%
 
 # Validation
 
-We can validate Chinook summer parr estimates of capacity with spawner-recruit data from a number of watersheds.
+We can validate Chinook summer parr estimates of capacity with spawner-recruit data from a number of watersheds. Morgan Bond at the Northwest Fisheries Science Center helped compile this data set with help from a variety of agencies and organizations including WDFW, ODFW, IDFG, USFS, BioAnalysts, Biomark, Nez Perce, etc. Most of the parr (recruits) data comes from rotary screw traps (with the exception of the Chiwawa, where snorkel surveys of parr were used to estimate parr directly). Estimates of parr-to-presmolt and parr-to-smolt survival were used to transform estimates of fall and spring emigrants to estimates of equivalent summer parr. Spawner estimates came from either redd counts or direct estimates of spawners. 
+
+From this dataset, we fit several spawner-recruit curves to each location, including Beverton-Holt, Ricker and hockey stick. The data at some locations led to some curves not fitting (no model convergence). Each of these spawner-recruit curves also generated an estimate of summer parr carrying capacity, which we can then compare to QRF estimates. We want to emphasize that the data for the spawner-recruit curves and the QRF estimates are completely independent, and therefore provide a good way to validate the QRF estimates of carrying capacity.
 
 ```{r}
 data("chnk_domain")
 # read in trap polygons
-trap_poly = read_sf('data/raw/spawn_rec/trap_regions.shp') %>%
+trap_poly = read_sf('../data/raw/spawn_rec/trap_regions.shp') %>%
   # st_transform(crs = 5070)
   st_transform(st_crs(chnk_domain)) %>%
   select(-Id)
@@ -1271,10 +1294,12 @@ qrf_caps = trap_poly %>%
                        'Upper Grande Ronde R.' ='Upper Grande Ronde River',
                        'Toucannon R.' = 'Tucannon River'))
 
-qrf_caps %>%
-  filter(is.na(tot_cap))
+# qrf_caps %>%
+#   filter(is.na(tot_cap))
 
 ```
+
+We can estimate a Beverton-Holt spawner-recruit curve with the capacity parameter fixed to the QRF estimate of capacity for that watershed.
 
 ```{r}
 library(FSA)
@@ -1338,8 +1363,6 @@ qrf_params = spawn_recr_data %>%
 
 ```
 
-
-
 ```{r}
 data("spawn_rec_params")
 
@@ -1365,7 +1388,7 @@ cap_tbl %<>%
 # pull out fitted spawner recruit curves
 curve_fits = spawn_rec_params %>%
   select(Population, form, preds) %>%
-  unnest() %>%
+  unnest(cols = "preds") %>%
   arrange(Population, form)
 
 # define polygons for uncertainty shading
@@ -1378,7 +1401,7 @@ cap_poly = cap_tbl %>%
          uprCI = if_else(uprCI > plot_max, plot_max, uprCI)) %>%
   left_join(spawn_rec_params %>%
               select(Population, data) %>%
-              unnest() %>%
+              unnest(cols = "data") %>%
               group_by(Population) %>%
               summarise_at(vars(Spawners, Parr),
                            list(min = min,
@@ -1401,7 +1424,7 @@ spawn_rec_comp_p = spawn_rec_params %>%
   # filter out a couple populations with super poor fits
   filter(Population %in% keep_wtsds) %>%
   select(Population, data) %>%
-  unnest() %>%
+  unnest(cols = "data") %>%
   distinct() %>%
   ggplot(aes(x = Spawners,
              y = Parr)) +
@@ -1449,16 +1472,73 @@ spawn_rec_comp_p = spawn_rec_params %>%
                     name = 'Model') +
   labs(shape = 'Spawner\nType')
 
+dodge_width = 0.5
+sr_est_comp_p = cap_tbl %>%
+  filter(Population %in% keep_wtsds) %>%
+  mutate(lwrCI = est + qnorm(0.025) * se,
+         lwrCI = if_else(lwrCI <= 0, 1, lwrCI),
+         uprCI = est + qnorm(0.975) * se,
+         uprCI = if_else(uprCI > 1.3e6, 1.3e6, uprCI)) %>%
+  mutate(type = if_else(form == 'QRF',
+                        'QRF', 'S-R')) %>%
+  ggplot(aes(x = Population,
+             y = est,
+             color = form,
+             group = form)) +
+  geom_errorbar(aes(ymin = lwrCI,
+                    ymax = uprCI),
+                position = position_dodge(width = dodge_width),
+                width = 0) +
+  geom_point(aes(shape = type),
+             fill = 'white',
+             size = 2,
+             position = position_dodge(width = dodge_width)) +
+  scale_shape_manual(values = c('QRF' = 19,
+                                'S-R' = 21),
+                     name = 'Type') + 
+  scale_color_brewer(palette = 'Set1',
+                     breaks = c('QRF',
+                                'BevertonHolt',
+                                'Ricker',
+                                'Hockey'),
+                     labels = c('QRF',
+                                'Beverton Holt',
+                                'Ricker',
+                                'Hockey Stick'),
+                     name = 'Model') +
+  # scale_y_continuous(trans = 'log') +
+  # theme(axis.text.x = element_text(angle = 90),
+  #       axis.text.y = element_blank()) +
+  theme(axis.text = element_blank()) +
+  facet_wrap(~ Population,
+             scales = 'free') +
+  labs(y = 'Capacity Estimate',
+       x = NULL)
+
+
 ```
+
+We then plotted the data, as well as the fitted curves, including the one which uses QRF estimates of capacity as one of the parameters, on the same plot, to compare the various estimates.
 
 ```{r}
 spawn_rec_comp_p
 ```
 
+```{r}
+sr_est_comp_p
+```
+
+
 # Watershed Capacity Estimates
 
+We can use the predictions of capacity at all master sample points to estimate carrying capacity at the watershed level. To do so, we join the points to a stream layer, and estimate the average capcity (fish per meter) from all the points on each stream. We then multiply that average by the length of the stream. Finally, we can add the capacities of all the streams within a watershed to determine the overall carrying capacity. 
+
+We can also map those capacities on the landscape. For mapping, we have found that displaying the capacity in units of fish per m$^2$ is more intuitive for the viewer to interpret. 
+
+## Tables
 ```{r}
-chnk_pops = st_read('data/raw/domain/CHNK_SPSU_All.shp') %>%
+chnk_pops = st_read('../data/raw/domain/CHNK_SPSU_All.shp',
+                    quiet = T) %>%
   st_transform(crs = st_crs(chnk_domain))
 
 lem_cap = chnk_pops %>%
@@ -1467,7 +1547,54 @@ lem_cap = chnk_pops %>%
                      spp_range = chnk_domain,
                      capacity_pts = capacity_pts,
                      by_stream = T)
-lem_cap
+
+lem_cap %>%
+  pander()
+
+```
+
+## Maps
+
+```{r}
+# define watershed polygon(s)
+# my_poly = chnk_pops %>%
+#   filter(grepl('Minam', NWR_NAME) |
+#            grepl('Grande Ronde', NWR_NAME))
+
+my_poly = chnk_pops %>%
+  filter(grepl('Lemhi', NWR_NAME))
+
+my_lines = get_flowlines(stream_order = 2,
+                         wtsd_polygon = my_poly)
+
+# grab all prediction points in watershed polygon
+my_pts = all_preds %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(st_crs(my_poly)) %>%
+  st_intersection(my_poly)
+
+# clip to Chinook range
+my_pts %<>%
+  st_transform(st_crs(chnk_domain)) %>%
+  as_Spatial() %>%
+  maptools::snapPointsToLines(lines = chnk_domain %>%
+                                as_Spatial,
+                              maxDist = 500) %>%
+  as('sf')
+
+# make map
+ggplot() +
+  geom_sf(data = my_poly,
+          fill = 'gray') +
+  geom_sf(data = my_lines,
+          color = 'blue') +
+  geom_sf(data = my_pts,
+          aes(color = chnk_per_m2)) +
+  scale_color_viridis_c(direction = -1) +
+  theme_bw() +
+  theme(axis.text = element_blank()) +
+  labs(color = expression(Parr / m^2))
 
 ```
 
