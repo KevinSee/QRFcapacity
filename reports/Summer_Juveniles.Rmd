@@ -3,6 +3,11 @@ title: "Summer Juvenile Fish"
 author: "Kevin See^[Biomark Inc.]"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: 
+  html_document:
+    toc: yes
+    toc_depth: 1
+    theme: cerulean
+    toc_float: yes
   rmarkdown::html_vignette:
     fig_caption: yes
     fig_height: 8
@@ -11,8 +16,8 @@ output:
     toc_depth: 1
 vignette: >
   %\VignetteIndexEntry{Summer_Juveniles}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
 csl: /Users/kevin/Dropbox/Bibliography/StyleFiles/ecology.csl
 bibliography:
 - /Users/kevin/Dropbox/Bibliography/Research.bib
@@ -951,7 +956,7 @@ gaa_pred = gaa_all %>%
 
 ```
 
-```{r with_model_weights}
+```{r with_model_weights, eval = T}
 # calculate adjusted weights for all predicted QRF capacity sites
 mod_data_weights = mod_data %>%
   left_join(site_strata) %>%
@@ -1093,12 +1098,6 @@ all_preds %<>%
 
 
 ```{r no_model_weights, eval = F}
-# split by response: per meter or per meter sq
-# mod_data_list = mod_data_weights %>%
-#   gather(response, qrf_cap, matches('per_m')) %>%
-#   select(-(n_sites:sum_weights)) %>%
-#   split(list(.$response))
-
 # extrapolation model formula
 full_form = as.formula(paste('log(qrf_cap) ~ -1 + (', paste(gaa_covars, collapse = ' + '), ')'))
 # extrap_mods = mod_data_list %>%
@@ -1218,7 +1217,7 @@ all_preds = y %>%
               mutate(model = 'non-CHaMP'))
 
 # quick comparison of capacity predicitons with both models
-all_preds %>%
+comp_pred_p = all_preds %>%
   filter(Site %in% Site[duplicated(Site)]) %>%
   select(Site, CHaMPsheds, Channel_Type, model, chnk_per_m, chnk_per_m2) %>%
   arrange(CHaMPsheds, Site, model) %>%
