@@ -1,13 +1,15 @@
 # Author: Mike Ackerman & Kevin See
 # Purpose: Examine abundance/densities and explore preferred or target habitat conditions in identified high density areas
 # Created: 10/24/2019
-# Last Modified: 10/24/2019
+# Last Modified: 11/21/2019
 # Notes: 
+rm(list = ls())
 
 #-----------------------------------------------------------------
 # load needed libraries
 library(tidyverse)
 library(ggplot2)
+library(janitor)
 
 #-----------------------------------------------------------------
 # load data
@@ -16,48 +18,40 @@ data("fh_sum_champ_2017")   # summer juvenile parr paired fish/CHaMP habitat dat
 data("fh_win_champ_2017")   # winter juvenile presmolts paired fish/CHaMP habitat data through 2017
 data("fh_redds_champ_2017") # paired redd/CHaMP habitat data through 2017
 
-# juvenile Chinook salmon parr
-ch_sum_champ_2017 = fh_sum_champ_2017 %>%
+# The fish-habitat summer CHaMP data frame contains data for chinook and steelhead. Let's just look at Chinook for now.
+chnk_sum_df = fh_sum_champ_2017 %>%
   filter(Species == 'Chinook')
 
-#dens_outlier_threshhold = 20
-ch_sum_dens = ch_sum_champ_2017 %>%
-  select(Year, Watershed, N, SE, fish_dens, Area_Wet) %>%
-  filter(fish_dens > 0) %>%
-  mutate(log_fish_dens = log(fish_dens + 0.005))
-  #filter(fish_dens > dens_outlier_threshhold)
+# first, let's just examine fish abundance and density information
+chnk_sum_n = chnk_sum_df %>%
+  select(Year, Watershed, N, fish_dens, Area_Wet) %>% # fish_dens = linear fish densities
+  filter(fish_dens > 0) %>% # only use sites where fish were observed
+  mutate(fish_dens_m2 = N / Area_Wet, # areal fish density (fish/m2) 
+         log_fish_dens = log(fish_dens + 0.005),
+         log_fish_dens_m2 = log(fish_dens_m2 + 0.005))
 
-# calculate quantiles of log(fish densities) after removing 0s
-ch_dens_quants = quantile(ch_sum_dens$log_fish_dens, probs = c(0, 0.2, 0.4, 0.6, 0.8, 1))
+# quartiles of linear and areal fish density estimates
+chnk_sum_qrtl_lin  = quantile(chnk_sum_n$log_fish_dens, probs = c(0, 0.25, 0.50, 0.75, 1))
+chnk_sum_qrtl_area = quantile(chnk_sum_n$log_fish_dens_m2, probs = c(0, 0.25, 0.50, 0.75, 1), na.rm = T) 
 
-# plot log transformed fish densities with quantiles
-ch_sum_p = ggplot(ch_sum_dens, aes(x = log_fish_dens, fill = Watershed)) +
-  geom_histogram(bins = 50) +
-  geom_vline(xintercept = ch_dens_quants) +
-  theme_classic() +
-  labs(x = 'Juvenile Chinook Density (fish/m)',
+# plot log transformed fish densities with quartiles
+chnk_sum_p = chnk_sum_n %>%
+  ggplot() +
+  geom_histogram(aes(x = log_fish_dens, fill = Watershed), bins = 50) +
+  geom_vline(xintercept = chnk_sum_qrtl_lin, color = 'blue') +
+  theme_bw() +
+  labs(x = 'Juvenile Chinook Density (fish/m',
        y = 'Frequency') +
   theme(axis.text.x = element_text(color = 'black', size = 10),
         axis.text.y = element_text(color = 'black', size = 10)) 
-ch_sum_p
+chnk_sum_p
 
-ch_df = ch_sum_champ_2017 %>%
-  filter(Watershed == "Lemhi") %>%
-  filter(fish_dens > 0) %>%
-  mutate(log_fish_dens = log(fish_dens + 0.005),
-         dens_cat = cut_number(log_fish_dens, 6,
-                               labels = c('very low', 'low', 'mod low', 'mod high', 'high', 'very high'))) %>%
-  mutate(plot_cat = recode(dens_cat, 'very low' = 'low', 
-                                     'low' = 'low',
-                                     'mod low' = 'low',
-                                     'mod high' = 'high',
-                                     'high' = 'high',
-                                     'very high' = 'high')) %>%
-  filter(plot_cat != 'mod') %>%
+# reduce chnk_sum_df in preparation for evaluation
+chnk_sum_df = chnk_sum_df %>%
   select(Watershed, Year, StreamName, Channel_Type, Lat, Lon,          # site
-         N, fish_dens, log_fish_dens, dens_cat, plot_cat,              # fish abundance/density
+         N, fish_dens,                                                 # fish abundance/density
          FishSiteLength, FishWettedArea, CUMDRAINAG, MeanU, Q,         # size
-         WetWdth_Int, WetBraid, WetWdth_Avg, DpthThlwg_Avg,
+         WetWdth_Int, WetBraid, WetWdth_Avg, DpthThlwg_Avg, Area_Wet,
          DistPrin1, NatPrin1, NatPrin2,                                # PCA
          SlowWater_Pct, SlowWater_Freq, FstTurb_Pct, FstTurb_Freq,     # channel units
          FstNT_Pct, FstNT_Freq, CU_Freq,
@@ -73,43 +67,86 @@ ch_df = ch_sum_champ_2017 %>%
          LWFreq_Wet, 
          Ucut_Area,  UcutLgth_Pct, UcutArea_Pct,                       # undercuts
          FishCovLW, FishCovTVeg, FishCovArt, FishCovNone, FishCovAqVeg,# fish cover
-         FishCovTotal) 
+         FishCovTotal) %>%
+  mutate(fish_dens_m2 = N / Area_Wet, # areal fish density (fish/m2) 
+         log_fish_dens = log(fish_dens + 0.005),
+         log_fish_dens_m2 = log(fish_dens_m2 + 0.005)) %>%
+  filter(fish_dens > 0)
 
+# now consider parsing data by Watershed, Channel_Type, others?
+# by watershed
+wtr = unique(chnk_sum_df$Watershed)
+for(w in wtr) {
+tmp = filter(chnk_sum_df, Watershed == as.character(w)) %>%
+  mutate(qrtl = cut_number(log_fish_dens, n = 4, labels = c('Q1','Q2','Q3','Q4')))
+assign(paste('chnk_sum_', make_clean_names(w), sep = ''), tmp)
+}
+
+# by channel unit type
+cht = unique(chnk_sum_df$Channel_Type)
+cht = cht[!is.na(cht)]
+for(c in cht) {
+tmp = filter(chnk_sum_df, Channel_Type == as.character(c)) %>%
+  mutate(qrtl = cut_number(log_fish_dens, n = 4, labels = c('Q1','Q2','Q3','Q4')))
+assign(paste('chnk_sum_', make_clean_names(c), sep = ''), tmp)
+}
+
+#-----------------------------------------------------------------
 # lists of metric categories
-size = c("FishSiteLength", "FishWettedArea", "CUMDRAINAG", "MeanU", "Q", "WetWdth_Int", "WetBraid", "WetWdth_Avg", 
-         "DpthThlwg_Avg")
-pca  = c("DistPrin1", "NatPrin1", "NatPrin2")
-channel_units = c("SlowWater_Pct", "SlowWater_Freq", "FstTurb_Pct", "FstTurb_Freq", "FstNT_Pct", "FstNT_Freq", 
-                  "CU_Freq")
-complexity = c("Grad", "Sin", "DetrendElev_SD", "DpthThlwg_UF_CV", "DpthWet_SD",  "WetWdth_CV", 
-               "WetWDRat_Avg", "PoolResidDpth")
-side_channel = c("SC_Area_Pct", "WetSC_Pct", "SCSm_Freq")
-substrate = c("SubD16", "SubD50", "SubD84", "SubEstGrvl", "SubEstSandFines", "SubEstBldr", "SubEstCbl")
-other = c("Cond")
-riparian_cover = c("RipCovBigTree", "RipCovConif", "RipCovNonWood", "RipCovUstory", "RipCovWood", "RipCovCanNone", 
-                   "RipCovUstoryNone", "RipCovGrndNone")
-large_wood = c("LWVol_Wet", "LWVol_WetSlow", "LWVol_WetFstTurb", "LWVol_WetFstNT", "LWFreq_Wet")
-undercuts = c("Ucut_Area",  "UcutLgth_Pct", "UcutArea_Pct")
-fish_cover = c("FishCovLW", "FishCovTVeg", "FishCovArt", "FishCovNone", "FishCovAqVeg", "FishCovTotal")
-         
-# start plotting
-hab_p = ch_df %>%
-  select(plot_cat, one_of(size)) %>%
-  gather(variable, value, -plot_cat) %>%
-  ggplot(aes(x = value, 
-                   color = plot_cat,
-                   fill = plot_cat)) +
-  # geom_histogram() +
-  geom_density(alpha = 0.3) +
-  theme_classic() +
-  theme(axis.text.x = element_text(color = 'black', size = 10),
-        axis.text.y = element_text(color = 'black', size = 10)) +
-  facet_wrap(~ variable,
-             scales = 'free')
-hab_p
+#-----------------------------------------------------------------
+# lists of metric categories
+size = c("FishSiteLength", "FishWettedArea", "CUMDRAINAG", "MeanU", 
+         "Q", "WetWdth_Int", "WetBraid", "WetWdth_Avg", "DpthThlwg_Avg")
 
-plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, other, riparian_cover, large_wood, undercuts, fish_cover) %>%
-  # rlang::set_names(nm = c('size', 'pca', 'channel_unit', 'complexity')) %>%
+pca  = c("DistPrin1", "NatPrin1", "NatPrin2")
+
+channel_units = c("SlowWater_Pct", "SlowWater_Freq", "FstTurb_Pct", "FstTurb_Freq", "FstNT_Pct", "FstNT_Freq", "CU_Freq")
+
+complexity = c("Grad", "Sin", "DetrendElev_SD", "DpthThlwg_UF_CV", "DpthWet_SD",  
+               "WetWdth_CV", "WetWDRat_Avg", "PoolResidDpth")
+
+side_channel = c("SC_Area_Pct", "WetSC_Pct", "SCSm_Freq")
+
+substrate = c("SubD16", "SubD50", "SubD84", "SubEstGrvl", "SubEstSandFines", "SubEstBldr", "SubEstCbl")
+
+other = c("Cond")
+
+riparian_cover = c("RipCovBigTree", "RipCovConif", "RipCovNonWood", "RipCovUstory", 
+                   "RipCovWood", "RipCovCanNone", "RipCovUstoryNone", "RipCovGrndNone")
+
+large_wood = c("LWVol_Wet", "LWVol_WetSlow", "LWVol_WetFstTurb", "LWVol_WetFstNT", "LWFreq_Wet")
+
+undercuts = c("Ucut_Area",  "UcutLgth_Pct", "UcutArea_Pct")
+
+fish_cover = c("FishCovLW", "FishCovTVeg", "FishCovArt", "FishCovNone", "FishCovAqVeg", "FishCovTotal")
+
+# a list of lists
+plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, 
+                 other, riparian_cover, large_wood, undercuts, fish_cover)
+# END LISTS
+
+#-----------------------------------------------------------------
+# Begin fish-habitat plots
+#-----------------------------------------------------------------
+
+# Mike's Way
+fh_plot = function(data, metrics_list) {
+  data %>%
+    select(qrtl, one_of(metrics_list)) %>%
+    gather(variable, value, -qrtl) %>%
+    ggplot(aes(x = value,
+               color = qrtl,
+               fill = qrtl)) +
+    geom_density(alpha = 0.3) +
+    theme_bw() +
+    facet_wrap(~ variable,
+               scales = 'free')
+}
+fh_plot(chnk_sum_lemhi, size)
+
+# Kevin's Way
+plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, 
+                 other, riparian_cover, large_wood, undercuts, fish_cover) %>%
   map(.f = function(x) {
     ch_df %>%
       select(plot_cat, one_of(x)) %>%
@@ -125,5 +162,4 @@ plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, 
       facet_wrap(~ variable,
                  scales = 'free')
   })
-
-plot_list[[11]]
+plot_list[[1]]
