@@ -91,6 +91,11 @@ tmp = filter(chnk_sum_df, Channel_Type == as.character(c)) %>%
 assign(paste('chnk_sum_', make_clean_names(c), sep = ''), tmp)
 }
 
+df_list = list(chnk_sum_entiat, chnk_sum_john_day, chnk_sum_lemhi, chnk_sum_minam, chnk_sum_south_fork_salmon,
+               chnk_sum_upper_grande_ronde, chnk_sum_wenatchee, # watersheds
+               chnk_sum_cascade, chnk_sum_confined, chnk_sum_island_braided, chnk_sum_meandering, chnk_sum_plane_bed,
+               chnk_sum_pool_riffle, chnk_sum_step_pool, chnk_sum_straight) # channel type
+
 #-----------------------------------------------------------------
 # lists of metric categories
 #-----------------------------------------------------------------
@@ -129,7 +134,6 @@ plot_list = list(size, pca, channel_units, complexity, side_channel, substrate,
 # Begin fish-habitat plots
 #-----------------------------------------------------------------
 
-# next I should just loop over this function.
 # also, recode the quartiles
 
 # Mike's Way
@@ -147,11 +151,6 @@ fh_plot = function(data, metrics_list) {
 }
 fh_plot(chnk_sum_lemhi, large_wood)
 
-df_list = list(chnk_sum_entiat, chnk_sum_john_day, chnk_sum_lemhi, chnk_sum_minam, chnk_sum_south_fork_salmon,
-               chnk_sum_upper_grande_ronde, chnk_sum_wenatchee, # watersheds
-               chnk_sum_cascade, chnk_sum_confined, chnk_sum_island_braided, chnk_sum_meandering, chnk_sum_plane_bed,
-               chnk_sum_pool_riffle, chnk_sum_step_pool, chnk_sum_straight) # channel type
-
 # loop over data frames and metrics lists
 for(d in 1:length(df_list)) {
   df = df_list[[d]] 
@@ -164,8 +163,10 @@ for(d in 1:length(df_list)) {
   
 } # end data frames loop
 
-
-
+# NEXT STEPS
+# Recode quartiles to 'high' v 'low'
+# Do 2-sample t-test by data frame and metric and export results to df
+# Repeat for winter and redds
 
 # Kevin's Way
 # plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, 
