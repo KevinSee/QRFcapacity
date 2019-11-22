@@ -129,6 +129,9 @@ plot_list = list(size, pca, channel_units, complexity, side_channel, substrate,
 # Begin fish-habitat plots
 #-----------------------------------------------------------------
 
+# next I should just loop over this function.
+# also, recode the quartiles
+
 # Mike's Way
 fh_plot = function(data, metrics_list) {
   data %>%
@@ -142,24 +145,44 @@ fh_plot = function(data, metrics_list) {
     facet_wrap(~ variable,
                scales = 'free')
 }
-fh_plot(chnk_sum_lemhi, size)
+fh_plot(chnk_sum_lemhi, large_wood)
+
+df_list = list(chnk_sum_entiat, chnk_sum_john_day, chnk_sum_lemhi, chnk_sum_minam, chnk_sum_south_fork_salmon,
+               chnk_sum_upper_grande_ronde, chnk_sum_wenatchee, # watersheds
+               chnk_sum_cascade, chnk_sum_confined, chnk_sum_island_braided, chnk_sum_meandering, chnk_sum_plane_bed,
+               chnk_sum_pool_riffle, chnk_sum_step_pool, chnk_sum_straight) # channel type
+
+# loop over data frames and metrics lists
+for(d in 1:length(df_list)) {
+  df = df_list[[d]] 
+  
+  for(p in 1:length(plot_list)) {
+    pl = plot_list[[p]]
+    tmp_p = fh_plot(df, pl)
+    ggsave(paste('figures/fh_plots/', d, p, '.png', sep = ""))
+  } # end plot metrics loop
+  
+} # end data frames loop
+
+
+
 
 # Kevin's Way
-plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, 
-                 other, riparian_cover, large_wood, undercuts, fish_cover) %>%
-  map(.f = function(x) {
-    ch_df %>%
-      select(plot_cat, one_of(x)) %>%
-      gather(variable, value, -plot_cat) %>%
-      ggplot(aes(x = value, 
-                 color = plot_cat,
-                 fill = plot_cat)) +
-      #geom_histogram(position = 'dodge') +
-      geom_density(alpha = 0.3) +
-      theme_classic() +
-      theme(axis.text.x = element_text(color = 'black', size = 10),
-            axis.text.y = element_text(color = 'black', size = 10)) +
-      facet_wrap(~ variable,
-                 scales = 'free')
-  })
-plot_list[[1]]
+# plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, 
+#                  other, riparian_cover, large_wood, undercuts, fish_cover) %>%
+#   map(.f = function(x) {
+#     ch_df %>%
+#       select(plot_cat, one_of(x)) %>%
+#       gather(variable, value, -plot_cat) %>%
+#       ggplot(aes(x = value, 
+#                  color = plot_cat,
+#                  fill = plot_cat)) +
+#       #geom_histogram(position = 'dodge') +
+#       geom_density(alpha = 0.3) +
+#       theme_classic() +
+#       theme(axis.text.x = element_text(color = 'black', size = 10),
+#             axis.text.y = element_text(color = 'black', size = 10)) +
+#       facet_wrap(~ variable,
+#                  scales = 'free')
+#   })
+# plot_list[[1]]
