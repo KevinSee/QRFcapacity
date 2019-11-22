@@ -126,8 +126,17 @@ undercuts = c("Ucut_Area",  "UcutLgth_Pct", "UcutArea_Pct")
 fish_cover = c("FishCovLW", "FishCovTVeg", "FishCovArt", "FishCovNone", "FishCovAqVeg", "FishCovTotal")
 
 # a list of lists
-plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, 
-                 other, riparian_cover, large_wood, undercuts, fish_cover)
+plot_list = list(size = size, 
+                 pca = pca, 
+                 channel_units = channel_units, 
+                 complexity = complexity, 
+                 side_channel = side_channel, 
+                 substrate = substrate, 
+                 other = other,
+                 riparian_cover = riparian_cover, 
+                 large_wood = large_wood, 
+                 undercuts = undercuts, 
+                 fish_cover = fish_cover)
 # END LISTS
 
 #-----------------------------------------------------------------
@@ -151,6 +160,25 @@ fh_plot = function(data, metrics_list) {
 }
 fh_plot(chnk_sum_lemhi, large_wood)
 
+<<<<<<< HEAD
+=======
+df_list = list(Entiat = chnk_sum_entiat, 
+               JohnDay = chnk_sum_john_day, 
+               Lemhi = chnk_sum_lemhi, 
+               Minam = chnk_sum_minam, 
+               SFS = chnk_sum_south_fork_salmon,
+               UGR = chnk_sum_upper_grande_ronde, 
+               Wenatchee = chnk_sum_wenatchee, # watersheds
+               cascade = chnk_sum_cascade, 
+               confined = chnk_sum_confined, 
+               island_braided = chnk_sum_island_braided, 
+               meandering = chnk_sum_meandering, 
+               plane_bed = chnk_sum_plane_bed,
+               pool_riffle = chnk_sum_pool_riffle, 
+               step_pool = chnk_sum_step_pool, 
+               straight = chnk_sum_straight) # channel type
+
+>>>>>>> 0de7266e57f012eeed1acbc8d1f5a8d8d1b28e35
 # loop over data frames and metrics lists
 for(d in 1:length(df_list)) {
   df = df_list[[d]] 
@@ -158,7 +186,7 @@ for(d in 1:length(df_list)) {
   for(p in 1:length(plot_list)) {
     pl = plot_list[[p]]
     tmp_p = fh_plot(df, pl)
-    ggsave(paste('figures/fh_plots/', d, p, '.png', sep = ""))
+    ggsave(paste0('figures/fh_plots/', names(df_list)[d], '_', names(plot_list)[p], '.png'))
   } # end plot metrics loop
   
 } # end data frames loop
