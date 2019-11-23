@@ -160,8 +160,6 @@ fh_plot = function(data, metrics_list) {
 }
 fh_plot(chnk_sum_lemhi, large_wood)
 
-<<<<<<< HEAD
-=======
 df_list = list(Entiat = chnk_sum_entiat, 
                JohnDay = chnk_sum_john_day, 
                Lemhi = chnk_sum_lemhi, 
@@ -178,7 +176,6 @@ df_list = list(Entiat = chnk_sum_entiat,
                step_pool = chnk_sum_step_pool, 
                straight = chnk_sum_straight) # channel type
 
->>>>>>> 0de7266e57f012eeed1acbc8d1f5a8d8d1b28e35
 # loop over data frames and metrics lists
 for(d in 1:length(df_list)) {
   df = df_list[[d]] 
@@ -192,6 +189,7 @@ for(d in 1:length(df_list)) {
 } # end data frames loop
 
 # NEXT STEPS
+# fix formatting/labels on plots
 # Recode quartiles to 'high' v 'low'
 # Do 2-sample t-test by data frame and metric and export results to df
 # Repeat for winter and redds
