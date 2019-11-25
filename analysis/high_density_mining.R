@@ -225,6 +225,13 @@ for(d in 1:length(df_list)) {
     
     q4_data = pull(df[df$qrtl == 'Q4', hc])
     rest_data = pull(df[df$qrtl == 'Rest', hc])
+    if(sum(is.na(q4_data)) == length(q4_data) |
+       sum(is.na(rest_data)) == length(rest_data)) {
+      tst_results[ctr, 1] = names(df_list)[[d]]
+      tst_results[ctr, 2] = hc
+      ctr = ctr + 1
+      next
+    }
     tst = try(wilcox.test(q4_data, rest_data))
     
     tst_results[ctr, 1] = names(df_list)[[d]]
