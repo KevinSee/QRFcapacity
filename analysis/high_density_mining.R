@@ -78,7 +78,11 @@ chnk_sum_df = chnk_sum_df %>%
 wtr = unique(chnk_sum_df$Watershed)
 for(w in wtr) {
 tmp = filter(chnk_sum_df, Watershed == as.character(w)) %>%
-  mutate(qrtl = cut_number(log_fish_dens, n = 4, labels = c('Q1','Q2','Q3','Q4')))
+  mutate(qrtl = cut_number(log_fish_dens, n = 4, labels = c('Q1','Q2','Q3','Q4'))) %>%
+  mutate(qrtl = recode(qrtl,
+                       `Q1` = 'Rest',
+                       `Q2` = 'Rest',
+                       `Q3` = 'Rest'))
 assign(paste('chnk_sum_', make_clean_names(w), sep = ''), tmp)
 }
 
@@ -87,14 +91,18 @@ cht = unique(chnk_sum_df$Channel_Type)
 cht = cht[!is.na(cht)]
 for(c in cht) {
 tmp = filter(chnk_sum_df, Channel_Type == as.character(c)) %>%
-  mutate(qrtl = cut_number(log_fish_dens, n = 4, labels = c('Q1','Q2','Q3','Q4')))
+  mutate(qrtl = cut_number(log_fish_dens, n = 4, labels = c('Q1','Q2','Q3','Q4'))) %>%
+  mutate(qrtl = recode(qrtl,
+                       `Q1` = 'Rest',
+                       `Q2` = 'Rest',
+                       `Q3` = 'Rest'))
 assign(paste('chnk_sum_', make_clean_names(c), sep = ''), tmp)
 }
 
-df_list = list(chnk_sum_entiat, chnk_sum_john_day, chnk_sum_lemhi, chnk_sum_minam, chnk_sum_south_fork_salmon,
-               chnk_sum_upper_grande_ronde, chnk_sum_wenatchee, # watersheds
-               chnk_sum_cascade, chnk_sum_confined, chnk_sum_island_braided, chnk_sum_meandering, chnk_sum_plane_bed,
-               chnk_sum_pool_riffle, chnk_sum_step_pool, chnk_sum_straight) # channel type
+# df_list = list(chnk_sum_entiat, chnk_sum_john_day, chnk_sum_lemhi, chnk_sum_minam, chnk_sum_south_fork_salmon,
+#                chnk_sum_upper_grande_ronde, chnk_sum_wenatchee, # watersheds
+#                chnk_sum_cascade, chnk_sum_confined, chnk_sum_island_braided, chnk_sum_meandering, chnk_sum_plane_bed,
+#                chnk_sum_pool_riffle, chnk_sum_step_pool, chnk_sum_straight) # channel type
 
 #-----------------------------------------------------------------
 # lists of metric categories
@@ -142,9 +150,6 @@ plot_list = list(size = size,
 #-----------------------------------------------------------------
 # Begin fish-habitat plots
 #-----------------------------------------------------------------
-
-# also, recode the quartiles
-
 # Mike's Way
 fh_plot = function(data, metrics_list) {
   data %>%
@@ -155,6 +160,10 @@ fh_plot = function(data, metrics_list) {
                fill = qrtl)) +
     geom_density(alpha = 0.3) +
     theme_bw() +
+    labs(x = 'Value',
+         y = 'Density',
+         color = 'Category',
+         fill = 'Category') +
     facet_wrap(~ variable,
                scales = 'free')
 }
@@ -176,6 +185,11 @@ df_list = list(Entiat = chnk_sum_entiat,
                step_pool = chnk_sum_step_pool, 
                straight = chnk_sum_straight) # channel type
 
+# find data frames that are too small for comparisons or plotting
+min_samp_size = 20
+small_dfs = names(which(sapply(df_list, nrow) > min_samp_size - 1, TRUE))
+df_list = df_list[names(df_list) %in% small_dfs]
+
 # loop over data frames and metrics lists
 for(d in 1:length(df_list)) {
   df = df_list[[d]] 
@@ -188,9 +202,11 @@ for(d in 1:length(df_list)) {
   
 } # end data frames loop
 
+#-----------------------------------------------------------------
+# Begin compare means by data frame and hab covariate
+#-----------------------------------------------------------------
+
 # NEXT STEPS
-# fix formatting/labels on plots
-# Recode quartiles to 'high' v 'low'
 # Do 2-sample t-test by data frame and metric and export results to df
 # Repeat for winter and redds
 
