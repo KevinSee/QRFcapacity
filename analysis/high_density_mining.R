@@ -205,6 +205,37 @@ for(d in 1:length(df_list)) {
 #-----------------------------------------------------------------
 # Begin compare means by data frame and hab covariate
 #-----------------------------------------------------------------
+hab_list = unlist(unique(plot_list[1:length(plot_list)]))
+
+# just get one df for now (UGR)
+df = df_list[[6]]
+# and one hab covariate
+hc = hab_list[25]
+
+# initiate blank df to store results
+tst_results = setNames(data.frame(matrix(ncol = 3, nrow = length(df_list) * length(hab_list))),
+                       c('data', 'hab_cov', 'p_value'))
+
+ctr = 1
+for(d in 1:length(df_list)) {
+  df = df_list[[d]]
+  
+  for(h in 1:length(hab_list)) {
+    hc = hab_list[h]
+    
+    q4_data = pull(df[df$qrtl == 'Q4', hc])
+    rest_data = pull(df[df$qrtl == 'Rest', hc])
+    tst = wilcox.test(q4_data, rest_data)
+    
+    tst_results[ctr, 1] = names(df_list)[[d]]
+    tst_results[ctr, 2] = hc
+    tst_results[ctr, 3] = tst$p.value
+    ctr = ctr + 1
+    
+  } # end habitat covariate loop
+  
+} # end data frame loop
+
 
 # NEXT STEPS
 # Do 2-sample t-test by data frame and metric and export results to df
