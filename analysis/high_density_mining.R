@@ -225,11 +225,13 @@ for(d in 1:length(df_list)) {
     
     q4_data = pull(df[df$qrtl == 'Q4', hc])
     rest_data = pull(df[df$qrtl == 'Rest', hc])
-    tst = wilcox.test(q4_data, rest_data)
+    tst = try(wilcox.test(q4_data, rest_data))
     
     tst_results[ctr, 1] = names(df_list)[[d]]
     tst_results[ctr, 2] = hc
-    tst_results[ctr, 3] = tst$p.value
+    tst_results[ctr, 3] = if_else(class(tst) == 'try-error',
+                                  as.numeric(NA),
+                                  tst$p.value)
     ctr = ctr + 1
     
   } # end habitat covariate loop
