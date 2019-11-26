@@ -1,7 +1,8 @@
 # Author: Mike Ackerman & Kevin See
-# Purpose: Examine abundance/densities for summer parr and explore preferred or target habitat 
-# conditions in
-# Created: 10/24/2019
+# Purpose: Examine abundance/densities of redds and explore preferred or target habitat conditions
+# in identified high redd areas
+#
+# Created: 11/25/2019
 # Last Modified: 11/25/2019
 # Notes:
 
@@ -15,64 +16,74 @@ library(janitor)
 #-----------------------------------------------------------------
 # load data
 #-----------------------------------------------------------------
-data("fh_sum_champ_2017")   # summer juvenile parr paired fish/CHaMP habitat data through 2017
-#data("fh_win_champ_2017")   # winter juvenile presmolts paired fish/CHaMP habitat data through 2017
-#data("fh_redds_champ_2017") # paired redd/CHaMP habitat data through 2017
+data("fh_redds_champ_2017") # paired redd/CHaMP habitat data through 2017
 
 # The fish-habitat summer CHaMP data frame contains data for chinook and steelhead. Let's just look at Chinook for now.
-chnk_sum_df = fh_sum_champ_2017 %>%
+chnk_redd_df = fh_redds_champ_2017 %>%
   filter(Species == 'Chinook')
 
 # first, let's just examine fish abundance and density information
-chnk_sum_n = chnk_sum_df %>%
-  select(Year, Watershed, N, fish_dens, Area_Wet) %>% # fish_dens = linear fish densities
-  filter(fish_dens > 0) %>% # only use sites where fish were observed
-  mutate(fish_dens_m2 = N / Area_Wet, # areal fish density (fish/m2) 
-         log_fish_dens = log(fish_dens + 0.005),
-         log_fish_dens_m2 = log(fish_dens_m2 + 0.005))
+chnk_redd_n = chnk_redd_df %>%
+  select(Watershed,
+         Year = maxYr,
+         ReddsPerKm = maxReddsPerKm) %>%
+  mutate(logReddsPerKm = log(ReddsPerKm))
 
-# quartiles of linear and areal fish density estimates
-chnk_sum_qrtl_lin  = quantile(chnk_sum_n$log_fish_dens, probs = c(0, 0.25, 0.50, 0.75, 1))
-chnk_sum_qrtl_area = quantile(chnk_sum_n$log_fish_dens_m2, probs = c(0, 0.25, 0.50, 0.75, 1), na.rm = T) 
+# quartiles of log(redds_per_km)
+chnk_redd_qrtl     = quantile(chnk_redd_n$ReddsPerKm, probs = c(0, 0.25, 0.50, 0.75, 1))  
+chnk_redd_qrtl_log = quantile(chnk_redd_n$logReddsPerKm, probs = c(0, 0.25, 0.50, 0.75, 1))  
 
-# plot log transformed fish densities with quartiles
-chnk_sum_p = chnk_sum_n %>%
+# plot log transformed linear redd densities with quartiles
+chnk_redd_p = chnk_redd_n %>%
   ggplot() +
-  geom_histogram(aes(x = log_fish_dens, fill = Watershed), bins = 50) +
-  geom_vline(xintercept = chnk_sum_qrtl_lin, color = 'blue') +
+  geom_histogram(aes(x = ReddsPerKm, fill = Watershed)) +
+  geom_vline(xintercept = chnk_redd_qrtl, color = 'blue') +
   theme_bw() +
-  labs(x = 'Juvenile Chinook Density (fish/m)',
+  labs(x = 'Redds per km',
        y = 'Frequency') +
   theme(axis.text.x = element_text(color = 'black', size = 10),
         axis.text.y = element_text(color = 'black', size = 10)) 
-chnk_sum_p
+chnk_redd_p
 
-# reduce chnk_sum_df in preparation for evaluation
-chnk_sum_df = chnk_sum_df %>%
-  select(Watershed, Year, StreamName, Channel_Type, Lat, Lon,          # site
-         N, fish_dens,                                                 # fish abundance/density
-         FishSiteLength, FishWettedArea, CUMDRAINAG, MeanU, Q,         # size
-         WetWdth_Int, WetBraid, WetWdth_Avg, DpthThlwg_Avg, Area_Wet,
-         DistPrin1, NatPrin1, NatPrin2,                                # PCA
-         SlowWater_Pct, SlowWater_Freq, FstTurb_Pct, FstTurb_Freq,     # channel units
-         FstNT_Pct, FstNT_Freq, CU_Freq,
-         Grad, Sin, DetrendElev_SD, DpthThlwg_UF_CV, DpthWet_SD,       # complexity
-         WetWdth_CV, WetWDRat_Avg, PoolResidDpth,  
-         SC_Area_Pct, WetSC_Pct, SCSm_Freq,                            # side channel
-         SubD16, SubD50, SubD84, SubEstGrvl, SubEstSandFines,          # substrate
-         SubEstBldr, SubEstCbl, 
-         Cond,                                                         # other
-         RipCovBigTree, RipCovConif, RipCovNonWood, RipCovUstory,      # riparian cover
-         RipCovWood, RipCovCanNone, RipCovUstoryNone, RipCovGrndNone, 
-         LWVol_Wet, LWVol_WetSlow, LWVol_WetFstTurb, LWVol_WetFstNT,   # large wood
+# plot log transformed linear redd densities with quartiles
+chnk_redd_log_p = chnk_redd_n %>%
+  ggplot() +
+  geom_histogram(aes(x = logReddsPerKm, fill = Watershed)) +
+  geom_vline(xintercept = chnk_redd_qrtl_log, color = 'blue') +
+  theme_bw() +
+  labs(x = 'log(redds per km)',
+       y = 'Frequency') +
+  theme(axis.text.x = element_text(color = 'black', size = 10),
+        axis.text.y = element_text(color = 'black', size = 10)) 
+chnk_redd_log_p
+
+# reduce chnk_redd_df in preparation for evaluation
+chnk_redd_df = chnk_redd_df %>%
+  select(Watershed, Stream, Channel_Type, Year = maxYr,              # site
+         ReddsPerKm = maxReddsPerKm, LON_DD, LAT_DD, 
+         CUMDRAINAG, MeanU, Q, Area_Wet, WetWdth_Int, WetBraid,      # size
+         WetWdth_Avg, DpthThlwg_Avg, 
+         NatPrin1, NatPrin2, DistPrin1,                              # PCA
+         SlowWater_Freq, FstTurb_Freq, FstNT_Freq, FstTurb_Pct,      # channel units
+         FstNT_Ct, FstNT_Pct, CU_Freq, 
+         Grad, Sin, DetrendElev_SD, DpthThlwg_UF_CV, DpthWet_SD,     # complexity
+         Sin_CL,
+         WetWdth_CV, WetWDRat_CV, WetWDRat_Avg, PoolResidDpth, 
+         WetSC_Pct, SCSm_Freq, SC_Area_Pct,                          # side channel
+         SubEmbed_Avg, SubEmbed_SD, SubD16, SubD50, SubD84,          # substrate
+         SubEstGrvl, SubEstSandFines, SubEstBldr, SubEstCbl, 
+         Elev_M, Cond, avg_aug_temp,                                 # other
+         RipCovBigTree, RipCovConif, RipCovGrnd, RipCovNonWood,      # riparian cover
+         RipCovUstory, RipCovWood, RipCovCanNone, RipCovUstoryNone,
+         RipCovGrndNone,
+         LWVol_Wet, LWVol_WetSlow, LWVol_WetFstTurb, LWVol_WetFstNT, # large wood
          LWFreq_Wet, 
-         Ucut_Area,  UcutLgth_Pct, UcutArea_Pct,                       # undercuts
-         FishCovLW, FishCovTVeg, FishCovArt, FishCovNone, FishCovAqVeg,# fish cover
-         FishCovTotal) %>%
-  mutate(fish_dens_m2 = N / Area_Wet, # areal fish density (fish/m2) 
-         log_fish_dens = log(fish_dens + 0.005),
-         log_fish_dens_m2 = log(fish_dens_m2 + 0.005)) %>%
-  filter(fish_dens > 0)
+         Ucut_Area, UcutLgth_Pct, UcutArea_Pct,                       # undercuts
+         FishCovLW, FishCovTVeg, FishCovArt, FishCovNone,            # fish cover
+         FishCovAqVeg, FishCovTotal) %>%
+  mutate(logReddsPerKm = log(ReddsPerKm))
+         
+
 
 # now consider parsing data by Watershed, Channel_Type, others?
 # by watershed
