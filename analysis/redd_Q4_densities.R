@@ -198,7 +198,7 @@ for(d in 1:length(df_list)) {
   for(p in 1:length(plot_list)) {
     pl = plot_list[[p]]
     tmp_p = fh_plot(df, pl)
-    ggsave(paste0('figures/win_fh_plots/', names(df_list)[d], '_', names(plot_list)[p], '.png'))
+    ggsave(paste0('figures/redd_fh_plots/', names(df_list)[d], '_', names(plot_list)[p], '.png'))
   } # end plot metrics loop
 } # end data frames loop
 
