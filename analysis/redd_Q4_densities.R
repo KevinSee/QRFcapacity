@@ -79,71 +79,81 @@ chnk_redd_df = chnk_redd_df %>%
          LWVol_Wet, LWVol_WetSlow, LWVol_WetFstTurb, LWVol_WetFstNT, # large wood
          LWFreq_Wet, 
          Ucut_Area, UcutLgth_Pct, UcutArea_Pct,                       # undercuts
-         FishCovLW, FishCovTVeg, FishCovArt, FishCovNone,            # fish cover
+         FishCovLW, FishCovTVeg, FishCovArt, FishCovNone,             # fish cover
          FishCovAqVeg, FishCovTotal) %>%
-  mutate(logReddsPerKm = log(ReddsPerKm))
-         
+  mutate(logReddsPerKm = log(ReddsPerKm)) %>%
+  filter(!Watershed %in% c('Tucannon'),
+         !Channel_Type %in% c('Cascade', 'Plane-bed', 'Step-pool')) # too little data
 
-
-# now consider parsing data by Watershed, Channel_Type, others?
+# next, let's parse the chnk_redd_df by Watershed, Channel_Type
 # by watershed
-wtr = unique(chnk_sum_df$Watershed)
+wtr = unique(chnk_redd_df$Watershed)
 for(w in wtr) {
-tmp = filter(chnk_sum_df, Watershed == as.character(w)) %>%
-  mutate(qrtl = cut_number(log_fish_dens, n = 4, labels = c('Q1','Q2','Q3','Q4'))) %>%
-  mutate(qrtl = recode(qrtl,
-                       `Q1` = 'Rest',
-                       `Q2` = 'Rest',
-                       `Q3` = 'Rest'))
-assign(paste('chnk_sum_', make_clean_names(w), sep = ''), tmp)
+  tmp = filter(chnk_redd_df, Watershed == as.character(w)) %>%
+    mutate(qrtl = cut_number(logReddsPerKm, n = 4, labels = c('Q1','Q2','Q3','Q4'))) %>%
+    mutate(qrtl = recode(qrtl,
+                         `Q1` = 'Rest',
+                         `Q2` = 'Rest',
+                         `Q3` = 'Rest'))
+  assign(paste('chnk_redd_', make_clean_names(w), sep = ''), tmp)
 }
 
 # by channel unit type
-cht = unique(chnk_sum_df$Channel_Type)
+cht = unique(chnk_redd_df$Channel_Type)
 cht = cht[!is.na(cht)]
 for(c in cht) {
-tmp = filter(chnk_sum_df, Channel_Type == as.character(c)) %>%
-  mutate(qrtl = cut_number(log_fish_dens, n = 4, labels = c('Q1','Q2','Q3','Q4'))) %>%
-  mutate(qrtl = recode(qrtl,
-                       `Q1` = 'Rest',
-                       `Q2` = 'Rest',
-                       `Q3` = 'Rest'))
-assign(paste('chnk_sum_', make_clean_names(c), sep = ''), tmp)
+  tmp = filter(chnk_redd_df, Channel_Type == as.character(c)) %>%
+    mutate(qrtl = cut_number(logReddsPerKm, n = 4, labels = c('Q1','Q2','Q3','Q4'))) %>%
+    mutate(qrtl = recode(qrtl,
+                         `Q1` = 'Rest',
+                         `Q2` = 'Rest',
+                         `Q3` = 'Rest'))
+  assign(paste('chnk_redd_', make_clean_names(c), sep = ''), tmp)
 }
 
-# df_list = list(chnk_sum_entiat, chnk_sum_john_day, chnk_sum_lemhi, chnk_sum_minam, chnk_sum_south_fork_salmon,
-#                chnk_sum_upper_grande_ronde, chnk_sum_wenatchee, # watersheds
-#                chnk_sum_cascade, chnk_sum_confined, chnk_sum_island_braided, chnk_sum_meandering, chnk_sum_plane_bed,
-#                chnk_sum_pool_riffle, chnk_sum_step_pool, chnk_sum_straight) # channel type
+# list of data frames
+df_list = list(Entiat = chnk_redd_entiat, 
+               JohnDay = chnk_redd_john_day, 
+               Lemhi = chnk_redd_lemhi,
+               Methow = chnk_redd_methow,
+               Minam = chnk_redd_minam, 
+               SFS = chnk_redd_south_fork_salmon,
+               UGR = chnk_redd_upper_grande_ronde, 
+               Wenatchee = chnk_redd_wenatchee, 
+               Yankee = chnk_redd_yankee_fork, # watersheds
+               confined = chnk_redd_confined, 
+               island_braided = chnk_redd_island_braided, 
+               meandering = chnk_redd_meandering, 
+               pool_riffle = chnk_redd_pool_riffle, 
+               straight = chnk_redd_straight) # channel type
+
+# find data frames that are too small for comparisons or plotting
+min_samp_size = 20
+small_dfs = names(which(sapply(df_list, nrow) > min_samp_size - 1, TRUE))
+df_list = df_list[names(df_list) %in% small_dfs]; rm(small_dfs)
 
 #-----------------------------------------------------------------
 # lists of metric categories
 #-----------------------------------------------------------------
-# lists of metric categories
-size = c("FishSiteLength", "FishWettedArea", "CUMDRAINAG", "MeanU", 
-         "Q", "WetWdth_Int", "WetBraid", "WetWdth_Avg", "DpthThlwg_Avg")
-
-pca  = c("DistPrin1", "NatPrin1", "NatPrin2")
-
-channel_units = c("SlowWater_Pct", "SlowWater_Freq", "FstTurb_Pct", "FstTurb_Freq", "FstNT_Pct", "FstNT_Freq", "CU_Freq")
-
-complexity = c("Grad", "Sin", "DetrendElev_SD", "DpthThlwg_UF_CV", "DpthWet_SD",  
-               "WetWdth_CV", "WetWDRat_Avg", "PoolResidDpth")
-
-side_channel = c("SC_Area_Pct", "WetSC_Pct", "SCSm_Freq")
-
-substrate = c("SubD16", "SubD50", "SubD84", "SubEstGrvl", "SubEstSandFines", "SubEstBldr", "SubEstCbl")
-
-other = c("Cond")
-
-riparian_cover = c("RipCovBigTree", "RipCovConif", "RipCovNonWood", "RipCovUstory", 
-                   "RipCovWood", "RipCovCanNone", "RipCovUstoryNone", "RipCovGrndNone")
-
-large_wood = c("LWVol_Wet", "LWVol_WetSlow", "LWVol_WetFstTurb", "LWVol_WetFstNT", "LWFreq_Wet")
-
-undercuts = c("Ucut_Area",  "UcutLgth_Pct", "UcutArea_Pct")
-
-fish_cover = c("FishCovLW", "FishCovTVeg", "FishCovArt", "FishCovNone", "FishCovAqVeg", "FishCovTotal")
+size = c('CUMDRAINAG', 'MeanU', 'Q', 'Area_Wet', 'WetWdth_Int', 'WetBraid',
+         'WetWdth_Avg', 'DpthThlwg_Avg') 
+pca = c('NatPrin1', 'NatPrin2', 'DistPrin1')
+channel_units = c('SlowWater_Freq', 'FstTurb_Freq', 'FstNT_Freq',
+                  'FstTurb_Pct', 'FstNT_Ct', 'FstNT_Pct', 'CU_Freq') 
+complexity = c('Grad', 'Sin', 'DetrendElev_SD', 'DpthThlwg_UF_CV', 'DpthWet_SD',
+               'Sin_CL', 'WetWdth_CV', 'WetWDRat_CV', 'WetWDRat_Avg', 'PoolResidDpth') 
+side_channel = c('WetSC_Pct', 'SCSm_Freq', 'SC_Area_Pct')
+substrate = c('SubEmbed_Avg', 'SubEmbed_SD', 'SubD16', 'SubD50', 'SubD84',
+              'SubEstGrvl', 'SubEstSandFines', 'SubEstBldr', 'SubEstCbl') 
+other = c('Elev_M', 'Cond', 'avg_aug_temp')                                 
+riparian_cover = c('RipCovBigTree', 'RipCovConif', 'RipCovGrnd', 'RipCovNonWood',
+                   'RipCovUstory', 'RipCovWood', 'RipCovCanNone', 'RipCovUstoryNone',
+                   'RipCovGrndNone')
+large_wood = c('LWVol_Wet', 'LWVol_WetSlow', 'LWVol_WetFstTurb', 'LWVol_WetFstNT',
+               'LWFreq_Wet')
+undercuts = c('Ucut_Area', 'UcutLgth_Pct', 'UcutArea_Pct')
+fish_cover = c('FishCovLW', 'FishCovTVeg', 'FishCovArt', 'FishCovNone',
+               'FishCovAqVeg', 'FishCovTotal') 
 
 # a list of lists
 plot_list = list(size = size, 
@@ -179,39 +189,17 @@ fh_plot = function(data, metrics_list) {
     facet_wrap(~ variable,
                scales = 'free')
 }
-fh_plot(chnk_sum_lemhi, large_wood)
-
-df_list = list(Entiat = chnk_sum_entiat, 
-               JohnDay = chnk_sum_john_day, 
-               Lemhi = chnk_sum_lemhi, 
-               Minam = chnk_sum_minam, 
-               SFS = chnk_sum_south_fork_salmon,
-               UGR = chnk_sum_upper_grande_ronde, 
-               Wenatchee = chnk_sum_wenatchee, # watersheds
-               cascade = chnk_sum_cascade, 
-               confined = chnk_sum_confined, 
-               island_braided = chnk_sum_island_braided, 
-               meandering = chnk_sum_meandering, 
-               plane_bed = chnk_sum_plane_bed,
-               pool_riffle = chnk_sum_pool_riffle, 
-               step_pool = chnk_sum_step_pool, 
-               straight = chnk_sum_straight) # channel type
-
-# find data frames that are too small for comparisons or plotting
-min_samp_size = 20
-small_dfs = names(which(sapply(df_list, nrow) > min_samp_size - 1, TRUE))
-df_list = df_list[names(df_list) %in% small_dfs]
+fh_plot(chnk_redd_lemhi, substrate)
 
 # loop over data frames and metrics lists
 for(d in 1:length(df_list)) {
-  df = df_list[[d]] 
+  df = df_list[[d]]
   
   for(p in 1:length(plot_list)) {
     pl = plot_list[[p]]
     tmp_p = fh_plot(df, pl)
-    ggsave(paste0('figures/sum_fh_plots/', names(df_list)[d], '_', names(plot_list)[p], '.png'))
+    ggsave(paste0('figures/win_fh_plots/', names(df_list)[d], '_', names(plot_list)[p], '.png'))
   } # end plot metrics loop
-  
 } # end data frames loop
 
 #-----------------------------------------------------------------
@@ -251,7 +239,6 @@ for(d in 1:length(df_list)) {
     ctr = ctr + 1
     
   } # end habitat covariate loop
-  
 } # end data frame loop
 
 # let's look at the # of significant comparisons by habitat covariate
@@ -270,6 +257,7 @@ sig_tst_results = tst_results %>%
   labs(x = 'Habitat Covariate',
        y = '# of Significant Comparisons')
 sig_tst_results
+ggsave('figures/chnk_redd_significant_comps.png')
 
 # let's plot 'raw' p-values by habitat covariate
 raw_wcx_p = tst_results %>%
@@ -296,24 +284,6 @@ p_val_p = tst_results %>%
        y = 'p_value') +
   facet_wrap(~ key)
 p_val_p
-ggsave('figures/Summer_parr_p_values.png')
+ggsave('figures/Redd_p_values.png')
 
-# Kevin's cool way for making fh_plots
-# plot_list = list(size, pca, channel_units, complexity, side_channel, substrate, 
-#                  other, riparian_cover, large_wood, undercuts, fish_cover) %>%
-#   map(.f = function(x) {
-#     ch_df %>%
-#       select(plot_cat, one_of(x)) %>%
-#       gather(variable, value, -plot_cat) %>%
-#       ggplot(aes(x = value, 
-#                  color = plot_cat,
-#                  fill = plot_cat)) +
-#       #geom_histogram(position = 'dodge') +
-#       geom_density(alpha = 0.3) +
-#       theme_classic() +
-#       theme(axis.text.x = element_text(color = 'black', size = 10),
-#             axis.text.y = element_text(color = 'black', size = 10)) +
-#       facet_wrap(~ variable,
-#                  scales = 'free')
-#   })
-# plot_list[[1]]
+# End Chinook redds analysis
