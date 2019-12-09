@@ -5,8 +5,8 @@ date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: 
   html_document:
     toc: yes
-    toc_depth: 1
-    theme: cerulean
+    toc_depth: 2
+    theme: simplex
     toc_float: yes
   rmarkdown::html_vignette:
     fig_caption: yes
@@ -59,36 +59,37 @@ library(MuMIn)
 
 # set default theme for ggplot
 theme_set(theme_bw())
+# setwd('analysis')
 ```
 
 ```{r}
 # determine which set of fish/habitat data to use
-data("fh_sum_dash_2014_17")
-fish_hab = fh_sum_dash_2014_17 %>%
-  mutate_at(vars(Watershed, Year),
-            list(as.factor))
-
-# data("fh_sum_champ_2017")
-# fish_hab = fh_sum_champ_2017 %>%
+# data("fh_sum_dash_2014_17")
+# fish_hab = fh_sum_dash_2014_17 %>%
 #   mutate_at(vars(Watershed, Year),
 #             list(as.factor))
+
+data("fh_sum_champ_2017")
+fish_hab = fh_sum_champ_2017 %>%
+  mutate_at(vars(Watershed, Year),
+            list(as.factor))
 
 # and the appropriate habitat dictionrary to go with it
 data("hab_dict_2017")
 hab_dict = hab_dict_2017
 
 # all the related habitat data
-data('champ_dash')
-hab_data = champ_dash
-
-data('champ_dash_avg')
-hab_avg = champ_dash_avg
-
-# data("champ_site_2011_17")
-# hab_data = champ_site_2011_17
+# data('champ_dash')
+# hab_data = champ_dash
 # 
-# data("champ_site_2011_17_avg")
-# hab_avg = champ_site_2011_17_avg
+# data('champ_dash_avg')
+# hab_avg = champ_dash_avg
+
+data("champ_site_2011_17")
+hab_data = champ_site_2011_17
+
+data("champ_site_2011_17_avg")
+hab_avg = champ_site_2011_17_avg
 
 # add temperature metrics
 data("champ_temps")
@@ -97,6 +98,29 @@ hab_avg %<>%
               as_tibble() %>%
               select(Site, avg_aug_temp = S2_02_11) %>%
               distinct())
+
+
+hab_data %<>%
+  left_join(hab_data %>%
+              select(VisitID, Year = VisitYear) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(VisitID, avg_aug_temp = S2_02_11))) %>%
+  left_join(hab_data %>%
+              select(VisitID, Year = VisitYear) %>%
+              distinct() %>%
+              left_join(champ_temps %>%
+                          as_tibble() %>%
+                          select(Site:VisitID, S1_93_11:S36_2015) %>%
+                          gather(scenario, aug_temp, S1_93_11:S36_2015) %>%
+                          mutate(Year = str_sub(scenario, -4)) %>%
+                          mutate_at(vars(Year),
+                                    list(as.numeric)) %>%
+                          filter(!is.na(Year)) %>%
+                          select(Site:VisitID, Year, aug_temp))) %>%
+  select(-Year)
+
 
 
 ```
@@ -108,7 +132,7 @@ We used quantile random forests (@Meinshausen2006) for this investigation becaus
 
 # Data
 
-The fish data was collected by various agencies during the summer low-flow season at many of the same sites surveyed using the CHaMP protocol. Survey methods included mark-recapture, three-pass removal sampling, two-pass removal sampling, and single-pass electrofishing, as well as snorkeling. We estimated juvenile fish abundance (and density) at all sites where fish survey data were available. Three-pass removal estimates used the Carle-Strub estimator (@Carle1978), following advice from @Hedger2013. Two-pass removal estimates used the estimator described by @Seber2002. Mark-recapture estimates used Chapman’s modified Lincoln-Peterson estimator (@Chapman1951) and were deemed valid if they met the criteria described in @Robson1964. These estimates were made using the `removal` and `mrClosed` functions from the FSA package (@Ogle2017) in R software (@Rsoftware2015). Snorkel counts were transformed to abundance estimates using paired snorkel-electrofishing sites to calibrate snorkel counts. 
+The fish data was collected by various agencies during the summer low-flow season at many of the same sites surveyed using the CHaMP protocol. Survey methods included mark-recapture, three-pass removal sampling, two-pass removal sampling, and single-pass electrofishing, as well as snorkeling. We estimated juvenile fish abundance (and density) at all sites where fish survey data were available. Three-pass removal estimates used the Carle-Strub estimator [@Carle1978], following advice from @Hedger2013. Two-pass removal estimates used the estimator described by @Seber2002. Mark-recapture estimates used Chapman’s modified Lincoln-Peterson estimator [@Chapman1951] and were deemed valid if they met the criteria described in @Robson1964. These estimates were made using the `removal` and `mrClosed` functions from the FSA package [@Ogle2017] in R software [@Rsoftware2015]. Snorkel counts were transformed to abundance estimates using paired snorkel-electrofishing sites to calibrate snorkel counts. 
 
 Many sites were sampled in multiple years. To avoid any chance of pseudo-replication (since habitat data is not usually expected to vary much year-to-year), for any site with multiple surveys, we chose the survey with the highest estimated density. We used this criteria because we are interested in estimating carrying capacity, so using the highest observed density seemed appropriate.
 
@@ -195,19 +219,21 @@ We used the Maximal Information-Based Nonparametric Exploration (MINE) class of 
 ```{r MINE_stats}
 
 # # what are some possible habitat covariates?
-# poss_hab_mets = hab_dict %>%
-#   filter(MetricCategory != 'Categorical') %>%
-#   filter(ShortName %in% names(fish_hab)) %>%
-#   pull(ShortName)
-
-# pull from which CHaMP metrics could be generated from DASH
-poss_hab_mets = read_csv('../data/prepped/hab_dict_champ_dash.csv') %>%
-  select(-starts_with('X')) %>%
-  filter(DASH_gen) %>%
+poss_hab_mets = hab_dict %>%
   filter(MetricCategory != 'Categorical') %>%
+  filter(ShortName %in% names(fish_hab)) %>%
   pull(ShortName) %>%
   unique()
-poss_hab_mets = c(poss_hab_mets, 'aug_avg_temp', 'avg_aug_temp')
+
+# pull from which CHaMP metrics could be generated from DASH
+# poss_hab_mets = read_csv('../data/prepped/hab_dict_champ_dash.csv') %>%
+#   select(-starts_with('X')) %>%
+#   filter(DASH_gen) %>%
+#   filter(MetricCategory != 'Categorical') %>%
+#   pull(ShortName) %>%
+#   unique()
+poss_hab_mets = c(poss_hab_mets, 'aug_temp', 'avg_aug_temp') %>%
+  unique()
 
 mine_res = fish_hab %>%
   split(list(.$Species)) %>%
@@ -224,6 +250,14 @@ mine_res = fish_hab %>%
                      MetricCategory,
                      Name),
             by = 'Metric') %>%
+  mutate_at(vars(MetricCategory),
+            list(fct_explicit_na),
+            na_level = 'Other') %>%
+  mutate_at(vars(Name),
+            list(as.character)) %>%
+  mutate(Name = if_else(is.na(Name),
+                        as.character(Metric),
+                        Name)) %>%
   # put the metric names in descending order by MIC
   mutate_at(vars(Metric, Name),
             list(~ fct_reorder(., .x = MIC))) %>%
@@ -358,7 +392,8 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                    'NatPrin1',
                                    'DistPrin1',
                                    'avg_aug_temp',
-                                   'Sin_CL',
+                                   # 'Sin_CL',
+                                   'Sin',
                                    'WetWdth_CV',
                                    'WetBraid',
                                    'WetSC_Pct',
@@ -606,7 +641,7 @@ pred_hab_sites_chnk = pred_hab_sites %>%
 
 ```
 
-Because most of our habitat data came from CHaMP sites, which were selected through a generalized random tesselation stratified (GRTS) sample design (@Stevens2003), we wanted to incorporate the design weights for each CHaMP site with a predicted carrying capacity. 
+Because most of our habitat data came from CHaMP sites, which were selected through a generalized random tesselation stratified (GRTS) sample design [@Stevens2003], we wanted to incorporate the design weights for each CHaMP site with a predicted carrying capacity. 
 
 ```{r survey_design_strata}
 #----------------------------------------
