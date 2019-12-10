@@ -26,7 +26,7 @@ estimate_MIC = function(data,
              y = data %>%
                pull(response),
              use = 'pairwise.complete.obs') %>%
-    as_tibble() %>%
+    map_df(.f = identity) %>%
     mutate(Metric = data %>%
              dplyr::select(one_of(covars)) %>%
              names()) %>%
