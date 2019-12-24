@@ -59,7 +59,7 @@ library(MuMIn)
 
 # set default theme for ggplot
 theme_set(theme_bw())
-# setwd('analysis')
+# setwd('reports')
 ```
 
 ```{r}
@@ -158,7 +158,9 @@ snap_dist = 1000
 # which of those sites are in Chinook domain?
 chnk_sites = chnk_samps %>%
   as_Spatial() %>%
-  maptools::snapPointsToLines(chnk_domain %>%
+  snapPointsToLines_v2(points = .,
+  # maptools::snapPointsToLines(points = .,
+                              chnk_domain %>%
                                 mutate(id = 1:n()) %>%
                                 select(id, MPG) %>%
                                 as_Spatial(),
