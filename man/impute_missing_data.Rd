@@ -4,9 +4,16 @@
 \alias{impute_missing_data}
 \title{Impute Missing Data}
 \usage{
-impute_missing_data(data = NULL, covars = NULL, max_missing = 3,
-  impute_vars = NULL, method = c("Hmisc", "missForest"), ntree = 100,
-  nk = 4, ...)
+impute_missing_data(
+  data = NULL,
+  covars = NULL,
+  max_missing = 3,
+  impute_vars = NULL,
+  method = c("Hmisc", "missForest"),
+  ntree = 100,
+  nk = 4,
+  ...
+)
 }
 \arguments{
 \item{data}{data.frame containing \code{covars} and any \code{impute_vars} as columns}
