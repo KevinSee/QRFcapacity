@@ -95,7 +95,7 @@ chnk_sites = chnk_samps %>%
   as('sf') %>%
   select(-nearest_line_id, -snap_dist) %>%
   # include some sites in the John Day where Chinook were found (or seemed to be close to sites where Chinook were found)
-  rbind(st_read('../data/raw/domain/Chnk_JohnDay_TrueObs.shp',
+  rbind(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
                 quiet = T) %>%
           st_transform(st_crs(chnk_domain)) %>%
           select(-in_range))
@@ -141,27 +141,23 @@ sel_hab_mets = crossing(Species = c('Chinook',
 # Fit QRF model
 #-----------------------------------------------------------------
 # impute missing data in fish / habitat dataset
-qrf_mod_df = fish_hab %>%
-  split(list(.$Species)) %>%
-  map_df(.id = 'Species',
-         .f = function(x) {
-           spp = unique(x$Species)
-           
-           covars = sel_hab_mets %>%
-             filter(Species == spp) %>%
-             pull(Metric)
-           
-           data = impute_missing_data(data = x %>%
-                                        mutate_at(vars(Watershed, Year),
-                                                  list(fct_drop)),
-                                      covars = covars,
-                                      impute_vars = c('Watershed', 'Elev_M', 'Sin', 'Year', 'CUMDRAINAG'),
-                                      method = 'missForest') %>%
-             select(Site, Watershed, Year, LON_DD, LAT_DD, fish_dens, VisitID, one_of(covars))
-           
-           return(data)
-           
-         })
+
+# impute missing habitat metrics once, for both species
+covars = sel_hab_mets %>%
+  pull(Metric) %>%
+  unique()
+
+qrf_mod_df = impute_missing_data(data = fish_hab %>%
+                                   select(-(FishSite:fish_dens)) %>%
+                                   distinct(),
+                                 covars = covars,
+                                 impute_vars = c('Watershed', 'Elev_M', 'Sin', 'Year', 'CUMDRAINAG'),
+                                 method = 'missForest') %>%
+  left_join(fish_hab %>%
+              select(Year:fish_dens, VisitID)) %>%
+  select(Species, Site, Watershed, Year, LON_DD, LAT_DD, fish_dens, VisitID, one_of(covars))
+
+rm(covars)
 
 # fit the QRF model
 # set the density offset (to accommodate 0z)
@@ -194,14 +190,17 @@ qrf_mods = qrf_mod_df %>%
 
 # save some results
 save(fish_hab, 
+     sel_hab_mets,
      qrf_mod_df,
      dens_offset,
      qrf_mods,
-     file = '../output/modelFits/qrf_juv_summer.rda')
+     file = 'output/modelFits/qrf_juv_summer.rda')
 
 #-----------------------------------------------------------------
 # predict capacity at all CHaMP sites
 #-----------------------------------------------------------------
+load('output/modelFits/qrf_juv_summer.rda')
+
 # what quantile is a proxy for capacity?
 pred_quant = 0.9
 
@@ -251,18 +250,17 @@ pred_hab_sites_chnk = pred_hab_sites %>%
   as_tibble() %>%
   select(-nearest_line_id, -snap_dist, -geometry) %>%
   # add sites in the John Day
-  bind_rows(st_read('../data/raw/domain/Chnk_JohnDay_TrueObs.shp',
+  bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
                     quiet = T) %>%
               as_tibble() %>%
               select(Site) %>%
               inner_join(pred_hab_sites))
 
-#-----------------------------------------------------------------
-# from here down is all Chinook related
-# need to update to include steelhead as well
-#-----------------------------------------------------------------
-
-
+# note if sites are in Chinook domain or not
+pred_hab_sites %<>% 
+  mutate(chnk_domain = if_else(Site %in% pred_hab_sites_chnk$Site, T, F)) %>%
+  mutate_at(vars(Watershed),
+            list(fct_drop))
 
 #----------------------------------------
 # pull in survey design related data
@@ -270,12 +268,11 @@ pred_hab_sites_chnk = pred_hab_sites %>%
 # Calculate GRTS design weights.
 
 # pull in info about what strata each CHaMP site was assigned to (using 2014 as reference year)
-site_strata = pred_hab_sites_chnk %>%
-  select(Site, Watershed) %>%
+site_strata = pred_hab_sites %>%
+  select(Site, Watershed, chnk_domain) %>%
   distinct() %>%
   left_join(gaa %>%
               select(Site,
-                     # CHaMPsheds,
                      strata = AStrat2014)) %>%
   mutate(site_num = str_split(Site, '-', simplify = T)[,2]) %>%
   mutate(strata = if_else(Watershed == 'Asotin',
@@ -294,7 +291,7 @@ site_strata = pred_hab_sites_chnk %>%
   select(-site_num)
 
 # read in data from the CHaMP frame
-champ_frame_df = read_csv('../data/prepped/champ_frame_data.csv') %>%
+champ_frame_df = read_csv('data/prepped/champ_frame_data.csv') %>%
   mutate(Target2014 = ifelse(is.na(AStrat2014), 'Non-Target', Target2014)) %>%
   mutate(AStrat2014 = ifelse(AStrat2014 == 'Entiat IMW', paste('EntiatIMW', GeoRchIMW, sep = '_'), AStrat2014)) %>%
   filter(Target2014 == 'Target') %>%
@@ -307,7 +304,7 @@ frame_strata = champ_frame_df %>%
          strata) %>%
   distinct()
 
-# how long is each strata?
+# how long is each strata, by species?
 chnk_strata_length = champ_frame_df %>%
   filter(!is.na(UseTypCHSP)) %>%
   mutate(strata = paste(Watershed, AStrat2014, sep='_')) %>%
@@ -333,6 +330,16 @@ sthd_strata_length = champ_frame_df %>%
             list(as.factor)) %>%
   arrange(Watershed, strata)
 
+strata_length = chnk_strata_length %>%
+  mutate(Species = 'Chinook') %>%
+  bind_rows(sthd_strata_length %>%
+              mutate(Species = 'Steelhead')) %>%
+  select(Species, everything())
+
+#-----------------------------------------------------------------
+# from here down is all Chinook related
+# need to update to include steelhead as well
+#-----------------------------------------------------------------
 
 # how many sites in each strata? and what is the length of each strata?
 strata_tab = pred_hab_sites_chnk %>%
