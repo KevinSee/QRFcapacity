@@ -7,6 +7,7 @@
 plot_partial_dependence(
   rf_mod,
   data,
+  plot_covars = NULL,
   data_dict = NULL,
   type = c("quantile", "mean"),
   pred_quantile = 0.9,
@@ -20,6 +21,8 @@ plot_partial_dependence(
 \item{rf_mod}{the \code{quantregForest} model}
 
 \item{data}{the data.frame used to fit the \code{rf_mod}}
+
+\item{plot_covars}{character vector of covariates to plot}
 
 \item{data_dict}{data.frame containing columns \code{}}
 

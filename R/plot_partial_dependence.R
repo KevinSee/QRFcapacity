@@ -6,6 +6,7 @@
 #'
 #' @param rf_mod the \code{quantregForest} model 
 #' @param data the data.frame used to fit the \code{rf_mod}
+#' @param plot_covars character vector of covariates to plot
 #' @param data_dict data.frame containing columns \code{}
 #' @param type whether to predict a particular quantile, or the mean
 #' @param pred_quantile if \code{type} is "quantile", which quantile to predict, between 0 and 1? The default value is 0.9
@@ -21,6 +22,7 @@
 
 plot_partial_dependence = function(rf_mod,
                                    data,
+                                   plot_covars = NULL,
                                    data_dict = NULL,
                                    type = c('quantile', 'mean'),
                                    pred_quantile = 0.9,
@@ -38,7 +40,7 @@ plot_partial_dependence = function(rf_mod,
   
   # relative importance of covariates
   rel_imp = as_tibble(rf_mod$importance,
-                   rownames = 'Metric') %>%
+                      rownames = 'Metric') %>%
     mutate(relImp = IncNodePurity / max(IncNodePurity)) %>%
     mutate_at(vars(Metric),
               list(~ fct_reorder(., relImp))) %>%
@@ -46,6 +48,7 @@ plot_partial_dependence = function(rf_mod,
   
   # names of covariates
   covars = rel_imp$Metric
+  if(is.null(plot_covars)) plot_covars = covars
   
   # get means and ranges of all
   covar_range = data %>%
@@ -121,7 +124,7 @@ plot_partial_dependence = function(rf_mod,
   # get covariate labels
   pdp_df = pdp_df %>%
     left_join(data_dict %>%
-              select(Metric = ShortName, covar_label = Name)) %>%
+                select(Metric = ShortName, covar_label = Name)) %>%
     # put covariates in order by relative importance
     left_join(rel_imp %>%
                 select(Metric, relImp)) %>%
@@ -148,13 +151,15 @@ plot_partial_dependence = function(rf_mod,
     select(Metric, covar_label, Watershed, value)
   
   
-  my_p = ggplot(data = pdp_df,
-                aes(x = value,
-                    y = pred)) +
+  my_p = pdp_df %>%
+    filter(Metric %in% plot_covars) %>%
+    ggplot(aes(x = value,
+               y = pred)) +
     geom_smooth(method = 'loess',
                 se = F,
                 color = 'black') +
-    geom_rug(data = rug_df, 
+    geom_rug(data = rug_df %>%
+               filter(Metric %in% plot_covars), 
              aes(x = value,
                  y = NULL,
                  color = Watershed)) +
