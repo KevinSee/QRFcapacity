@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to summer parr data, using CHaMP habitat 2011-2017
 # Created: 12/4/2019
-# Last Modified: 12/4/19
+# Last Modified: 12/30/19
 # Notes: 
 
 #-----------------------------------------------------------------
