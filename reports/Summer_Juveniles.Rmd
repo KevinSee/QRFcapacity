@@ -513,14 +513,14 @@ We then created partial dependence plots for each covariate, which show the marg
 chnk_pdp = plot_partial_dependence(qrf_mods[[1]],
                                    qrf_mod_df %>%
                                      filter(Species == 'Chinook'),
-                                   hab_dict,
+                                   data_dict = hab_dict,
                                    scales = 'free_x')
 
 # for steelhead
 sthd_pdp = plot_partial_dependence(qrf_mods[[2]],
                                    qrf_mod_df %>%
                                      filter(Species == 'Steelhead'),
-                                   hab_dict,
+                                   data_dict = hab_dict,
                                    scales = 'free_x')
 
 
