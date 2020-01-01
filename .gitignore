@@ -13,3 +13,5 @@ data/prepped/NorWeST_temps.shx
 data/prepped/champ_frame_data.csv
 RepoDesign.txt
 inst/doc
+output/shapefiles
+output/gpkg

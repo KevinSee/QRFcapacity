@@ -530,6 +530,16 @@ mod_data %<>%
   mutate_at(vars(Watershed, CHaMPsheds, Channel_Type),
             list(fct_drop)) 
 
+# calculate adjusted weights for all predicted QRF capacity sites
+mod_data_weights = mod_data %>%
+  left_join(site_strata) %>%
+  left_join(strata_tab) %>%
+  filter(!is.na(site_weight)) %>%
+  group_by(Species, Watershed) %>%
+  mutate(sum_weights = sum(site_weight)) %>%
+  ungroup() %>%
+  mutate(adj_weight = site_weight / sum_weights)
+
 
 # where do we want to make extrapolation predictions?
 gaa_pred = gaa_all %>%
@@ -542,23 +552,12 @@ gaa_pred = gaa_all %>%
   filter(!grepl('mega', Site, ignore.case = T)) %>%
   # note which sites have GAAs outside range of CHaMP sites GAAs
   mutate(inCovarRange = ifelse(Site %in% out_range_sites, F, T)) %>%
-  select(Site, one_of(gaa_covars), Lon, Lat, inCovarRange, HUC6NmNRCS, HUC8NmNRCS, HUC10NmNRC, HUC12NmNRC, chnk) %>%
+  select(Site, one_of(gaa_covars), Lon, Lat, inCovarRange, HUC6NmNRCS, HUC8NmNRCS, HUC10NmNRC, HUC12NmNRC, chnk, steel) %>%
   gather(GAA, value, one_of(gaa_num)) %>%
   left_join(gaa_summ) %>%
   mutate(norm_value = (value - metric_mean) / metric_sd) %>%
   select(-(value:metric_sd)) %>%
   spread(GAA, norm_value)
-
-
-# calculate adjusted weights for all predicted QRF capacity sites
-mod_data_weights = mod_data %>%
-  left_join(site_strata) %>%
-  left_join(strata_tab) %>%
-  filter(!is.na(site_weight)) %>%
-  group_by(Species, Watershed) %>%
-  mutate(sum_weights = sum(site_weight)) %>%
-  ungroup() %>%
-  mutate(adj_weight = site_weight / sum_weights)
 
 #-------------------------------------------------------------
 # Set up the survey design.
@@ -814,3 +813,19 @@ save(gaa_covars,
      model_svy_df,
      all_preds,
      file = 'output/modelFits/extrap_juv_summer.rda')
+
+#---------------------------
+# create a shapefile
+load('output/modelFits/extrap_juv_summer.rda')
+data("chnk_domain")
+
+all_preds_sf = all_preds %>%
+  select(Site, Lon:model) %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(st_crs(chnk_domain))
+
+st_write(all_preds_sf,
+         dsn = 'output/shapefiles',
+         layer = 'Sum_Juv_Capacity.shp',
+         driver = 'ESRI Shapefile')
