@@ -825,7 +825,13 @@ all_preds_sf = all_preds %>%
            crs = 4326) %>%
   st_transform(st_crs(chnk_domain))
 
+# save it
 st_write(all_preds_sf,
          dsn = 'output/shapefiles',
          layer = 'Sum_Juv_Capacity.shp',
          driver = 'ESRI Shapefile')
+
+st_write(all_preds_sf,
+         dsn = 'output/gpkg/Sum_Juv_Capacity.gpkg',
+         # layer = 'Sum_Juv_Capacity.gpkg',
+         driver = 'GPKG')
