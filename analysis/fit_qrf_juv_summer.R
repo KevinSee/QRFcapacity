@@ -826,12 +826,22 @@ all_preds_sf = all_preds %>%
   st_transform(st_crs(chnk_domain))
 
 # save it
+# as shapefile
 st_write(all_preds_sf,
          dsn = 'output/shapefiles',
          layer = 'Sum_Juv_Capacity.shp',
          driver = 'ESRI Shapefile')
 
+# as GPKG
 st_write(all_preds_sf,
          dsn = 'output/gpkg/Sum_Juv_Capacity.gpkg',
          # layer = 'Sum_Juv_Capacity.gpkg',
          driver = 'GPKG')
+
+# test out a small one
+all_preds_sf %>%
+  filter(HUC10NmNRC == 'Hayden Creek') %>%
+  st_write(dsn = 'output/gpkg/Sum_Juv_Capacity_Hayden.gpkg',
+           driver = 'GPKG')
+
+test = st_read('output/gpkg/Sum_Juv_Capacity.gpkg')
