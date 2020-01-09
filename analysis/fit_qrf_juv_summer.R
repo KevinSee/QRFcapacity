@@ -197,6 +197,50 @@ save(fish_hab,
      file = 'output/modelFits/qrf_juv_summer.rda')
 
 #-----------------------------------------------------------------
+# create a few figures
+#-----------------------------------------------------------------
+load('output/modelFits/qrf_juv_summer.rda')
+data("hab_dict_2017")
+hab_dict = hab_dict_2017
+
+# relative importance of habtiat covariates
+rel_imp_p = qrf_mods %>%
+  map(.f = function(x) {
+    as_tibble(x$importance,
+              rownames = 'Metric') %>%
+      mutate(relImp = IncNodePurity / max(IncNodePurity)) %>%
+      left_join(hab_dict %>%
+                  select(Metric = ShortName,
+                         Name)) %>%
+      mutate_at(vars(Metric, Name),
+                list(~ fct_reorder(., relImp))) %>%
+      arrange(Metric) %>%
+      distinct() %>%
+      ggplot(aes(x = Name,
+                 y = relImp)) +
+      geom_col(fill = 'gray40') +
+      coord_flip() +
+      labs(x = 'Metric',
+           y = 'Relative Importance')
+    
+  })
+
+# for Chinook
+chnk_pdp = plot_partial_dependence(qrf_mods[['Chinook']],
+                                   qrf_mod_df %>%
+                                     filter(Species == 'Chinook'),
+                                   data_dict = hab_dict,
+                                   scales = 'free')
+
+# for steelhead
+sthd_pdp = plot_partial_dependence(qrf_mods[['Steelhead']],
+                                   qrf_mod_df %>%
+                                     filter(Species == 'Steelhead'),
+                                   data_dict = hab_dict,
+                                   scales = 'free')
+
+
+#-----------------------------------------------------------------
 # predict capacity at all CHaMP sites
 #-----------------------------------------------------------------
 load('output/modelFits/qrf_juv_summer.rda')
