@@ -10,6 +10,7 @@
 
 #-----------------------------------------------------------------
 # load needed libraries
+library(usethis)
 library(tidyverse)
 library(sf)
 
@@ -233,6 +234,33 @@ sthd_domain %>%
   rbind(ugrSthd) -> sthd_domain
 
 #-----------------------------------------------------------------
+# John Day extent for Chinook, based on ODFW
+#-----------------------------------------------------------------
+jd_chnk = st_read("data/raw/domain/ODFW_ChS_Distribution.shp") %>%
+  st_transform(myCRS) %>%
+  st_intersection(st_read("/Users/seek/OneDrive - Merck Sharp & Dohme, Corp/Data/WatershedBoundaries/WBDHU6.shp") %>%
+                    filter(NAME == 'John Day') %>%
+                    st_transform(myCRS)) %>%
+  mutate(Source = 'ODFW',
+         ESU_DPS = 'Middle Columbia River Chinook Salmon ESU',
+         MPG = NA,
+         NWR_POPID = NA,
+         NWR_NAME = "Chinook Salmon (Middle Columbia River Chinook Salmon ESU) - John Day") %>%
+  unite(SciName, fhdGenus, fhdSp, sep = " ", remove = F)
+
+chnk_domain %>%
+  rbind(jd_chnk %>%
+          select(Source = fhdOEnt,
+                 StreamName = fhdStNm,
+                 Species = fhdSpNm,
+                 SciName,
+                 UseType = fhdUseTy,
+                 ESU_DPS,
+                 MPG,
+                 NWR_POPID,
+                 NWR_NAME)) -> chnk_domain
+
+#-----------------------------------------------------------------
 # Save species extents
 #-----------------------------------------------------------------
 # make available like in a package, by calling "data()"
@@ -249,4 +277,16 @@ st_write(chnk_domain,
 st_write(sthd_domain,
          dsn = 'data/prepped/sthd_domain.shp',
          driver = 'ESRI Shapefile',
+         delete_layer = T)
+
+# save as GPKG
+st_write(chnk_domain,
+         dsn = 'data/prepped/chnk_domain_GPKG.gpkg',
+         driver = "GPKG",
+         delete_layer = T)
+
+# save as GPKG
+st_write(sthd_domain,
+         dsn = 'data/prepped/sthd_domain_GPKG.gpkg',
+         driver = "GPKG",
          delete_layer = T)
