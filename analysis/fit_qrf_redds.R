@@ -804,3 +804,25 @@ save(gaa_covars,
      model_svy_df,
      all_preds,
      file = 'output/modelFits/extrap_redds.rda')
+
+#---------------------------
+# create a shapefile
+load('output/modelFits/extrap_redds.rda')
+data("chnk_domain")
+
+all_preds_sf = all_preds %>%
+  select(Site, Lon:model) %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(st_crs(chnk_domain))
+
+# save it
+# as shapefile
+st_write(all_preds_sf,
+         dsn = 'output/shapefiles/Redds_Capacity.shp',
+         driver = 'ESRI Shapefile')
+
+# as GPKG
+st_write(all_preds_sf,
+         dsn = 'output/gpkg/Redds_Capacity.gpkg',
+         driver = 'GPKG')
