@@ -214,7 +214,8 @@ A key step in developing a QRF model to predict fish capacities is selecting the
 ## Methods
 
 We used the Maximal Information-Based Nonparametric Exploration (MINE) class of statistics (@Reshef2011) to determine those habitat characteristics (covariates) most highly associated with observed parr densities. We calculated the maximal information coefficient (MIC), using the R package `minerva` (@Albanese2013), to measure the strength of the linear or non-linear association between two variables (@Reshef2011). The MIC value between each of the measured habitat characteristics and the response variable, juvenile fish density (fish/m), was used to inform decisions on which habitat covariates to include in the QRF parr capacity model.
-	Habitat metrics were first grouped into broad categories that included channel unit, complexity, cover, disturbance, riparian, size, substrate, temperature, water quality, and woody debris. Within each category, metrics were ranked according to their MIC value (Figure 1). Our strategy was to select one or two variables with the highest MIC score within each category so that covariates describe different aspects of rearing habitat (e.g., substrate, temperature, etc.). 
+
+Habitat metrics were first grouped into broad categories that included channel unit, complexity, cover, disturbance, riparian, size, substrate, temperature, water quality, and woody debris. Within each category, metrics were ranked according to their MIC value (Figure 1). Our strategy was to select one or two variables with the highest MIC score within each category so that covariates describe different aspects of rearing habitat (e.g., substrate, temperature, etc.). 
 
 ```{r MINE_stats}
 
