@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to summer parr data, using CHaMP habitat 2011-2017
 # Created: 12/4/2019
-# Last Modified: 12/4/19
+# Last Modified: 12/30/19
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -95,7 +95,7 @@ chnk_sites = chnk_samps %>%
   as('sf') %>%
   select(-nearest_line_id, -snap_dist) %>%
   # include some sites in the John Day where Chinook were found (or seemed to be close to sites where Chinook were found)
-  rbind(st_read('../data/raw/domain/Chnk_JohnDay_TrueObs.shp',
+  rbind(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
                 quiet = T) %>%
           st_transform(st_crs(chnk_domain)) %>%
           select(-in_range))
@@ -141,27 +141,23 @@ sel_hab_mets = crossing(Species = c('Chinook',
 # Fit QRF model
 #-----------------------------------------------------------------
 # impute missing data in fish / habitat dataset
-qrf_mod_df = fish_hab %>%
-  split(list(.$Species)) %>%
-  map_df(.id = 'Species',
-         .f = function(x) {
-           spp = unique(x$Species)
-           
-           covars = sel_hab_mets %>%
-             filter(Species == spp) %>%
-             pull(Metric)
-           
-           data = impute_missing_data(data = x %>%
-                                        mutate_at(vars(Watershed, Year),
-                                                  list(fct_drop)),
-                                      covars = covars,
-                                      impute_vars = c('Watershed', 'Elev_M', 'Sin', 'Year', 'CUMDRAINAG'),
-                                      method = 'missForest') %>%
-             select(Site, Watershed, Year, LON_DD, LAT_DD, fish_dens, VisitID, one_of(covars))
-           
-           return(data)
-           
-         })
+
+# impute missing habitat metrics once, for both species
+covars = sel_hab_mets %>%
+  pull(Metric) %>%
+  unique()
+
+qrf_mod_df = impute_missing_data(data = fish_hab %>%
+                                   select(-(FishSite:fish_dens)) %>%
+                                   distinct(),
+                                 covars = covars,
+                                 impute_vars = c('Watershed', 'Elev_M', 'Sin', 'Year', 'CUMDRAINAG'),
+                                 method = 'missForest') %>%
+  left_join(fish_hab %>%
+              select(Year:fish_dens, VisitID)) %>%
+  select(Species, Site, Watershed, Year, LON_DD, LAT_DD, fish_dens, VisitID, one_of(covars))
+
+rm(covars)
 
 # fit the QRF model
 # set the density offset (to accommodate 0z)
@@ -194,14 +190,61 @@ qrf_mods = qrf_mod_df %>%
 
 # save some results
 save(fish_hab, 
+     sel_hab_mets,
      qrf_mod_df,
      dens_offset,
      qrf_mods,
-     file = '../output/modelFits/qrf_juv_summer.rda')
+     file = 'output/modelFits/qrf_juv_summer.rda')
+
+#-----------------------------------------------------------------
+# create a few figures
+#-----------------------------------------------------------------
+load('output/modelFits/qrf_juv_summer.rda')
+data("hab_dict_2017")
+hab_dict = hab_dict_2017
+
+# relative importance of habtiat covariates
+rel_imp_p = qrf_mods %>%
+  map(.f = function(x) {
+    as_tibble(x$importance,
+              rownames = 'Metric') %>%
+      mutate(relImp = IncNodePurity / max(IncNodePurity)) %>%
+      left_join(hab_dict %>%
+                  select(Metric = ShortName,
+                         Name)) %>%
+      mutate_at(vars(Metric, Name),
+                list(~ fct_reorder(., relImp))) %>%
+      arrange(Metric) %>%
+      distinct() %>%
+      ggplot(aes(x = Name,
+                 y = relImp)) +
+      geom_col(fill = 'gray40') +
+      coord_flip() +
+      labs(x = 'Metric',
+           y = 'Relative Importance')
+    
+  })
+
+# for Chinook
+chnk_pdp = plot_partial_dependence(qrf_mods[['Chinook']],
+                                   qrf_mod_df %>%
+                                     filter(Species == 'Chinook'),
+                                   data_dict = hab_dict,
+                                   scales = 'free')
+
+# for steelhead
+sthd_pdp = plot_partial_dependence(qrf_mods[['Steelhead']],
+                                   qrf_mod_df %>%
+                                     filter(Species == 'Steelhead'),
+                                   data_dict = hab_dict,
+                                   scales = 'free')
+
 
 #-----------------------------------------------------------------
 # predict capacity at all CHaMP sites
 #-----------------------------------------------------------------
+load('output/modelFits/qrf_juv_summer.rda')
+
 # what quantile is a proxy for capacity?
 pred_quant = 0.9
 
@@ -251,18 +294,32 @@ pred_hab_sites_chnk = pred_hab_sites %>%
   as_tibble() %>%
   select(-nearest_line_id, -snap_dist, -geometry) %>%
   # add sites in the John Day
-  bind_rows(st_read('../data/raw/domain/Chnk_JohnDay_TrueObs.shp',
+  bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
                     quiet = T) %>%
               as_tibble() %>%
               select(Site) %>%
               inner_join(pred_hab_sites))
 
-#-----------------------------------------------------------------
-# from here down is all Chinook related
-# need to update to include steelhead as well
-#-----------------------------------------------------------------
+# note if sites are in Chinook domain or not
+pred_hab_sites %<>% 
+  mutate(chnk_domain = if_else(Site %in% pred_hab_sites_chnk$Site, T, F)) %>%
+  mutate_at(vars(Watershed),
+            list(fct_drop))
 
-
+pred_hab_df = pred_hab_sites %>%
+  select(-starts_with('chnk')) %>%
+  rename(cap_per_m = sthd_per_m,
+         cap_per_m2 = sthd_per_m2) %>%
+  mutate(Species = 'Steelhead') %>%
+  bind_rows(pred_hab_sites %>%
+              select(-starts_with('sthd')) %>%
+              filter(chnk_domain) %>%
+              select(-chnk_domain) %>%
+              rename(cap_per_m = chnk_per_m,
+                     cap_per_m2 = chnk_per_m2) %>%
+              mutate(Species = 'Chinook')) %>%
+  select(Species, everything())
+  
 
 #----------------------------------------
 # pull in survey design related data
@@ -270,12 +327,11 @@ pred_hab_sites_chnk = pred_hab_sites %>%
 # Calculate GRTS design weights.
 
 # pull in info about what strata each CHaMP site was assigned to (using 2014 as reference year)
-site_strata = pred_hab_sites_chnk %>%
-  select(Site, Watershed) %>%
+site_strata = pred_hab_df %>%
+  select(Species, Site, Watershed) %>%
   distinct() %>%
   left_join(gaa %>%
               select(Site,
-                     # CHaMPsheds,
                      strata = AStrat2014)) %>%
   mutate(site_num = str_split(Site, '-', simplify = T)[,2]) %>%
   mutate(strata = if_else(Watershed == 'Asotin',
@@ -294,7 +350,7 @@ site_strata = pred_hab_sites_chnk %>%
   select(-site_num)
 
 # read in data from the CHaMP frame
-champ_frame_df = read_csv('../data/prepped/champ_frame_data.csv') %>%
+champ_frame_df = read_csv('data/prepped/champ_frame_data.csv') %>%
   mutate(Target2014 = ifelse(is.na(AStrat2014), 'Non-Target', Target2014)) %>%
   mutate(AStrat2014 = ifelse(AStrat2014 == 'Entiat IMW', paste('EntiatIMW', GeoRchIMW, sep = '_'), AStrat2014)) %>%
   filter(Target2014 == 'Target') %>%
@@ -307,7 +363,7 @@ frame_strata = champ_frame_df %>%
          strata) %>%
   distinct()
 
-# how long is each strata?
+# how long is each strata, by species?
 chnk_strata_length = champ_frame_df %>%
   filter(!is.na(UseTypCHSP)) %>%
   mutate(strata = paste(Watershed, AStrat2014, sep='_')) %>%
@@ -333,18 +389,23 @@ sthd_strata_length = champ_frame_df %>%
             list(as.factor)) %>%
   arrange(Watershed, strata)
 
+strata_length = chnk_strata_length %>%
+  mutate(Species = 'Chinook') %>%
+  bind_rows(sthd_strata_length %>%
+              mutate(Species = 'Steelhead')) %>%
+  select(Species, everything())
 
 # how many sites in each strata? and what is the length of each strata?
-strata_tab = pred_hab_sites_chnk %>%
-  select(Site, Watershed, matches('per_m')) %>%
+strata_tab = pred_hab_df %>%
+  select(Species, Site, Watershed, matches('per_m')) %>%
   left_join(site_strata) %>%
   filter(strata != 'Entiat_Entiat IMW') %>%
   mutate_at(vars(Watershed),
             list(fct_drop)) %>%
-  group_by(Watershed, strata) %>%
+  group_by(Species, Watershed, strata) %>%
   summarise(n_sites = n_distinct(Site)) %>%
   ungroup() %>%
-  full_join(chnk_strata_length) %>%
+  full_join(strata_length) %>%
   mutate(n_sites = if_else(is.na(n_sites),
                            as.integer(0),
                            n_sites)) %>%
@@ -354,19 +415,22 @@ strata_tab = pred_hab_sites_chnk %>%
                                as.numeric(NA)))
 
 
+# test to see if we've accounted for all strata and most of each watershed
 strata_test = frame_strata %>%
   full_join(strata_tab) %>%
   mutate_at(vars(Watershed),
             list(fct_drop)) %>%
   mutate(n_sites = if_else(is.na(n_sites),
                            as.integer(0),
-                           n_sites))
+                           n_sites)) %>%
+  select(Species, everything()) %>%
+  arrange(Species, Watershed, strata)
 
-# # what frame strata don't have any sites in them?
+# what frame strata don't have any sites in them?
 # strata_test %>%
 #   filter(n_sites == 0,
 #          !is.na(tot_length_km)) %>%
-#   arrange(Watershed, strata) %>%
+#   arrange(Species, Watershed, strata) %>%
 #   as.data.frame()
 
 # # what strata that we have sites for are not in the frame strata?
@@ -436,14 +500,14 @@ range_comp = bind_rows(gaa_all %>%
                          select(Site,
                                 one_of(gaa_num)) %>%
                          gather(Metric, value, -Site) %>%
-                         mutate(Source = 'non-DASH Sites'),
+                         mutate(Source = 'non-CHaMP Sites'),
                        gaa_all %>%
                          filter(Site %in% unique(pred_hab_sites$Site)) %>%
                          select(Site,
                                 one_of(gaa_num)) %>%
                          distinct() %>%
                          gather(Metric, value, -Site) %>%
-                         mutate(Source = 'DASH Sites')) %>%
+                         mutate(Source = 'CHaMP Sites')) %>%
   mutate_at(vars(Source, Metric),
             list(as.factor))
 
@@ -452,7 +516,7 @@ range_max = range_comp %>%
   summarise_at(vars(value),
                tibble::lst(min, max),
                na.rm = T) %>%
-  filter(Source == 'DASH Sites') %>%
+  filter(Source == 'CHaMP Sites') %>%
   ungroup() %>%
   gather(type, value, -Metric, -Source)
 
@@ -475,7 +539,7 @@ out_range_sites = gaa_all %>%
   unique()
 
 # center covariates
-gaa_summ = inner_join(pred_hab_sites %>%
+gaa_summ = inner_join(pred_hab_df %>%
                         select(Site) %>%
                         distinct(),
                       gaa_all %>%
@@ -487,8 +551,8 @@ gaa_summ = inner_join(pred_hab_sites %>%
   ungroup()
 
 # extrapolation model data set, with normalized covariates
-mod_data = inner_join(pred_hab_sites_chnk %>%
-                        select(Site:avg_aug_temp,
+mod_data = inner_join(pred_hab_df %>%
+                        select(Species:avg_aug_temp,
                                matches('per_m')),
                       gaa_all %>%
                         select(Site, one_of(gaa_num))) %>%
@@ -510,6 +574,16 @@ mod_data %<>%
   mutate_at(vars(Watershed, CHaMPsheds, Channel_Type),
             list(fct_drop)) 
 
+# calculate adjusted weights for all predicted QRF capacity sites
+mod_data_weights = mod_data %>%
+  left_join(site_strata) %>%
+  left_join(strata_tab) %>%
+  filter(!is.na(site_weight)) %>%
+  group_by(Species, Watershed) %>%
+  mutate(sum_weights = sum(site_weight)) %>%
+  ungroup() %>%
+  mutate(adj_weight = site_weight / sum_weights)
+
 
 # where do we want to make extrapolation predictions?
 gaa_pred = gaa_all %>%
@@ -522,23 +596,12 @@ gaa_pred = gaa_all %>%
   filter(!grepl('mega', Site, ignore.case = T)) %>%
   # note which sites have GAAs outside range of CHaMP sites GAAs
   mutate(inCovarRange = ifelse(Site %in% out_range_sites, F, T)) %>%
-  select(Site, one_of(gaa_covars), Lon, Lat, inCovarRange, HUC6NmNRCS, HUC8NmNRCS, HUC10NmNRC, HUC12NmNRC, chnk) %>%
+  select(Site, one_of(gaa_covars), Lon, Lat, inCovarRange, HUC6NmNRCS, HUC8NmNRCS, HUC10NmNRC, HUC12NmNRC, chnk, steel) %>%
   gather(GAA, value, one_of(gaa_num)) %>%
   left_join(gaa_summ) %>%
   mutate(norm_value = (value - metric_mean) / metric_sd) %>%
   select(-(value:metric_sd)) %>%
   spread(GAA, norm_value)
-
-
-# calculate adjusted weights for all predicted QRF capacity sites
-mod_data_weights = mod_data %>%
-  left_join(site_strata) %>%
-  left_join(strata_tab) %>%
-  filter(!is.na(site_weight)) %>%
-  group_by(Watershed) %>%
-  mutate(sum_weights = sum(site_weight)) %>%
-  ungroup() %>%
-  mutate(adj_weight = site_weight / sum_weights)
 
 #-------------------------------------------------------------
 # Set up the survey design.
@@ -556,7 +619,7 @@ full_form = as.formula(paste('log(qrf_cap) ~ -1 + (', paste(gaa_covars, collapse
 model_svy_df = mod_data_weights %>%
   gather(response, qrf_cap, matches('per_m')) %>%
   select(-(n_sites:sum_weights)) %>%
-  group_by(response) %>%
+  group_by(Species, response) %>%
   nest() %>%
   mutate(design = map(data,
                       .f = function(x) {
@@ -575,7 +638,10 @@ model_svy_df = mod_data_weights %>%
                             .f = function(x) {
                               svyglm(update(full_form, .~ . -CHaMPsheds),
                                      design = x)
-                            }))
+                            })) %>%
+  arrange(Species, response) %>%
+  ungroup()
+
 
 # predictions within CHaMP watersheds, using the model that includes CHaMPsheds as a covariate
 y = gaa_pred %>%
@@ -586,29 +652,65 @@ y = gaa_pred %>%
   mutate_at(vars(Channel_Type),
             list(as.factor))
 
-per_m_preds = predict(model_svy_df$mod_full[[1]],
+per_m_preds = model_svy_df %>%
+  filter(Species == 'Chinook',
+         response == 'cap_per_m') %>%
+  pull(mod_full) %>%
+  extract2(1) %>%
+  predict(.,
+          newdata = y,
+          se = T,
+          type = 'response') %>%
+  as_tibble() %>%
+  rename(chnk_per_m = response,
+         chnk_per_m_se = SE) %>%
+  bind_cols(model_svy_df %>%
+              filter(Species == 'Steelhead',
+                     response == 'cap_per_m') %>%
+              pull(mod_full) %>%
+              extract2(1) %>%
+              predict(.,
                       newdata = y,
                       se = T,
-                      type = 'response')
+                      type = 'response') %>%
+              as_tibble() %>%
+              rename(sthd_per_m = response,
+                     sthd_per_m_se = SE))
 
-per_m2_preds = predict(model_svy_df$mod_full[[2]],
-                       newdata = y,
-                       se = T,
-                       type = 'response')
+
+per_m2_preds = model_svy_df %>%
+  filter(Species == 'Chinook',
+         response == 'cap_per_m2') %>%
+  pull(mod_full) %>%
+  extract2(1) %>%
+  predict(.,
+          newdata = y,
+          se = T,
+          type = 'response') %>%
+  as_tibble() %>%
+  rename(chnk_per_m2 = response,
+         chnk_per_m2_se = SE) %>%
+  bind_cols(model_svy_df %>%
+              filter(Species == 'Steelhead',
+                     response == 'cap_per_m2') %>%
+              pull(mod_full) %>%
+              extract2(1) %>%
+              predict(.,
+                      newdata = y,
+                      se = T,
+                      type = 'response') %>%
+              as_tibble() %>%
+              rename(sthd_per_m2 = response,
+                     sthd_per_m2_se = SE))
 
 y %<>%
-  bind_cols(per_m_preds %>%
-              as_tibble() %>%
-              rename(chnk_per_m = response,
-                     chnk_per_m_se = SE)) %>%
-  bind_cols(per_m2_preds %>%
-              as_tibble() %>%
-              rename(chnk_per_m2 = response,
-                     chnk_per_m2_se = SE)) %>%
+  bind_cols(per_m_preds) %>%
+  bind_cols(per_m2_preds) %>%
   mutate_at(vars(matches('per_m')),
             list(exp))
 
-rm(per_m_preds, per_m2_preds)
+rm(per_m_preds,
+   per_m2_preds)
 
 # predictions at all points, using the model without CHaMPsheds as a covariate
 z = gaa_pred %>%
@@ -618,30 +720,67 @@ z = gaa_pred %>%
   mutate_at(vars(Channel_Type),
             list(as.factor))
 
-per_m_preds = predict(model_svy_df$mod_no_champ[[1]],
+per_m_preds = model_svy_df %>%
+  filter(Species == 'Chinook',
+         response == 'cap_per_m') %>%
+  pull(mod_no_champ) %>%
+  extract2(1) %>%
+  predict(.,
+          newdata = z,
+          se = T,
+          type = 'response') %>%
+  as_tibble() %>%
+  rename(chnk_per_m = response,
+         chnk_per_m_se = SE) %>%
+  bind_cols(model_svy_df %>%
+              filter(Species == 'Steelhead',
+                     response == 'cap_per_m') %>%
+              pull(mod_no_champ) %>%
+              extract2(1) %>%
+              predict(.,
                       newdata = z,
                       se = T,
-                      type = 'response')
+                      type = 'response') %>%
+              as_tibble() %>%
+              rename(sthd_per_m = response,
+                     sthd_per_m_se = SE))
 
-per_m2_preds = predict(model_svy_df$mod_no_champ[[2]],
-                       newdata = z,
-                       se = T,
-                       type = 'response')
+
+per_m2_preds = model_svy_df %>%
+  filter(Species == 'Chinook',
+         response == 'cap_per_m2') %>%
+  pull(mod_no_champ) %>%
+  extract2(1) %>%
+  predict(.,
+          newdata = z,
+          se = T,
+          type = 'response') %>%
+  as_tibble() %>%
+  rename(chnk_per_m2 = response,
+         chnk_per_m2_se = SE) %>%
+  bind_cols(model_svy_df %>%
+              filter(Species == 'Steelhead',
+                     response == 'cap_per_m2') %>%
+              pull(mod_no_champ) %>%
+              extract2(1) %>%
+              predict(.,
+                      newdata = z,
+                      se = T,
+                      type = 'response') %>%
+              as_tibble() %>%
+              rename(sthd_per_m2 = response,
+                     sthd_per_m2_se = SE))
 
 z %<>%
-  bind_cols(per_m_preds %>%
-              as_tibble() %>%
-              rename(chnk_per_m = response,
-                     chnk_per_m_se = SE)) %>%
-  bind_cols(per_m2_preds %>%
-              as_tibble() %>%
-              rename(chnk_per_m2 = response,
-                     chnk_per_m2_se = SE)) %>%
+  bind_cols(per_m_preds) %>%
+  bind_cols(per_m2_preds) %>%
   mutate_at(vars(matches('per_m')),
             list(exp))
 
+
 rm(per_m_preds, per_m2_preds)
 
+# put all predictions together
 all_preds = y %>%
   mutate(model = 'CHaMP') %>%
   bind_rows(z %>%
@@ -650,9 +789,10 @@ all_preds = y %>%
 # quick comparison of capacity predicitons with both models
 comp_pred_p = all_preds %>%
   filter(Site %in% Site[duplicated(Site)]) %>%
-  select(Site, CHaMPsheds, Channel_Type, model, chnk_per_m, chnk_per_m2) %>%
+  # select(Site, CHaMPsheds, Channel_Type, model, chnk_per_m, chnk_per_m2) %>%
+  select(Site, CHaMPsheds, Channel_Type, model, chnk_per_m, chnk_per_m2, sthd_per_m, sthd_per_m2) %>%
   arrange(CHaMPsheds, Site, model) %>%
-  gather(dens_type, cap, starts_with('chnk_per_m')) %>%
+  gather(dens_type, cap, matches('_per_m')) %>%
   spread(model, cap) %>%
   ggplot(aes(x = CHaMP,
              y = `non-CHaMP`)) +
@@ -673,8 +813,18 @@ all_preds %<>%
 all_preds %<>%
   left_join(mod_data %>%
               select(Site, 
-                     qrf_chnk_per_m = chnk_per_m,
-                     qrf_chnk_per_m2 = chnk_per_m2)) %>%
+                     Species,
+                     cap_per_m) %>%
+              spread(Species, cap_per_m) %>%
+              rename(qrf_chnk_per_m = Chinook,
+                     qrf_sthd_per_m = Steelhead) %>%
+              full_join(mod_data %>%
+                          select(Site, 
+                                 Species,
+                                 cap_per_m2) %>%
+                          spread(Species, cap_per_m2) %>%
+                          rename(qrf_chnk_per_m2 = Chinook,
+                                 qrf_sthd_per_m2 = Steelhead))) %>%
   mutate(chnk_per_m = if_else(!is.na(qrf_chnk_per_m),
                               qrf_chnk_per_m,
                               chnk_per_m),
@@ -687,5 +837,55 @@ all_preds %<>%
          chnk_per_m2_se = if_else(!is.na(qrf_chnk_per_m2),
                                   as.numeric(NA),
                                   chnk_per_m2_se)) %>%
+  mutate(sthd_per_m = if_else(!is.na(qrf_sthd_per_m),
+                              qrf_sthd_per_m,
+                              sthd_per_m),
+         sthd_per_m_se = if_else(!is.na(qrf_sthd_per_m),
+                                 as.numeric(NA),
+                                 sthd_per_m_se),
+         sthd_per_m2 = if_else(!is.na(qrf_sthd_per_m2),
+                               qrf_sthd_per_m2,
+                               sthd_per_m2),
+         sthd_per_m2_se = if_else(!is.na(qrf_sthd_per_m2),
+                                  as.numeric(NA),
+                                  sthd_per_m2_se)) %>%
   select(-starts_with('qrf'))
 
+
+save(gaa_covars,
+     mod_data_weights,
+     model_svy_df,
+     all_preds,
+     file = 'output/modelFits/extrap_juv_summer.rda')
+
+#---------------------------
+# create a shapefile
+load('output/modelFits/extrap_juv_summer.rda')
+data("chnk_domain")
+
+all_preds_sf = all_preds %>%
+  select(Site, Lon:model) %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(st_crs(chnk_domain))
+
+# save it
+# as shapefile
+st_write(all_preds_sf,
+         dsn = 'output/shapefiles',
+         layer = 'Sum_Juv_Capacity.shp',
+         driver = 'ESRI Shapefile')
+
+# as GPKG
+st_write(all_preds_sf,
+         dsn = 'output/gpkg/Sum_Juv_Capacity.gpkg',
+         # layer = 'Sum_Juv_Capacity.gpkg',
+         driver = 'GPKG')
+
+# test out a small one
+all_preds_sf %>%
+  filter(HUC10NmNRC == 'Hayden Creek') %>%
+  st_write(dsn = 'output/gpkg/Sum_Juv_Capacity_Hayden.gpkg',
+           driver = 'GPKG')
+
+test = st_read('output/gpkg/Sum_Juv_Capacity.gpkg')

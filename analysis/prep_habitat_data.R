@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep habitat data
 # Created: 5/14/2019
-# Last Modified: 10/28/19
+# Last Modified: 1/12/2020
 # Notes: some data downloaded from CHaMP webpage on 9/16/2015
 # final champ dataset downloaded on 3/8/2018
 # Richie joined the NorWeST temperature data to the master sample points
@@ -14,6 +14,8 @@ library(magrittr)
 library(WriteXLS)
 library(readxl)
 library(QRFcapacity)
+library(sf)
+library(usethis)
 
 #-----------------------------------------------------------------
 # get globally available attributes from all master sample points
@@ -41,6 +43,7 @@ gaa = read_csv('data/raw/master_sample_pts/IC_Sites_withMetrics_20151016.csv') %
                      S30_2040D = S30_204,
                      S32_2080D = S32_208))
 
+# compare some of the GAAs that come from the GAA file and the NorWeST file
 comp_df = gaa %>%
   filter(steel == 'Yes' | chnk == 'Yes') %>%
   select(Site,
@@ -85,6 +88,64 @@ comp_df %>%
 #   facet_wrap(~ source) +
 #   theme(axis.text = element_blank())
 
+#------------------------------------
+# determine which sites are in Chinook and steelhead domains
+#------------------------------------
+data("chnk_domain")
+data("sthd_domain")
+
+gaa_sf = gaa %>%
+  select(Site, Lon, Lat) %>%
+  distinct() %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(st_crs(chnk_domain))
+
+# build a buffer around species domain, as polygon
+# buffer the species domain by some distance, create a polygon
+buff_dist = 500
+
+chnk_buff = chnk_domain %>%
+  st_combine() %>%
+  st_buffer(dist = buff_dist)
+
+chnk_buff %<>%
+  st_buffer(dist = 0)
+
+chnk_pts = gaa_sf %>%
+  st_intersection(chnk_buff)
+
+use_data(chnk_pts,
+         version = 2,
+         overwrite = T)
+
+rm(chnk_buff, chnk_pts)
+
+# sthd_buff = sthd_domain %>%
+#   st_union() %>%
+#   st_buffer(dist = buff_dist)
+
+sthd_buff = sthd_domain %>%
+  st_combine() %>%
+  st_buffer(dist = buff_dist)
+
+sthd_buff %<>%
+  st_buffer(dist = 0)
+
+sthd_pts = gaa_sf %>%
+  st_intersection(sthd_buff)
+
+use_data(sthd_pts,
+         version = 2,
+         overwrite = T)
+
+rm(sthd_buff, sthd_pts)
+
+
+# add to gaa
+gaa %<>%
+  mutate(chnk_range = if_else(Site %in% chnk_pts$Site, T, F),
+         sthd_range = if_else(Site %in% sthd_pts$Site, T, F))
 
 # make available like a package, by calling "data()"
 use_data(gaa,

@@ -4,14 +4,25 @@
 \alias{plot_partial_dependence}
 \title{Partial Dependence Plots}
 \usage{
-plot_partial_dependence(rf_mod, data, data_dict = NULL,
-  type = c("quantile", "mean"), pred_quantile = 0.9, n_pts = 200,
-  log_transform = T, log_offset = 0.005, scales = "free")
+plot_partial_dependence(
+  rf_mod,
+  data,
+  plot_covars = NULL,
+  data_dict = NULL,
+  type = c("quantile", "mean"),
+  pred_quantile = 0.9,
+  n_pts = 200,
+  log_transform = T,
+  log_offset = 0.005,
+  scales = "free"
+)
 }
 \arguments{
 \item{rf_mod}{the \code{quantregForest} model}
 
 \item{data}{the data.frame used to fit the \code{rf_mod}}
+
+\item{plot_covars}{character vector of covariates to plot}
 
 \item{data_dict}{data.frame containing columns \code{}}
 

@@ -4,9 +4,15 @@
 \alias{calc_watershed_cap}
 \title{Watershed Capacity}
 \usage{
-calc_watershed_cap(wtsd_polygon, spp_range, capacity_pts,
-  capacity_name = "chnk_per_m", capacity_se_name = "chnk_per_m_se",
-  snap_dist = 500, by_stream = F)
+calc_watershed_cap(
+  wtsd_polygon,
+  spp_range,
+  capacity_pts,
+  capacity_name = "chnk_per_m",
+  capacity_se_name = "chnk_per_m_se",
+  snap_dist = 500,
+  by_stream = F
+)
 }
 \arguments{
 \item{wtsd_polygon}{sf polygon defining the extent you wish to estimate capacity over}

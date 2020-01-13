@@ -8,16 +8,6 @@ output:
     toc_depth: 2
     theme: simplex
     toc_float: yes
-  rmarkdown::html_vignette:
-    fig_caption: yes
-    fig_height: 8
-    fig_width: 8
-    toc: yes
-    toc_depth: 1
-vignette: >
-  %\VignetteIndexEntry{Summer_Juveniles}
-  %\VignetteEncoding{UTF-8}
-  %\VignetteEngine{knitr::rmarkdown}
 csl: /Users/kevin/Dropbox/Bibliography/StyleFiles/ecology.csl
 bibliography:
 - /Users/kevin/Dropbox/Bibliography/Research.bib
@@ -59,7 +49,7 @@ library(MuMIn)
 
 # set default theme for ggplot
 theme_set(theme_bw())
-# setwd('analysis')
+# setwd('reports')
 ```
 
 ```{r}
@@ -158,7 +148,9 @@ snap_dist = 1000
 # which of those sites are in Chinook domain?
 chnk_sites = chnk_samps %>%
   as_Spatial() %>%
-  maptools::snapPointsToLines(chnk_domain %>%
+  snapPointsToLines_v2(points = .,
+  # maptools::snapPointsToLines(points = .,
+                              chnk_domain %>%
                                 mutate(id = 1:n()) %>%
                                 select(id, MPG) %>%
                                 as_Spatial(),
@@ -521,14 +513,14 @@ We then created partial dependence plots for each covariate, which show the marg
 chnk_pdp = plot_partial_dependence(qrf_mods[[1]],
                                    qrf_mod_df %>%
                                      filter(Species == 'Chinook'),
-                                   hab_dict,
+                                   data_dict = hab_dict,
                                    scales = 'free_x')
 
 # for steelhead
 sthd_pdp = plot_partial_dependence(qrf_mods[[2]],
                                    qrf_mod_df %>%
                                      filter(Species == 'Steelhead'),
-                                   hab_dict,
+                                   data_dict = hab_dict,
                                    scales = 'free_x')
 
 
@@ -1326,8 +1318,16 @@ qrf_caps = trap_poly %>%
   mutate(Trap = recode(Trap,
                        'Minam R.' = 'Minam River',
                        'Entiat R.' = 'Entiat River',
+                       'Crooked Fork Creek' = 'Crooked Fork',
                        'Upper Grande Ronde R.' ='Upper Grande Ronde River',
-                       'Toucannon R.' = 'Tucannon River'))
+                       'Toucannon R.' = 'Tucannon River',
+                       'Pahsimeroi' = 'Pahsimeroi River',
+                       'Hood R.' = 'Hood River',
+                       'John Day Middle Fork' = 'Middle Fork John Day',
+                       'Upper Salmon River' = 'Upper Salmon River Chinook',
+                       'John Day Upper Mainstem' = 'Upper Mainstem John Day',
+                       'East Fork Salmon' = 'East Fork Salmon River',
+                       'Lostine R.' = 'Lostine River'))
 
 # qrf_caps %>%
 #   filter(is.na(tot_cap))
