@@ -286,14 +286,14 @@ pred_hab_sites_chnk = pred_hab_sites %>%
                               withAttrs = T,
                               idField = 'id') %>%
   as('sf') %>%
-  as_tibble() %>%
-  select(-nearest_line_id, -snap_dist, -geometry) %>%
-  # add sites in the John Day
-  bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-                    quiet = T) %>%
-              as_tibble() %>%
-              select(Site) %>%
-              inner_join(pred_hab_sites))
+  as_tibble() #%>%
+  # select(-nearest_line_id, -snap_dist, -geometry) %>%
+  # # add sites in the John Day
+  # bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
+  #                   quiet = T) %>%
+  #             as_tibble() %>%
+  #             select(Site) %>%
+  #             inner_join(pred_hab_sites))
 
 # note if sites are in Chinook domain or not
 pred_hab_sites %<>% 
@@ -804,6 +804,8 @@ all_preds %<>%
   filter((Site %in% Site[duplicated(Site)] & model == 'CHaMP') |
            !Site %in% Site[duplicated(Site)])
 
+sum(duplicated(all_preds$Site))
+
 # for CHaMP sites, use direct QRF esimates, not extrapolation ones
 all_preds %<>%
   left_join(mod_data %>%
@@ -851,11 +853,11 @@ save(gaa_covars,
      mod_data_weights,
      model_svy_df,
      all_preds,
-     file = 'output/modelFits/extrap_juv_summer.rda')
+     file = 'output/modelFits/extrap_juv_summer_dash.rda')
 
 #---------------------------
 # create a shapefile
-load('output/modelFits/extrap_juv_summer.rda')
+load('output/modelFits/extrap_juv_summer_dash.rda')
 data("chnk_domain")
 
 all_preds_sf = all_preds %>%
@@ -867,20 +869,10 @@ all_preds_sf = all_preds %>%
 # save it
 # as shapefile
 st_write(all_preds_sf,
-         dsn = 'output/shapefiles',
-         layer = 'Sum_Juv_Capacity.shp',
+         dsn = 'output/shapefiles/Sum_Juv_Capacity_DASH.shp',
          driver = 'ESRI Shapefile')
 
 # as GPKG
 st_write(all_preds_sf,
-         dsn = 'output/gpkg/Sum_Juv_Capacity.gpkg',
-         # layer = 'Sum_Juv_Capacity.gpkg',
+         dsn = 'output/gpkg/Sum_Juv_Capacity_DASH.gpkg',
          driver = 'GPKG')
-
-# test out a small one
-all_preds_sf %>%
-  filter(HUC10NmNRC == 'Hayden Creek') %>%
-  st_write(dsn = 'output/gpkg/Sum_Juv_Capacity_Hayden.gpkg',
-           driver = 'GPKG')
-
-test = st_read('output/gpkg/Sum_Juv_Capacity.gpkg')
