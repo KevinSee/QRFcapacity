@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to summer parr data, using CHaMP habitat 2011-2017
 # Created: 12/4/2019
-# Last Modified: 12/30/19
+# Last Modified: 1/14/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -107,6 +107,7 @@ chnk_sites = chnk_samps %>%
 #           aes(color = 'In Chnk Range')) +
 #   theme(axis.text = element_blank())
 
+# only keep Chinook data from sites in Chinook domain
 fish_hab %<>%
   filter(Species == 'Steelhead' |
            (Species == 'Chinook' & Site %in% chnk_sites$Site))
@@ -164,7 +165,6 @@ rm(covars)
 dens_offset = 0.005
 
 # fit random forest models
-set.seed(4)
 qrf_mods = qrf_mod_df %>%
   split(list(.$Species)) %>%
   map(.f = function(z) {
@@ -291,14 +291,7 @@ pred_hab_sites_chnk = pred_hab_sites %>%
                               withAttrs = T,
                               idField = 'id') %>%
   as('sf') %>%
-  as_tibble() #%>%
-  # select(-nearest_line_id, -snap_dist, -geometry) %>%
-  # # add sites in the John Day
-  # bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-  #                   quiet = T) %>%
-  #             as_tibble() %>%
-  #             select(Site) %>%
-  #             inner_join(pred_hab_sites))
+  as_tibble()
 
 # note if sites are in Chinook domain or not
 pred_hab_sites %<>% 
@@ -306,6 +299,7 @@ pred_hab_sites %<>%
   mutate_at(vars(Watershed),
             list(fct_drop))
 
+# put into dataframe for extrapolation, keeping only Chinook sites in Chinook domain
 pred_hab_df = pred_hab_sites %>%
   select(-starts_with('chnk')) %>%
   rename(cap_per_m = sthd_per_m,
@@ -810,15 +804,29 @@ all_preds %<>%
            !Site %in% Site[duplicated(Site)])
 
 # for CHaMP sites, use direct QRF esimates, not extrapolation ones
+qrf_cap = pred_hab_sites %>%
+  select(-starts_with('chnk')) %>%
+  rename(cap_per_m = sthd_per_m,
+         cap_per_m2 = sthd_per_m2) %>%
+  mutate(Species = 'Steelhead') %>%
+  bind_rows(pred_hab_sites %>%
+              select(-starts_with('sthd')) %>%
+              select(-chnk_domain) %>%
+              rename(cap_per_m = chnk_per_m,
+                     cap_per_m2 = chnk_per_m2) %>%
+              mutate(Species = 'Chinook')) %>%
+  select(Species, everything()) %>%
+  select(Site, Species, cap_per_m, cap_per_m2)
+
 all_preds %<>%
-  left_join(mod_data %>%
+  left_join(qrf_cap %>%
               select(Site, 
                      Species,
                      cap_per_m) %>%
               spread(Species, cap_per_m) %>%
               rename(qrf_chnk_per_m = Chinook,
                      qrf_sthd_per_m = Steelhead) %>%
-              full_join(mod_data %>%
+              full_join(qrf_cap %>%
                           select(Site, 
                                  Species,
                                  cap_per_m2) %>%
@@ -872,15 +880,15 @@ all_preds_sf = all_preds %>%
 # save it
 # as shapefile
 st_write(all_preds_sf,
-         dsn = 'output/shapefiles',
-         layer = 'Sum_Juv_Capacity.shp',
-         driver = 'ESRI Shapefile')
+         dsn = 'output/shapefiles/Sum_Juv_Capacity.shp',
+         driver = 'ESRI Shapefile',
+         delete_layer = T)
 
 # as GPKG
 st_write(all_preds_sf,
          dsn = 'output/gpkg/Sum_Juv_Capacity.gpkg',
-         # layer = 'Sum_Juv_Capacity.gpkg',
-         driver = 'GPKG')
+         driver = 'GPKG',
+         delete_layer = T)
 
 # test out a small one
 all_preds_sf %>%
