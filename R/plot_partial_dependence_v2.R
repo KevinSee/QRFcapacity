@@ -55,9 +55,11 @@ plot_partial_dependence_v2 = function(rf_mod,
     map_chr(.f = class) %>%
     enframe(name = "covar",
             value = "type")
+  
   covars_num = covars_type %>%
     filter(type %in% c("numeric", "integer")) %>%
     pull(covar)
+  
   covars_fct = covars_type %>%
     filter(type  == 'factor') %>%
     pull(covar)
@@ -103,9 +105,9 @@ plot_partial_dependence_v2 = function(rf_mod,
              } 
              if(class(pull(data, x)) %in% c('factor')) {
                df = crossing(factor_cross,
-                        covar_range %>%
-                          select(Metric, median) %>%
-                          spread(Metric, median))
+                             covar_range %>%
+                               select(Metric, median) %>%
+                               spread(Metric, median))
              }
              
              return(df)
