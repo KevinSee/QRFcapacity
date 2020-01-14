@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to winter juvenile parr data, using CHaMP habitat data
 # Created: 1/12/2020
-# Last Modified: 1/12/2020
+# Last Modified: 1/14/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -22,121 +22,99 @@ theme_set(theme_bw())
 # determine which set of fish/habitat data to use
 data("fh_win_champ_2017")
 fish_hab = fh_win_champ_2017 %>%
-  mutate_at(vars(Watershed, Year),
+  filter(!is.na(fish_dens)) %>%
+  mutate_at(vars(Watershed, Year, Tier1),
             list(as.factor))
 
 # and the appropriate habitat dictionrary to go with it
 data("hab_dict_2017")
-hab_dict = hab_dict_2017
+hab_dict = hab_dict_2017 %>%
+  bind_rows(hab_dict_2017 %>%
+              filter(ShortName == 'Q') %>%
+              mutate(ShortName = 'Discharge')) %>%
+  filter(ShortName != "DpthThlwgExit" |
+           (ShortName == "DpthThlwgExit" & MetricGroupName == 'Channel Unit'))
 
 # all the related habitat data
 data("champ_cu")
 data("champ_site_2011_17")
-hab_data = champ_site_2011_17
 
-data("champ_site_2011_17_avg")
-hab_avg = champ_site_2011_17_avg
-
-# add temperature metrics
-data("champ_temps")
-hab_avg %<>%
-  left_join(champ_temps %>%
-              as_tibble() %>%
-              select(Site, avg_aug_temp = S2_02_11) %>%
-              distinct())
-
-hab_data %<>%
-  left_join(hab_data %>%
-              select(VisitID, Year = VisitYear) %>%
-              distinct() %>%
-              left_join(champ_temps %>%
-                          as_tibble() %>%
-                          select(VisitID, avg_aug_temp = S2_02_11))) %>%
-  left_join(hab_data %>%
-              select(VisitID, Year = VisitYear) %>%
-              distinct() %>%
-              left_join(champ_temps %>%
-                          as_tibble() %>%
-                          select(Site:VisitID, S1_93_11:S36_2015) %>%
-                          gather(scenario, aug_temp, S1_93_11:S36_2015) %>%
-                          mutate(Year = str_sub(scenario, -4)) %>%
-                          mutate_at(vars(Year),
-                                    list(as.numeric)) %>%
-                          filter(!is.na(Year)) %>%
-                          select(Site:VisitID, Year, aug_temp))) %>%
-  select(-Year)
-
-#-----------------------------------------------------------------
-# clip Chinook data to Chinook domain
-data("chnk_domain")
-
-# which sites were sampled for Chinook? 
-chnk_samps = fish_hab %>%
-  filter(Species == 'Chinook') %>%
-  select(Site:Lon, N) %>%
-  distinct() %>%
-  st_as_sf(coords = c('Lon', 'Lat'),
-           crs = 4326) %>%
-  st_transform(st_crs(chnk_domain))
-
-# set snap distance (in meters)
-st_crs(chnk_samps)
-snap_dist = 1000
-
-# which of those sites are in Chinook domain?
-chnk_sites = chnk_samps %>%
-  as_Spatial() %>%
-  maptools::snapPointsToLines(chnk_domain %>%
-                                mutate(id = 1:n()) %>%
-                                select(id, MPG) %>%
-                                as_Spatial(),
-                              maxDist = snap_dist,
-                              withAttrs = T,
-                              idField = 'id') %>%
-  as('sf') %>%
-  select(-nearest_line_id, -snap_dist) %>%
-  # include some sites in the John Day where Chinook were found (or seemed to be close to sites where Chinook were found)
-  rbind(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-                quiet = T) %>%
-          st_transform(st_crs(chnk_domain)) %>%
-          select(-in_range))
-
-# ggplot() +
-#   geom_sf(data = chnk_samps,
-#           aes(color = 'Sampled')) +
-#   geom_sf(data = chnk_sites,
-#           aes(color = 'In Chnk Range')) +
-#   theme(axis.text = element_blank())
+hab_data = champ_cu %>%
+  mutate(Tier1 = recode(Tier1,
+                        'Fast-NonTurbulent/Glide' = 'Run',
+                        'Fast-Turbulent' = 'Riffle',
+                        'Slow/Pool' = 'Pool',
+                        'Small Side Channel' = 'SSC'),
+         Tier1 = fct_explicit_na(Tier1)) %>%
+  # add some site-scale metrics
+  inner_join(champ_site_2011_17 %>%
+              filter(VisitObjective == 'Primary Visit',
+                     VisitStatus == 'Released to Public') %>%
+               filter(!Watershed %in% c('Big-Navarro-Garcia (CA)',
+                                        'CHaMP Training',
+                                        'Region 17')) %>%
+              select(Site, Watershed, VisitID, VisitYear,
+                     Channel_Type, Elev_M, CUMDRAINAG, 
+                     LON_DD, LAT_DD,
+                     Discharge = Q,
+                     Lgth_Wet, Area_Wet,
+                     CU_Freq,
+                     Sin,
+                     SubD50))
 
 fish_hab %<>%
-  filter(Species == 'Steelhead' |
-           (Species == 'Chinook' & Site %in% chnk_sites$Site))
+  left_join(champ_site_2011_17 %>%
+              select(VisitID, Elev_M, CUMDRAINAG, LON_DD, LAT_DD))
 
+# average habitat == latest channel unit habitat
+data("champ_site_2011_17_avg")
+
+hab_avg = champ_cu %>%
+  mutate(Tier1 = recode(Tier1,
+                        'Fast-NonTurbulent/Glide' = 'Run',
+                        'Fast-Turbulent' = 'Riffle',
+                        'Slow/Pool' = 'Pool',
+                        'Small Side Channel' = 'SSC'),
+         Tier1 = fct_explicit_na(Tier1)) %>%
+  # # use VisitID as proxy for sample date
+  # group_by(Site) %>%
+  # filter(VisitID == max(VisitID)) %>%
+  # ungroup()
+  inner_join(champ_site_2011_17 %>%
+              filter(VisitObjective == 'Primary Visit',
+                     VisitStatus == 'Released to Public') %>%
+               filter(Watershed %in% unique(hab_data$Watershed)) %>%
+              select(VisitID, Site, SampleDate)) %>%
+  group_by(Site) %>%
+  filter(SampleDate == max(SampleDate, na.rm = T)) %>%
+  ungroup() %>%
+  select(-SampleDate) %>%
+  # add some site-scale metrics
+  left_join(champ_site_2011_17_avg %>%
+              select(Site, Watershed,
+                     Channel_Type, Elev_M, CUMDRAINAG, 
+                     LON_DD, LAT_DD,
+                     Discharge = Q,
+                     Lgth_Wet, Area_Wet,
+                     CU_Freq,
+                     Sin,
+                     SubD50))
+
+# all sites within Chinook domain by design
 
 #-----------------------------------------------------------------
 # select which habitat metrics to use in QRF model
 # based on conversation with Mike and Richie
 sel_hab_mets = crossing(Species = c('Chinook', 
                                     'Steelhead'),
-                        Metric = c('UcutArea_Pct',
-                                   'FishCovNone',
-                                   'SubEstGrvl',
-                                   'FstTurb_Freq',
-                                   'FstNT_Freq',
+                        Metric = c('Tier1',
+                                   'Discharge',
                                    'CU_Freq',
-                                   'SlowWater_Pct',
-                                   'NatPrin1',
-                                   'DistPrin1',
-                                   'avg_aug_temp',
-                                   # 'Sin_CL',
                                    'Sin',
-                                   'WetWdth_CV',
-                                   'WetBraid',
-                                   'WetSC_Pct',
-                                   'Q',
-                                   'WetWdth_Int',
-                                   'LWFreq_Wet',
-                                   'LWVol_WetFstTurb'))
+                                   'SubD50',
+                                   'DpthThlwgExit',
+                                   'FishCovLW',
+                                   'SubEstGrvl'))
 
 #-----------------------------------------------------------------
 # Fit QRF model
@@ -149,23 +127,22 @@ covars = sel_hab_mets %>%
   unique()
 
 qrf_mod_df = impute_missing_data(data = fish_hab %>%
-                                   select(-(FishSite:fish_dens)) %>%
+                                   select(-(count:Nmethod), -fish_dens) %>%
                                    distinct(),
                                  covars = covars,
                                  impute_vars = c('Watershed', 'Elev_M', 'Sin', 'Year', 'CUMDRAINAG'),
                                  method = 'missForest') %>%
   left_join(fish_hab %>%
-              select(Year:fish_dens, VisitID)) %>%
-  select(Species, Site, Watershed, Year, LON_DD, LAT_DD, fish_dens, VisitID, one_of(covars))
+              select(Year:ChUnitNumber, Species, fish_dens, VisitID, Tier1)) %>%
+  select(Species, Site, Watershed, Year, ChUnitNumber, SiteUnit, LON_DD, LAT_DD, fish_dens, VisitID, one_of(covars))
 
 rm(covars)
 
 # fit the QRF model
-# set the density offset (to accommodate 0z)
+# set the density offset (to accommodate 0s)
 dens_offset = 0.005
 
 # fit random forest models
-set.seed(4)
 qrf_mods = qrf_mod_df %>%
   split(list(.$Species)) %>%
   map(.f = function(z) {
@@ -176,8 +153,7 @@ qrf_mods = qrf_mod_df %>%
     
     set.seed(3)
     qrf_mod = quantregForest(x = z %>%
-                               select(one_of(covars)) %>%
-                               as.matrix,
+                               select(one_of(covars)),
                              y = z %>%
                                mutate_at(vars(fish_dens),
                                          list(~ log(. + dens_offset))) %>%
@@ -195,14 +171,12 @@ save(fish_hab,
      qrf_mod_df,
      dens_offset,
      qrf_mods,
-     file = 'output/modelFits/qrf_juv_summer.rda')
+     file = 'output/modelFits/qrf_juv_winter.rda')
 
 #-----------------------------------------------------------------
 # create a few figures
 #-----------------------------------------------------------------
-load('output/modelFits/qrf_juv_summer.rda')
-data("hab_dict_2017")
-hab_dict = hab_dict_2017
+load('output/modelFits/qrf_juv_winter.rda')
 
 # relative importance of habtiat covariates
 rel_imp_p = qrf_mods %>%
@@ -212,7 +186,8 @@ rel_imp_p = qrf_mods %>%
       mutate(relImp = IncNodePurity / max(IncNodePurity)) %>%
       left_join(hab_dict %>%
                   select(Metric = ShortName,
-                         Name)) %>%
+                         Name) %>%
+                  distinct()) %>%
       mutate_at(vars(Metric, Name),
                 list(~ fct_reorder(., relImp))) %>%
       arrange(Metric) %>%
@@ -227,52 +202,79 @@ rel_imp_p = qrf_mods %>%
   })
 
 # for Chinook
-chnk_pdp = plot_partial_dependence(qrf_mods[['Chinook']],
-                                   qrf_mod_df %>%
-                                     filter(Species == 'Chinook'),
-                                   data_dict = hab_dict,
-                                   scales = 'free')
+chnk_pdp = plot_partial_dependence_v2(qrf_mods[['Chinook']],
+                                      data = qrf_mod_df %>%
+                                        filter(Species == 'Chinook'),
+                                      data_dict = hab_dict,
+                                      scales = 'free')
 
 # for steelhead
-sthd_pdp = plot_partial_dependence(qrf_mods[['Steelhead']],
-                                   qrf_mod_df %>%
-                                     filter(Species == 'Steelhead'),
-                                   data_dict = hab_dict,
-                                   scales = 'free')
+sthd_pdp = plot_partial_dependence_v2(qrf_mods[['Steelhead']],
+                                      data = qrf_mod_df %>%
+                                        filter(Species == 'Steelhead'),
+                                      data_dict = hab_dict,
+                                      scales = 'free')
 
 
 #-----------------------------------------------------------------
 # predict capacity at all CHaMP sites
 #-----------------------------------------------------------------
-load('output/modelFits/qrf_juv_summer.rda')
+load('output/modelFits/qrf_juv_winter.rda')
 
 # what quantile is a proxy for capacity?
 pred_quant = 0.9
 
 covars = unique(sel_hab_mets$Metric)
-hab_impute = hab_avg %>%
-  mutate_at(vars(Watershed, Channel_Type),
+covars = covars[-grep('Tier1', covars)]
+
+hab_impute = hab_data %>%
+  filter(!is.na(Tier1),
+         Tier1 != "(Missing)") %>%
+  mutate_at(vars(Watershed, Channel_Type, Tier1),
             list(fct_drop)) %>%
   impute_missing_data(data = .,
                       covars = covars,
-                      impute_vars = c('Watershed', 
-                                      'Elev_M', 
-                                      'Channel_Type', 
-                                      'CUMDRAINAG'),
-                      method = 'missForest') %>%
-  select(Site, Watershed, LON_DD, LAT_DD, VisitYear, Lgth_Wet, Area_Wet, one_of(covars))
+                      impute_vars = c(#'Watershed', 
+                        'Elev_M', 
+                        'Channel_Type', 
+                        'CUMDRAINAG'),
+                      method = 'Hmisc') %>%
+  select(Site, Watershed, VisitID, LON_DD, LAT_DD, VisitYear, Lgth_Wet, ChUnitNumber, Tier1, Tier2, AreaTotal, one_of(covars))
 
-pred_hab_sites = hab_impute %>%
-  mutate(chnk_per_m = predict(qrf_mods[['Chinook']],
+pred_hab_cu = hab_impute %>%
+  mutate(chnk_per_m2 = predict(qrf_mods[['Chinook']],
                               newdata = select(., one_of(unique(sel_hab_mets$Metric))),
                               what = pred_quant),
-         chnk_per_m = exp(chnk_per_m) - dens_offset,
-         chnk_per_m2 = chnk_per_m * Lgth_Wet / Area_Wet) %>%
-  mutate(sthd_per_m = predict(qrf_mods[['Steelhead']],
+         chnk_per_m2 = exp(chnk_per_m2) - dens_offset) %>%
+  mutate(sthd_per_m2 = predict(qrf_mods[['Steelhead']],
                               newdata = select(., one_of(unique(sel_hab_mets$Metric))),
                               what = pred_quant),
-         sthd_per_m = exp(sthd_per_m) - dens_offset,
-         sthd_per_m2 = sthd_per_m * Lgth_Wet / Area_Wet)
+         sthd_per_m2 = exp(sthd_per_m2) - dens_offset)
+
+# sum channel unit capacities up to site-scale, then take average capacity of site across years
+pred_hab_sites = pred_hab_cu %>%
+  mutate(chnk_capN = chnk_per_m2 * AreaTotal,
+         sthd_capN = sthd_per_m2 * AreaTotal) %>%
+  group_by(VisitID, Site, Watershed) %>%
+  summarise_at(vars(ends_with('capN')),
+               list(sum)) %>%
+  ungroup() %>%
+  group_by(Site, Watershed) %>%
+  summarise_at(vars(chnk_capN, sthd_capN),
+               list(mean)) %>%
+  ungroup() %>%
+  left_join(champ_site_2011_17_avg %>%
+              select(Site, Watershed, LON_DD, LAT_DD, Lgth_Wet, Area_Wet)) %>%
+  mutate(chnk_per_m = chnk_capN / Lgth_Wet,
+         chnk_per_m2 = chnk_capN / Area_Wet,
+         sthd_per_m = sthd_capN / Lgth_Wet,
+         sthd_per_m2 = sthd_capN / Area_Wet) %>%
+  mutate_at(vars(ends_with('capN')),
+            list(round)) %>%
+  select(Site, Watershed, LON_DD, LAT_DD, 
+         Lgth_Wet, Area_Wet,
+         starts_with('chnk'),
+         starts_with('sthd'))
 
 # filter out sites outside the Chinook domain
 data("chnk_domain")
@@ -292,14 +294,7 @@ pred_hab_sites_chnk = pred_hab_sites %>%
                               withAttrs = T,
                               idField = 'id') %>%
   as('sf') %>%
-  as_tibble() %>%
-  select(-nearest_line_id, -snap_dist, -geometry) %>%
-  # add sites in the John Day
-  bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-                    quiet = T) %>%
-              as_tibble() %>%
-              select(Site) %>%
-              inner_join(pred_hab_sites))
+  as_tibble()
 
 # note if sites are in Chinook domain or not
 pred_hab_sites %<>% 
@@ -307,6 +302,7 @@ pred_hab_sites %<>%
   mutate_at(vars(Watershed),
             list(fct_drop))
 
+# put into dataframe for extrapolation, keeping only Chinook sites in Chinook domain
 pred_hab_df = pred_hab_sites %>%
   select(-starts_with('chnk')) %>%
   rename(cap_per_m = sthd_per_m,
@@ -319,7 +315,8 @@ pred_hab_df = pred_hab_sites %>%
               rename(cap_per_m = chnk_per_m,
                      cap_per_m2 = chnk_per_m2) %>%
               mutate(Species = 'Chinook')) %>%
-  select(Species, everything())
+  select(Species, everything(),
+         -ends_with('capN'))
   
 
 #----------------------------------------
@@ -427,7 +424,7 @@ strata_test = frame_strata %>%
   select(Species, everything()) %>%
   arrange(Species, Watershed, strata)
 
-# what frame strata don't have any sites in them?
+# # what frame strata don't have any sites in them?
 # strata_test %>%
 #   filter(n_sites == 0,
 #          !is.na(tot_length_km)) %>%
@@ -553,7 +550,7 @@ gaa_summ = inner_join(pred_hab_df %>%
 
 # extrapolation model data set, with normalized covariates
 mod_data = inner_join(pred_hab_df %>%
-                        select(Species:avg_aug_temp,
+                        select(Species:Watershed,
                                matches('per_m')),
                       gaa_all %>%
                         select(Site, one_of(gaa_num))) %>%
@@ -565,6 +562,7 @@ mod_data = inner_join(pred_hab_df %>%
   left_join(gaa_all %>%
               select(Site, one_of(gaa_catg)))
 
+# drop NAs
 mod_data %<>%
   bind_cols(mod_data %>%
               is.na() %>%
@@ -857,11 +855,11 @@ save(gaa_covars,
      mod_data_weights,
      model_svy_df,
      all_preds,
-     file = 'output/modelFits/extrap_juv_summer.rda')
+     file = 'output/modelFits/extrap_juv_winter.rda')
 
 #---------------------------
 # create a shapefile
-load('output/modelFits/extrap_juv_summer.rda')
+load('output/modelFits/extrap_juv_winter.rda')
 data("chnk_domain")
 
 all_preds_sf = all_preds %>%
@@ -873,20 +871,12 @@ all_preds_sf = all_preds %>%
 # save it
 # as shapefile
 st_write(all_preds_sf,
-         dsn = 'output/shapefiles',
-         layer = 'Sum_Juv_Capacity.shp',
-         driver = 'ESRI Shapefile')
+         dsn = 'output/shapefiles/Win_Juv_Capacity.shp',
+         driver = 'ESRI Shapefile',
+         delete_layer = T)
 
 # as GPKG
 st_write(all_preds_sf,
-         dsn = 'output/gpkg/Sum_Juv_Capacity.gpkg',
-         # layer = 'Sum_Juv_Capacity.gpkg',
-         driver = 'GPKG')
-
-# test out a small one
-all_preds_sf %>%
-  filter(HUC10NmNRC == 'Hayden Creek') %>%
-  st_write(dsn = 'output/gpkg/Sum_Juv_Capacity_Hayden.gpkg',
-           driver = 'GPKG')
-
-test = st_read('output/gpkg/Sum_Juv_Capacity.gpkg')
+         dsn = 'output/gpkg/Win_Juv_Capacity.gpkg',
+         driver = 'GPKG',
+         delete_layer = T)
