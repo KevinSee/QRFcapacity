@@ -92,13 +92,13 @@ chnk_sites = chnk_samps %>%
                               maxDist = snap_dist,
                               withAttrs = T,
                               idField = 'id') %>%
-  as('sf') %>%
-  select(-nearest_line_id, -snap_dist) %>%
-  # include some sites in the John Day where Chinook were found (or seemed to be close to sites where Chinook were found)
-  rbind(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-                quiet = T) %>%
-          st_transform(st_crs(chnk_domain)) %>%
-          select(-in_range))
+  as('sf') #%>%
+  # select(-nearest_line_id, -snap_dist) %>%
+  # # include some sites in the John Day where Chinook were found (or seemed to be close to sites where Chinook were found)
+  # rbind(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
+  #               quiet = T) %>%
+  #         st_transform(st_crs(chnk_domain)) %>%
+  #         select(-in_range))
 
 # ggplot() +
 #   geom_sf(data = chnk_samps,
@@ -291,14 +291,14 @@ pred_hab_sites_chnk = pred_hab_sites %>%
                               withAttrs = T,
                               idField = 'id') %>%
   as('sf') %>%
-  as_tibble() %>%
-  select(-nearest_line_id, -snap_dist, -geometry) %>%
-  # add sites in the John Day
-  bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-                    quiet = T) %>%
-              as_tibble() %>%
-              select(Site) %>%
-              inner_join(pred_hab_sites))
+  as_tibble() #%>%
+  # select(-nearest_line_id, -snap_dist, -geometry) %>%
+  # # add sites in the John Day
+  # bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
+  #                   quiet = T) %>%
+  #             as_tibble() %>%
+  #             select(Site) %>%
+  #             inner_join(pred_hab_sites))
 
 # note if sites are in Chinook domain or not
 pred_hab_sites %<>% 
