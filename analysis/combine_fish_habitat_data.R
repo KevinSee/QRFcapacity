@@ -363,6 +363,7 @@ cu_df = champ_cu %>%
                      Site, 
                      Watershed,
                      SampleDate,
+                     CUMDRAINAG,
                      SubD50,
                      Sin,
                      CU_Freq)) %>%
@@ -384,9 +385,11 @@ fh_win_champ_2017 = fish_win_est %>%
                rename(habSampDate = SampleDate) %>%
                mutate_at(vars(ChUnitNumber),
                          list(as.character))) %>%
-  mutate(fish_dens = N / AreaTotal)
+  mutate(fish_dens = N / AreaTotal) %>%
+  mutate_at(vars(Watershed, Tier1, Tier2),
+            list(as.factor))
 
 
-use_data(fh_win_champ_2017,
-         version = 2,
-         overwrite = T)
+usethis::use_data(fh_win_champ_2017,
+                  version = 2,
+                  overwrite = T)
