@@ -65,7 +65,7 @@ impute_missing_data = function(data = NULL,
     Hmisc::aregImpute(as.formula(paste('~', paste(colnames(.), collapse = '+'))),
                       data = .,
                       n.impute = 20,
-                      nk = 4, ...)
+                      nk = nk, ...)
   
   imputed_data = data %>%
     filter(row_num %in% keep_rows) %>%
