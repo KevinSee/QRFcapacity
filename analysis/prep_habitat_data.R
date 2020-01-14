@@ -346,7 +346,10 @@ champ_site_2011_17 = siteData %<>%
          LAT_DD = if_else(is.na(LAT_DD), Lat, LAT_DD)) %>%
   select(-Lon, -Lat)
 
+# get channel unit metrics
 champ_cu = chunitDf
+
+# the channel unit numbers do not necessarily line up with the same channel unit each year. Every survey, the CHaMP crew re-delineated the channel units, so DO NOT assume that channel unit #4 in 2015 is the same channel unit #4 in 2016. So no averaging of channel unit metrics.
 
 # calculate average habitat data across all years
 champ_site_2011_17_avg = champ_site_2011_17 %>%
