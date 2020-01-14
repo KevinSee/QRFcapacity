@@ -52,7 +52,7 @@ plot_partial_dependence = function(rf_mod,
   
   # get means and ranges of all
   covar_range = data %>%
-    select(one_of(as.character(covars))) %>%
+    select(one_of(as.character(plot_covars))) %>%
     gather(Metric, value) %>%
     group_by(Metric) %>%
     summarise_at(vars(value),
