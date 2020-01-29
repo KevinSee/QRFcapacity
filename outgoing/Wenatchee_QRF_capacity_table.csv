@@ -1,0 +1,172 @@
+Species,NAME,Lifestage,area,n_pts,tot_length,tot_cap,tot_cap_se
+Chinook,Beaver Creek-Wenatchee River,Redds,115.51,78,63325.41,6831,68594
+Chinook,Beaver Creek-Wenatchee River,Summer Juv.,115.51,78,63325.41,259659,69865
+Chinook,Beaver Creek-Wenatchee River,Winter Juv.,115.51,78,63325.41,144820,74304
+Chinook,Brender Creek-Mission Creek,Redds,97.78,3,1305.3,8,1312
+Chinook,Brender Creek-Mission Creek,Summer Juv.,97.78,3,1305.3,3612,1414
+Chinook,Brender Creek-Mission Creek,Winter Juv.,97.78,3,1305.3,780,1388
+Chinook,Chikamin Creek,Redds,56.72,32,10357.54,147,11425
+Chinook,Chikamin Creek,Summer Juv.,56.72,32,10357.54,15967,14859
+Chinook,Chikamin Creek,Winter Juv.,56.72,32,10357.54,8828,13747
+Chinook,Chiwaukum Creek,Redds,124.93,15,6059.37,203,6417
+Chinook,Chiwaukum Creek,Summer Juv.,124.93,15,6059.37,14194,6924
+Chinook,Chiwaukum Creek,Winter Juv.,124.93,15,6059.37,4463,7004
+Chinook,Derby Canyon-Wenatchee River,Redds,74.25,36,28063.23,2828,31895
+Chinook,Derby Canyon-Wenatchee River,Summer Juv.,74.25,36,28063.23,117327,33440
+Chinook,Derby Canyon-Wenatchee River,Winter Juv.,74.25,36,28063.23,42470,36659
+Chinook,Headwaters Chiwawa River,Redds,68.11,5,2040.98,65,2514
+Chinook,Headwaters Chiwawa River,Summer Juv.,68.11,5,2040.98,5382,3582
+Chinook,Headwaters Chiwawa River,Winter Juv.,68.11,5,2040.98,1665,3153
+Chinook,Ingalls Creek,Redds,95.51,4,808.21,16,921
+Chinook,Ingalls Creek,Summer Juv.,95.51,4,808.21,1503,1055
+Chinook,Ingalls Creek,Winter Juv.,95.51,4,808.21,537,1033
+Chinook,Lake Wenatchee,Redds,44.48,22,8108.86,612,8557
+Chinook,Lake Wenatchee,Summer Juv.,44.48,22,8108.86,25180,8441
+Chinook,Lake Wenatchee,Winter Juv.,44.48,22,8108.86,19624,8859
+Chinook,Lower Chiwawa River,Redds,101.53,64,24296.4,909,25454
+Chinook,Lower Chiwawa River,Summer Juv.,101.53,64,24296.4,86913,26570
+Chinook,Lower Chiwawa River,Winter Juv.,101.53,64,24296.4,25576,27675
+Chinook,Lower Icicle Creek,Redds,86.62,14,9416.02,654,11438
+Chinook,Lower Icicle Creek,Summer Juv.,86.62,14,9416.02,43496,11313
+Chinook,Lower Icicle Creek,Winter Juv.,86.62,14,9416.02,18361,12533
+Chinook,Lower Little Wenatchee River,Redds,50.12,74,14967.58,777,16813
+Chinook,Lower Little Wenatchee River,Summer Juv.,50.12,74,14967.58,61530,17960
+Chinook,Lower Little Wenatchee River,Winter Juv.,50.12,74,14967.58,25346,18049
+Chinook,Lower Nason Creek,Redds,128.17,85,25091.21,820,30303
+Chinook,Lower Nason Creek,Summer Juv.,128.17,85,25091.21,74249,42403
+Chinook,Lower Nason Creek,Winter Juv.,128.17,85,25091.21,32545,36816
+Chinook,Lower Peshastin Creek,Redds,100.18,49,14842.85,210,17292
+Chinook,Lower Peshastin Creek,Summer Juv.,100.18,49,14842.85,40815,19491
+Chinook,Lower Peshastin Creek,Winter Juv.,100.18,49,14842.85,9888,19058
+Chinook,Lower White River,Redds,68.07,69,24459.78,1956,28323
+Chinook,Lower White River,Summer Juv.,68.07,69,24459.78,89331,35170
+Chinook,Lower White River,Winter Juv.,68.07,69,24459.78,43448,32083
+Chinook,Middle Chiwawa River,Redds,42.93,40,12685.51,527,16284
+Chinook,Middle Chiwawa River,Summer Juv.,42.93,40,12685.51,29370,26767
+Chinook,Middle Chiwawa River,Winter Juv.,42.93,40,12685.51,16207,21018
+Chinook,Nahahum Canyon-Wenatchee River,Redds,122.5,64,34236.18,3224,40600
+Chinook,Nahahum Canyon-Wenatchee River,Summer Juv.,122.5,64,34236.18,137893,42392
+Chinook,Nahahum Canyon-Wenatchee River,Winter Juv.,122.5,64,34236.18,50595,47492
+Chinook,Napeequa River,Redds,104.71,6,1920.65,76,2198
+Chinook,Napeequa River,Summer Juv.,104.71,6,1920.65,8535,2237
+Chinook,Napeequa River,Winter Juv.,104.71,6,1920.65,2576,2271
+Chinook,Ollala Canyon-Wenatchee River,Redds,88.68,34,24061.25,2699,31400
+Chinook,Ollala Canyon-Wenatchee River,Summer Juv.,88.68,34,24061.25,102459,33457
+Chinook,Ollala Canyon-Wenatchee River,Winter Juv.,88.68,34,24061.25,28318,38593
+Chinook,Panther Creek,Redds,48.54,4,1785.66,59,2047
+Chinook,Panther Creek,Summer Juv.,48.54,4,1785.66,2670,2398
+Chinook,Panther Creek,Winter Juv.,48.54,4,1785.66,1287,2289
+Chinook,Phelps Creek,Redds,41.3,5,1574.33,36,1927
+Chinook,Phelps Creek,Summer Juv.,41.3,5,1574.33,3593,2524
+Chinook,Phelps Creek,Winter Juv.,41.3,5,1574.33,746,2331
+Chinook,Rock Creek,Redds,55.4,2,752.09,21,891
+Chinook,Rock Creek,Summer Juv.,55.4,2,752.09,1714,911
+Chinook,Rock Creek,Winter Juv.,55.4,2,752.09,764,890
+Chinook,Tumwater Canyon-Wenatchee River,Redds,85.79,41,34062.7,4170,49820
+Chinook,Tumwater Canyon-Wenatchee River,Summer Juv.,85.79,41,34062.7,115930,68036
+Chinook,Tumwater Canyon-Wenatchee River,Winter Juv.,85.79,41,34062.7,33451,76553
+Chinook,Upper Chiwawa River,Redds,81.38,43,16855.73,562,21138
+Chinook,Upper Chiwawa River,Summer Juv.,81.38,43,16855.73,49358,32211
+Chinook,Upper Chiwawa River,Winter Juv.,81.38,43,16855.73,18351,26816
+Chinook,Upper Peshastin Creek,Redds,155.36,24,8596.29,155,10051
+Chinook,Upper Peshastin Creek,Summer Juv.,155.36,24,8596.29,20092,11275
+Chinook,Upper Peshastin Creek,Winter Juv.,155.36,24,8596.29,7684,11168
+Chinook,Upper White River,Redds,129.31,5,1991.6,167,2288
+Chinook,Upper White River,Summer Juv.,129.31,5,1991.6,8755,2326
+Chinook,Upper White River,Winter Juv.,129.31,5,1991.6,1863,2535
+Steelhead,Beaver Creek-Wenatchee River,Redds,115.51,81,33432.78,2057,33732
+Steelhead,Beaver Creek-Wenatchee River,Summer Juv.,115.51,81,33432.78,88924,32246
+Steelhead,Beaver Creek-Wenatchee River,Winter Juv.,115.51,81,33432.78,84218,33390
+Steelhead,Big Meadow Creek,Redds,41.01,3,1053,11,1170
+Steelhead,Big Meadow Creek,Summer Juv.,41.01,3,1053,2154,1129
+Steelhead,Big Meadow Creek,Winter Juv.,41.01,3,1053,2854,1158
+Steelhead,Brender Creek-Mission Creek,Redds,97.78,43,18100.42,205,19792
+Steelhead,Brender Creek-Mission Creek,Summer Juv.,97.78,43,18100.42,58216,18551
+Steelhead,Brender Creek-Mission Creek,Winter Juv.,97.78,43,18100.42,41758,19680
+Steelhead,Chikamin Creek,Redds,56.72,9,1435.01,15,1644
+Steelhead,Chikamin Creek,Summer Juv.,56.72,9,1435.01,2853,1567
+Steelhead,Chikamin Creek,Winter Juv.,56.72,9,1435.01,3729,1648
+Steelhead,Chiwaukum Creek,Redds,124.93,23,10693.22,208,8467
+Steelhead,Chiwaukum Creek,Summer Juv.,124.93,23,10693.22,27132,8284
+Steelhead,Chiwaukum Creek,Winter Juv.,124.93,23,10693.22,26578,8527
+Steelhead,Chumstick Creek,Redds,130.2,45,14408.43,150,16473
+Steelhead,Chumstick Creek,Summer Juv.,130.2,45,14408.43,37089,15634
+Steelhead,Chumstick Creek,Winter Juv.,130.2,45,14408.43,40510,16296
+Steelhead,Derby Canyon-Wenatchee River,Redds,74.25,51,19066.49,997,16886
+Steelhead,Derby Canyon-Wenatchee River,Summer Juv.,74.25,51,19066.49,69855,15375
+Steelhead,Derby Canyon-Wenatchee River,Winter Juv.,74.25,51,19066.49,44499,16616
+Steelhead,Devils Gulch-Mission Creek,Redds,41.35,20,8931.45,89,10420
+Steelhead,Devils Gulch-Mission Creek,Summer Juv.,41.35,20,8931.45,15383,9844
+Steelhead,Devils Gulch-Mission Creek,Winter Juv.,41.35,20,8931.45,25163,10455
+Steelhead,Eagle Creek,Redds,73.35,5,1908.89,16,2248
+Steelhead,Eagle Creek,Summer Juv.,73.35,5,1908.89,5396,2097
+Steelhead,Eagle Creek,Winter Juv.,73.35,5,1908.89,4700,2215
+Steelhead,East Fork Mission Creek,Redds,52.77,22,6910.81,65,7773
+Steelhead,East Fork Mission Creek,Summer Juv.,52.77,22,6910.81,16558,7427
+Steelhead,East Fork Mission Creek,Winter Juv.,52.77,22,6910.81,19304,7780
+Steelhead,Headwaters Chiwawa River,Redds,68.11,14,7300.57,144,7290
+Steelhead,Headwaters Chiwawa River,Summer Juv.,68.11,14,7300.57,12809,6781
+Steelhead,Headwaters Chiwawa River,Winter Juv.,68.11,14,7300.57,17942,7398
+Steelhead,Ingalls Creek,Redds,95.51,5,1548.62,34,1762
+Steelhead,Ingalls Creek,Summer Juv.,95.51,5,1548.62,4562,1686
+Steelhead,Ingalls Creek,Winter Juv.,95.51,5,1548.62,3158,1784
+Steelhead,Lake Wenatchee,Redds,44.48,22,8108.86,389,8227
+Steelhead,Lake Wenatchee,Summer Juv.,44.48,22,8108.86,15546,8358
+Steelhead,Lake Wenatchee,Winter Juv.,44.48,22,8108.86,19412,8268
+Steelhead,Lower Chiwawa River,Redds,101.53,69,26238.51,682,25513
+Steelhead,Lower Chiwawa River,Summer Juv.,101.53,69,26238.51,69130,24731
+Steelhead,Lower Chiwawa River,Winter Juv.,101.53,69,26238.51,56299,25586
+Steelhead,Lower Icicle Creek,Redds,86.62,14,4708.01,189,5599
+Steelhead,Lower Icicle Creek,Summer Juv.,86.62,14,4708.01,14800,5246
+Steelhead,Lower Icicle Creek,Winter Juv.,86.62,14,4708.01,16574,5542
+Steelhead,Lower Little Wenatchee River,Redds,50.12,74,14967.58,419,16729
+Steelhead,Lower Little Wenatchee River,Summer Juv.,50.12,74,14967.58,35733,16375
+Steelhead,Lower Little Wenatchee River,Winter Juv.,50.12,74,14967.58,36987,16736
+Steelhead,Lower Nason Creek,Redds,128.17,90,29912.45,647,30676
+Steelhead,Lower Nason Creek,Summer Juv.,128.17,90,29912.45,60189,29056
+Steelhead,Lower Nason Creek,Winter Juv.,128.17,90,29912.45,75308,31238
+Steelhead,Lower Peshastin Creek,Redds,100.18,49,14681.16,267,17152
+Steelhead,Lower Peshastin Creek,Summer Juv.,100.18,49,14681.16,49577,16018
+Steelhead,Lower Peshastin Creek,Winter Juv.,100.18,49,14681.16,32349,17266
+Steelhead,Lower White River,Redds,68.07,69,24080.91,1114,27206
+Steelhead,Lower White River,Summer Juv.,68.07,69,24080.91,49042,27457
+Steelhead,Lower White River,Winter Juv.,68.07,69,24080.91,65626,27685
+Steelhead,Middle Chiwawa River,Redds,42.93,40,12685.51,395,15608
+Steelhead,Middle Chiwawa River,Summer Juv.,42.93,40,12685.51,20682,15189
+Steelhead,Middle Chiwawa River,Winter Juv.,42.93,40,12685.51,35499,16025
+Steelhead,Nahahum Canyon-Wenatchee River,Redds,122.5,64,17153.18,1360,20292
+Steelhead,Nahahum Canyon-Wenatchee River,Summer Juv.,122.5,64,17153.18,77043,18494
+Steelhead,Nahahum Canyon-Wenatchee River,Winter Juv.,122.5,64,17153.18,42992,20174
+Steelhead,Ollala Canyon-Wenatchee River,Redds,88.68,34,12051.72,1203,15598
+Steelhead,Ollala Canyon-Wenatchee River,Summer Juv.,88.68,34,12051.72,66349,14089
+Steelhead,Ollala Canyon-Wenatchee River,Winter Juv.,88.68,34,12051.72,30079,15652
+Steelhead,Panther Creek,Redds,48.54,3,1140.76,35,1286
+Steelhead,Panther Creek,Summer Juv.,48.54,3,1140.76,3014,1264
+Steelhead,Panther Creek,Winter Juv.,48.54,3,1140.76,2686,1313
+Steelhead,Phelps Creek,Redds,41.3,1,574.59,10,654
+Steelhead,Phelps Creek,Summer Juv.,41.3,1,574.59,1421,640
+Steelhead,Phelps Creek,Winter Juv.,41.3,1,574.59,1836,669
+Steelhead,Rock Creek,Redds,55.4,4,1255.39,22,1424
+Steelhead,Rock Creek,Summer Juv.,55.4,4,1255.39,2977,1387
+Steelhead,Rock Creek,Winter Juv.,55.4,4,1255.39,3655,1433
+Steelhead,Sand Creek,Redds,48.22,11,2082.11,17,2401
+Steelhead,Sand Creek,Summer Juv.,48.22,11,2082.11,4804,2261
+Steelhead,Sand Creek,Winter Juv.,48.22,11,2082.11,5436,2391
+Steelhead,Tumwater Canyon-Wenatchee River,Redds,85.79,41,17042.31,1481,25041
+Steelhead,Tumwater Canyon-Wenatchee River,Summer Juv.,85.79,41,17042.31,165502,21998
+Steelhead,Tumwater Canyon-Wenatchee River,Winter Juv.,85.79,41,17042.31,37041,27080
+Steelhead,Upper Chiwawa River,Redds,81.38,43,16780.38,453,20958
+Steelhead,Upper Chiwawa River,Summer Juv.,81.38,43,16780.38,31719,19463
+Steelhead,Upper Chiwawa River,Winter Juv.,81.38,43,16780.38,48236,21332
+Steelhead,Upper Nason Creek,Redds,90.4,35,14409.12,219,15677
+Steelhead,Upper Nason Creek,Summer Juv.,90.4,35,14409.12,21256,14597
+Steelhead,Upper Nason Creek,Winter Juv.,90.4,35,14409.12,38005,15893
+Steelhead,Upper Peshastin Creek,Redds,155.36,60,23005.82,200,14976
+Steelhead,Upper Peshastin Creek,Summer Juv.,155.36,60,23005.82,46193,14187
+Steelhead,Upper Peshastin Creek,Winter Juv.,155.36,60,23005.82,53348,15080
+Steelhead,Upper White River,Redds,129.31,5,1991.6,100,2245
+Steelhead,Upper White River,Summer Juv.,129.31,5,1991.6,7471,2221
+Steelhead,Upper White River,Winter Juv.,129.31,5,1991.6,4618,2310
+Steelhead,Whitepine Creek,Redds,63.29,1,279.61,6,316
+Steelhead,Whitepine Creek,Summer Juv.,63.29,1,279.61,696,308
+Steelhead,Whitepine Creek,Winter Juv.,63.29,1,279.61,489,328

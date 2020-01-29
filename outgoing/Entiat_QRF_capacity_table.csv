@@ -1,0 +1,43 @@
+Species,NAME,Lifestage,area,tot_length,n_pts,tot_cap,tot_cap_se
+Chinook,Lake Creek-Entiat River,Redds,152.36,17809.36,24,793,23464
+Chinook,Lake Creek-Entiat River,Summer Juv.,152.36,17809.36,24,45292,38677
+Chinook,Lake Creek-Entiat River,Winter Juv.,152.36,17809.36,24,23741,31665
+Chinook,Lower Mad River,Redds,65.97,11574.14,43,246,12127
+Chinook,Lower Mad River,Summer Juv.,65.97,11574.14,43,37756,12923
+Chinook,Lower Mad River,Winter Juv.,65.97,11574.14,43,11680,13204
+Chinook,Mills Creek-Entiat River,Redds,131.17,35521.98,77,1095,38681
+Chinook,Mills Creek-Entiat River,Summer Juv.,131.17,35521.98,77,169162,39440
+Chinook,Mills Creek-Entiat River,Winter Juv.,131.17,35521.98,77,43683,41804
+Chinook,Potato Creek-Entiat River,Redds,107.66,36772.45,79,953,41288
+Chinook,Potato Creek-Entiat River,Summer Juv.,107.66,36772.45,79,146666,47663
+Chinook,Potato Creek-Entiat River,Winter Juv.,107.66,36772.45,79,51444,46194
+Chinook,Preston Creek-Entiat River,Redds,67.52,15420.9,33,544,18248
+Chinook,Preston Creek-Entiat River,Summer Juv.,67.52,15420.9,33,53579,23459
+Chinook,Preston Creek-Entiat River,Winter Juv.,67.52,15420.9,33,26747,21398
+Chinook,Tillicum Creek,Redds,57.96,3731.89,7,77,4340
+Chinook,Tillicum Creek,Summer Juv.,57.96,3731.89,7,3320,5227
+Chinook,Tillicum Creek,Winter Juv.,57.96,3731.89,7,3143,5086
+Steelhead,Lake Creek-Entiat River,Redds,152.36,14322.91,24,324,19383
+Steelhead,Lake Creek-Entiat River,Summer Juv.,152.36,14322.91,24,33145,17151
+Steelhead,Lake Creek-Entiat River,Winter Juv.,152.36,14322.91,24,45033,19938
+Steelhead,Lower Mad River,Redds,65.97,19886.51,50,326,22197
+Steelhead,Lower Mad River,Summer Juv.,65.97,19886.51,50,58958,21164
+Steelhead,Lower Mad River,Winter Juv.,65.97,19886.51,50,46653,22449
+Steelhead,Mills Creek-Entiat River,Redds,131.17,17773.64,77,589,19234
+Steelhead,Mills Creek-Entiat River,Summer Juv.,131.17,17773.64,77,74846,18551
+Steelhead,Mills Creek-Entiat River,Winter Juv.,131.17,17773.64,77,45629,19517
+Steelhead,Potato Creek-Entiat River,Redds,107.66,20347.66,81,339,20693
+Steelhead,Potato Creek-Entiat River,Summer Juv.,107.66,20347.66,81,56662,19739
+Steelhead,Potato Creek-Entiat River,Winter Juv.,107.66,20347.66,81,50916,20957
+Steelhead,Preston Creek-Entiat River,Redds,67.52,7710.45,33,138,9192
+Steelhead,Preston Creek-Entiat River,Summer Juv.,67.52,7710.45,33,16604,8566
+Steelhead,Preston Creek-Entiat River,Winter Juv.,67.52,7710.45,33,20657,9327
+Steelhead,Roaring Creek,Redds,65.88,8815.02,12,63,9594
+Steelhead,Roaring Creek,Summer Juv.,65.88,8815.02,12,23089,9112
+Steelhead,Roaring Creek,Winter Juv.,65.88,8815.02,12,26212,9656
+Steelhead,Tillicum Creek,Redds,57.96,3722.48,7,34,4182
+Steelhead,Tillicum Creek,Summer Juv.,57.96,3722.48,7,7895,3998
+Steelhead,Tillicum Creek,Winter Juv.,57.96,3722.48,7,8714,4252
+Steelhead,Upper Mad River,Redds,112.62,3469.93,6,50,3875
+Steelhead,Upper Mad River,Summer Juv.,112.62,3469.93,6,6949,3735
+Steelhead,Upper Mad River,Winter Juv.,112.62,3469.93,6,7035,3973

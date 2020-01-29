@@ -1,0 +1,220 @@
+Species,NAME,Lifestage,area,n_pts,tot_length,tot_cap,tot_cap_se
+Chinook,Alder Creek-Methow River,Redds,120.56,24,41332.01,1792,46492
+Chinook,Alder Creek-Methow River,Summer Juv.,120.56,24,41332.01,230273,45296
+Chinook,Alder Creek-Methow River,Winter Juv.,120.56,24,41332.01,99333,48413
+Chinook,Alta Coulee-Methow River,Redds,81.06,14,28357.62,1525,32645
+Chinook,Alta Coulee-Methow River,Summer Juv.,81.06,14,28357.62,141759,31827
+Chinook,Alta Coulee-Methow River,Winter Juv.,81.06,14,28357.62,102233,33436
+Chinook,Bear Creek,Redds,46.71,1,1522.74,6,1881
+Chinook,Bear Creek,Summer Juv.,46.71,1,1522.74,2750,1886
+Chinook,Bear Creek,Winter Juv.,46.71,1,1522.74,1052,1937
+Chinook,Boulder Creek,Redds,53.37,2,1781.73,22,2085
+Chinook,Boulder Creek,Summer Juv.,53.37,2,1781.73,7322,2196
+Chinook,Boulder Creek,Winter Juv.,53.37,2,1781.73,1654,2185
+Chinook,Buttermilk Creek,Redds,95.95,2,1788.61,36,2066
+Chinook,Buttermilk Creek,Summer Juv.,95.95,2,1788.61,5443,2143
+Chinook,Buttermilk Creek,Winter Juv.,95.95,2,1788.61,2057,2216
+Chinook,Cub Creek,Redds,62.59,1,618.18,4,733
+Chinook,Cub Creek,Summer Juv.,62.59,1,618.18,876,748
+Chinook,Cub Creek,Winter Juv.,62.59,1,618.18,486,750
+Chinook,Doe Creek-Chewuch River,Redds,101.49,22,19909.8,371,22657
+Chinook,Doe Creek-Chewuch River,Summer Juv.,101.49,22,19909.8,95165,23460
+Chinook,Doe Creek-Chewuch River,Winter Juv.,101.49,22,19909.8,32238,23768
+Chinook,Eagle Creek,Redds,34.71,1,178.75,2,226
+Chinook,Eagle Creek,Summer Juv.,34.71,1,178.75,61,282
+Chinook,Eagle Creek,Winter Juv.,34.71,1,178.75,132,279
+Chinook,Early Winters Creek,Redds,128.48,19,12829.94,302,15333
+Chinook,Early Winters Creek,Summer Juv.,128.48,19,12829.94,46866,17321
+Chinook,Early Winters Creek,Winter Juv.,128.48,19,12829.94,16703,17282
+Chinook,Eightmile Creek,Redds,119.96,1,1414.1,19,1725
+Chinook,Eightmile Creek,Summer Juv.,119.96,1,1414.1,4792,1787
+Chinook,Eightmile Creek,Winter Juv.,119.96,1,1414.1,913,1742
+Chinook,Eureka Creek,Redds,93.62,1,678.5,16,788
+Chinook,Eureka Creek,Summer Juv.,93.62,1,678.5,1185,882
+Chinook,Eureka Creek,Winter Juv.,93.62,1,678.5,549,893
+Chinook,Fawn Creek-Methow River,Redds,142.85,26,26098.8,790,28024
+Chinook,Fawn Creek-Methow River,Summer Juv.,142.85,26,26098.8,139438,27681
+Chinook,Fawn Creek-Methow River,Winter Juv.,142.85,26,26098.8,49329,28923
+Chinook,Goat Creek,Redds,92.79,2,1977.1,19,2374
+Chinook,Goat Creek,Summer Juv.,92.79,2,1977.1,2941,2667
+Chinook,Goat Creek,Winter Juv.,92.79,2,1977.1,1782,2664
+Chinook,Gold Creek,Redds,157.56,8,8346.46,130,9763
+Chinook,Gold Creek,Summer Juv.,157.56,8,8346.46,33000,9840
+Chinook,Gold Creek,Winter Juv.,157.56,8,8346.46,9004,10310
+Chinook,Headwaters Twisp River,Redds,52.07,3,2101.03,52,2013
+Chinook,Headwaters Twisp River,Summer Juv.,52.07,3,2101.03,2319,2245
+Chinook,Headwaters Twisp River,Winter Juv.,52.07,3,2101.03,2632,2275
+Chinook,Kay Creek-Chewuch River,Redds,101.59,8,7132.84,194,8277
+Chinook,Kay Creek-Chewuch River,Summer Juv.,101.59,8,7132.84,21195,8349
+Chinook,Kay Creek-Chewuch River,Winter Juv.,101.59,8,7132.84,9767,8746
+Chinook,Lake Creek,Redds,138.53,12,10872.4,201,13462
+Chinook,Lake Creek,Summer Juv.,138.53,12,10872.4,27073,16076
+Chinook,Lake Creek,Winter Juv.,138.53,12,10872.4,15778,15320
+Chinook,Lower Beaver Creek,Redds,124.38,0,268.97,0,0
+Chinook,Lower Beaver Creek,Summer Juv.,124.38,0,268.97,0,0
+Chinook,Lower Beaver Creek,Winter Juv.,124.38,0,268.97,0,0
+Chinook,Lower Lost River,Redds,171.14,12,12003.09,521,14750
+Chinook,Lower Lost River,Summer Juv.,171.14,12,12003.09,53214,19825
+Chinook,Lower Lost River,Winter Juv.,171.14,12,12003.09,18562,17728
+Chinook,Lower Twisp River,Redds,115.75,28,21707.2,466,24389
+Chinook,Lower Twisp River,Summer Juv.,115.75,28,21707.2,111086,25202
+Chinook,Lower Twisp River,Winter Juv.,115.75,28,21707.2,30216,25836
+Chinook,McFarland Creek-Methow River,Redds,102.4,18,39921.79,2777,45675
+Chinook,McFarland Creek-Methow River,Summer Juv.,102.4,18,39921.79,235022,44028
+Chinook,McFarland Creek-Methow River,Winter Juv.,102.4,18,39921.79,149484,47161
+Chinook,Middle Twisp River,Redds,88.48,17,13582.3,339,17010
+Chinook,Middle Twisp River,Summer Juv.,88.48,17,13582.3,66982,23767
+Chinook,Middle Twisp River,Winter Juv.,88.48,17,13582.3,29765,21043
+Chinook,Pearrygin Creek-Chewuch River,Redds,104.23,22,18977.69,344,21422
+Chinook,Pearrygin Creek-Chewuch River,Summer Juv.,104.23,22,18977.69,102999,21195
+Chinook,Pearrygin Creek-Chewuch River,Winter Juv.,104.23,22,18977.69,28009,21899
+Chinook,Rattlesnake Creek-Methow River,Redds,101.42,21,17892.85,511,21479
+Chinook,Rattlesnake Creek-Methow River,Summer Juv.,101.42,21,17892.85,77590,26130
+Chinook,Rattlesnake Creek-Methow River,Winter Juv.,101.42,21,17892.85,27812,25054
+Chinook,Robinson Creek,Redds,51,1,1034.78,16,1240
+Chinook,Robinson Creek,Summer Juv.,51,1,1034.78,1070,1531
+Chinook,Robinson Creek,Winter Juv.,51,1,1034.78,828,1465
+Chinook,South Creek,Redds,40.67,2,1428.66,32,1787
+Chinook,South Creek,Summer Juv.,40.67,2,1428.66,1326,2095
+Chinook,South Creek,Winter Juv.,40.67,2,1428.66,1428,2123
+Chinook,South Fork Gold Creek,Redds,72.58,5,2106.48,21,2526
+Chinook,South Fork Gold Creek,Summer Juv.,72.58,5,2106.48,3449,2681
+Chinook,South Fork Gold Creek,Winter Juv.,72.58,5,2106.48,1591,2647
+Chinook,Texas Creek-Methow River,Redds,82.7,16,22572.72,1629,26731
+Chinook,Texas Creek-Methow River,Summer Juv.,82.7,16,22572.72,137079,25977
+Chinook,Texas Creek-Methow River,Winter Juv.,82.7,16,22572.72,76535,27975
+Chinook,Thirtymile Creek-Chewuch River,Redds,73.13,14,13523.74,342,15506
+Chinook,Thirtymile Creek-Chewuch River,Summer Juv.,73.13,14,13523.74,49171,15660
+Chinook,Thirtymile Creek-Chewuch River,Winter Juv.,73.13,14,13523.74,20183,16239
+Chinook,Thompson Creek-Methow River,Redds,115.21,20,41215.23,1526,46897
+Chinook,Thompson Creek-Methow River,Summer Juv.,115.21,20,41215.23,233277,45867
+Chinook,Thompson Creek-Methow River,Winter Juv.,115.21,20,41215.23,78626,49221
+Chinook,Twentymile Creek,Redds,106.77,1,935.6,9,1135
+Chinook,Twentymile Creek,Summer Juv.,106.77,1,935.6,1098,1357
+Chinook,Twentymile Creek,Winter Juv.,106.77,1,935.6,914,1261
+Chinook,Upper Twisp River,Redds,75.17,10,10661.68,241,12424
+Chinook,Upper Twisp River,Summer Juv.,75.17,10,10661.68,44768,12869
+Chinook,Upper Twisp River,Winter Juv.,75.17,10,10661.68,15035,13622
+Chinook,War Creek,Redds,70.27,1,967.63,14,1128
+Chinook,War Creek,Summer Juv.,70.27,1,967.63,1685,1297
+Chinook,War Creek,Winter Juv.,70.27,1,967.63,1074,1262
+Chinook,West Fork Methow River-Methow River,Redds,129.14,5,1390.67,31,1800
+Chinook,West Fork Methow River-Methow River,Summer Juv.,129.14,5,1390.67,3468,2495
+Chinook,West Fork Methow River-Methow River,Winter Juv.,129.14,5,1390.67,2026,2263
+Chinook,Windy Creek,Redds,49.2,1,0.33,0,0
+Chinook,Windy Creek,Summer Juv.,49.2,1,0.33,0,1
+Chinook,Windy Creek,Winter Juv.,49.2,1,0.33,0,1
+Chinook,Wolf Creek,Redds,102.81,5,5061.19,79,5928
+Chinook,Wolf Creek,Summer Juv.,102.81,5,5061.19,17504,6077
+Chinook,Wolf Creek,Winter Juv.,102.81,5,5061.19,5166,6365
+Steelhead,Alder Creek-Methow River,Redds,120.56,24,20690.4,561,24311
+Steelhead,Alder Creek-Methow River,Summer Juv.,120.56,24,20690.4,74342,21927
+Steelhead,Alder Creek-Methow River,Winter Juv.,120.56,24,20690.4,60919,22897
+Steelhead,Alta Coulee-Methow River,Redds,81.06,14,14237.72,514,17215
+Steelhead,Alta Coulee-Methow River,Summer Juv.,81.06,14,14237.72,42022,15424
+Steelhead,Alta Coulee-Methow River,Winter Juv.,81.06,14,14237.72,46987,15949
+Steelhead,Black Canyon Creek,Redds,64.23,1,1013.28,7,1169
+Steelhead,Black Canyon Creek,Summer Juv.,64.23,1,1013.28,3846,1113
+Steelhead,Black Canyon Creek,Winter Juv.,64.23,1,1013.28,3583,1188
+Steelhead,Boulder Creek,Redds,53.37,2,1733.2,24,1950
+Steelhead,Boulder Creek,Summer Juv.,53.37,2,1733.2,6596,1859
+Steelhead,Boulder Creek,Winter Juv.,53.37,2,1733.2,3966,1960
+Steelhead,Buttermilk Creek,Redds,95.95,4,4168.19,56,4593
+Steelhead,Buttermilk Creek,Summer Juv.,95.95,4,4168.19,12386,4458
+Steelhead,Buttermilk Creek,Winter Juv.,95.95,4,4168.19,11315,4713
+Steelhead,Cub Creek,Redds,62.59,1,618.18,4,697
+Steelhead,Cub Creek,Summer Juv.,62.59,1,618.18,2349,663
+Steelhead,Cub Creek,Winter Juv.,62.59,1,618.18,2041,693
+Steelhead,Doe Creek-Chewuch River,Redds,101.49,22,19918.95,262,22066
+Steelhead,Doe Creek-Chewuch River,Summer Juv.,101.49,22,19918.95,68191,21134
+Steelhead,Doe Creek-Chewuch River,Winter Juv.,101.49,22,19918.95,51199,22107
+Steelhead,Eagle Creek,Redds,34.71,1,796.89,7,939
+Steelhead,Eagle Creek,Summer Juv.,34.71,1,796.89,1850,895
+Steelhead,Eagle Creek,Winter Juv.,34.71,1,796.89,3215,963
+Steelhead,Early Winters Creek,Redds,128.48,11,7397.01,85,8583
+Steelhead,Early Winters Creek,Summer Juv.,128.48,11,7397.01,25791,8140
+Steelhead,Early Winters Creek,Winter Juv.,128.48,11,7397.01,24001,8820
+Steelhead,Eightmile Creek,Redds,119.96,2,3414.95,32,3899
+Steelhead,Eightmile Creek,Summer Juv.,119.96,2,3414.95,11111,3702
+Steelhead,Eightmile Creek,Winter Juv.,119.96,2,3414.95,7320,3884
+Steelhead,Fawn Creek-Methow River,Redds,142.85,27,29699.08,578,27824
+Steelhead,Fawn Creek-Methow River,Summer Juv.,142.85,27,29699.08,92483,26449
+Steelhead,Fawn Creek-Methow River,Winter Juv.,142.85,27,29699.08,85909,27438
+Steelhead,Goat Creek,Redds,92.79,3,4753.67,28,5357
+Steelhead,Goat Creek,Summer Juv.,92.79,3,4753.67,16096,5124
+Steelhead,Goat Creek,Winter Juv.,92.79,3,4753.67,15269,5416
+Steelhead,Gold Creek,Redds,157.56,18,17595.22,189,12935
+Steelhead,Gold Creek,Summer Juv.,157.56,18,17595.22,56928,12487
+Steelhead,Gold Creek,Winter Juv.,157.56,18,17595.22,56497,13162
+Steelhead,Headwaters Twisp River,Redds,52.07,3,2073.54,18,2423
+Steelhead,Headwaters Twisp River,Summer Juv.,52.07,3,2073.54,3997,2298
+Steelhead,Headwaters Twisp River,Winter Juv.,52.07,3,2073.54,7932,2452
+Steelhead,Kay Creek-Chewuch River,Redds,101.59,8,6950.31,90,7833
+Steelhead,Kay Creek-Chewuch River,Summer Juv.,101.59,8,6950.31,17870,7509
+Steelhead,Kay Creek-Chewuch River,Winter Juv.,101.59,8,6950.31,15805,7924
+Steelhead,Lake Creek,Redds,138.53,12,10872.4,152,12928
+Steelhead,Lake Creek,Summer Juv.,138.53,12,10872.4,28413,12122
+Steelhead,Lake Creek,Winter Juv.,138.53,12,10872.4,32466,13179
+Steelhead,Libby Creek,Redds,104.61,5,5343.78,56,6038
+Steelhead,Libby Creek,Summer Juv.,104.61,5,5343.78,21236,5762
+Steelhead,Libby Creek,Winter Juv.,104.61,5,5343.78,15171,6044
+Steelhead,Little Bridge Creek,Redds,63.13,11,8198.91,53,9356
+Steelhead,Little Bridge Creek,Summer Juv.,63.13,11,8198.91,22710,8860
+Steelhead,Little Bridge Creek,Winter Juv.,63.13,11,8198.91,28471,9356
+Steelhead,Lower Beaver Creek,Redds,124.38,17,14590.82,137,16602
+Steelhead,Lower Beaver Creek,Summer Juv.,124.38,17,14590.82,55896,15738
+Steelhead,Lower Beaver Creek,Winter Juv.,124.38,17,14590.82,35858,16445
+Steelhead,Lower Lost River,Redds,171.14,12,12003.8,240,14465
+Steelhead,Lower Lost River,Summer Juv.,171.14,12,12003.8,34763,13500
+Steelhead,Lower Lost River,Winter Juv.,171.14,12,12003.8,35277,14893
+Steelhead,Lower Twisp River,Redds,115.75,28,21407.86,403,24075
+Steelhead,Lower Twisp River,Summer Juv.,115.75,28,21407.86,83648,22758
+Steelhead,Lower Twisp River,Winter Juv.,115.75,28,21407.86,57664,23923
+Steelhead,McFarland Creek-Methow River,Redds,102.4,18,20953.94,881,25267
+Steelhead,McFarland Creek-Methow River,Summer Juv.,102.4,18,20953.94,64455,22181
+Steelhead,McFarland Creek-Methow River,Winter Juv.,102.4,18,20953.94,70011,23166
+Steelhead,Middle Twisp River,Redds,88.48,17,13582.3,191,16341
+Steelhead,Middle Twisp River,Summer Juv.,88.48,17,13582.3,40753,15211
+Steelhead,Middle Twisp River,Winter Juv.,88.48,17,13582.3,49421,16778
+Steelhead,Pearrygin Creek-Chewuch River,Redds,104.23,22,18977.69,296,21369
+Steelhead,Pearrygin Creek-Chewuch River,Summer Juv.,104.23,22,18977.69,71108,20111
+Steelhead,Pearrygin Creek-Chewuch River,Winter Juv.,104.23,22,18977.69,49019,20824
+Steelhead,Rattlesnake Creek-Methow River,Redds,101.42,21,17892.85,278,20745
+Steelhead,Rattlesnake Creek-Methow River,Summer Juv.,101.42,21,17892.85,48668,19654
+Steelhead,Rattlesnake Creek-Methow River,Winter Juv.,101.42,21,17892.85,52921,21160
+Steelhead,Robinson Creek,Redds,51,0,0.38,0,0
+Steelhead,Robinson Creek,Summer Juv.,51,0,0.38,0,0
+Steelhead,Robinson Creek,Winter Juv.,51,0,0.38,0,0
+Steelhead,South Creek,Redds,40.67,2,1277.84,12,1482
+Steelhead,South Creek,Summer Juv.,40.67,2,1277.84,2980,1417
+Steelhead,South Creek,Winter Juv.,40.67,2,1277.84,4714,1519
+Steelhead,South Fork Gold Creek,Redds,72.58,8,6037.58,50,6996
+Steelhead,South Fork Gold Creek,Summer Juv.,72.58,8,6037.58,18765,6612
+Steelhead,South Fork Gold Creek,Winter Juv.,72.58,8,6037.58,18005,7042
+Steelhead,Texas Creek-Methow River,Redds,82.7,16,11317.67,557,13991
+Steelhead,Texas Creek-Methow River,Summer Juv.,82.7,16,11317.67,36046,12301
+Steelhead,Texas Creek-Methow River,Winter Juv.,82.7,16,11317.67,39456,12965
+Steelhead,Thirtymile Creek-Chewuch River,Redds,73.13,15,14456.36,207,14989
+Steelhead,Thirtymile Creek-Chewuch River,Summer Juv.,73.13,15,14456.36,41962,14498
+Steelhead,Thirtymile Creek-Chewuch River,Winter Juv.,73.13,15,14456.36,36694,15096
+Steelhead,Thompson Creek-Methow River,Redds,115.21,20,21659.61,640,25058
+Steelhead,Thompson Creek-Methow River,Summer Juv.,115.21,20,21659.61,87126,22755
+Steelhead,Thompson Creek-Methow River,Winter Juv.,115.21,20,21659.61,63759,23851
+Steelhead,Twentymile Creek,Redds,106.77,2,2351.85,27,2712
+Steelhead,Twentymile Creek,Summer Juv.,106.77,2,2351.85,6805,2564
+Steelhead,Twentymile Creek,Winter Juv.,106.77,2,2351.85,5717,2753
+Steelhead,Upper Twisp River,Redds,75.17,10,10661.67,108,11970
+Steelhead,Upper Twisp River,Summer Juv.,75.17,10,10661.67,26146,11489
+Steelhead,Upper Twisp River,Winter Juv.,75.17,10,10661.67,25305,12255
+Steelhead,War Creek,Redds,70.27,2,1916.61,24,2160
+Steelhead,War Creek,Summer Juv.,70.27,2,1916.61,5630,2086
+Steelhead,War Creek,Winter Juv.,70.27,2,1916.61,4701,2231
+Steelhead,West Fork Methow River-Methow River,Redds,129.14,10,8450.54,100,9933
+Steelhead,West Fork Methow River-Methow River,Summer Juv.,129.14,10,8450.54,19374,9373
+Steelhead,West Fork Methow River-Methow River,Winter Juv.,129.14,10,8450.54,24310,10171
+Steelhead,Windy Creek,Redds,49.2,1,0.33,0,0
+Steelhead,Windy Creek,Summer Juv.,49.2,1,0.33,1,0
+Steelhead,Windy Creek,Winter Juv.,49.2,1,0.33,1,0
+Steelhead,Wolf Creek,Redds,102.81,5,5061.19,76,5691
+Steelhead,Wolf Creek,Summer Juv.,102.81,5,5061.19,19018,5490
+Steelhead,Wolf Creek,Winter Juv.,102.81,5,5061.19,13353,5815
