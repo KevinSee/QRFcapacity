@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to redd data, using CHaMP habitat 2011-2017
 # Created: 12/31/2019
-# Last Modified: 12/31/19
+# Last Modified: 1/15/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -96,13 +96,7 @@ chnk_sites = chnk_samps %>%
                               maxDist = snap_dist,
                               withAttrs = T,
                               idField = 'id') %>%
-  as('sf') %>%
-  select(-nearest_line_id, -snap_dist) %>%
-  # include some sites in the John Day where Chinook were found (or seemed to be close to sites where Chinook were found)
-  rbind(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-                quiet = T) %>%
-          st_transform(st_crs(chnk_domain)) %>%
-          select(Site, Watershed))
+  as('sf')
 
 # ggplot() +
 #   geom_sf(data = chnk_samps,
@@ -156,7 +150,6 @@ rm(covars)
 dens_offset = 0
 
 # fit random forest models
-set.seed(4)
 qrf_mods = qrf_mod_df %>%
   split(list(.$Species)) %>%
   map(.f = function(z) {
@@ -239,14 +232,7 @@ pred_hab_sites_chnk = pred_hab_sites %>%
                               withAttrs = T,
                               idField = 'id') %>%
   as('sf') %>%
-  as_tibble() %>%
-  select(-nearest_line_id, -snap_dist, -geometry) %>%
-  # add sites in the John Day
-  bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-                    quiet = T) %>%
-              as_tibble() %>%
-              select(Site) %>%
-              inner_join(pred_hab_sites))
+  as_tibble()
 
 # note if sites are in Chinook domain or not
 pred_hab_sites %<>% 
@@ -254,6 +240,7 @@ pred_hab_sites %<>%
   mutate_at(vars(Watershed),
             list(fct_drop))
 
+# put into dataframe for extrapolation, keeping only Chinook sites in Chinook domain
 pred_hab_df = pred_hab_sites %>%
   select(-starts_with('chnk')) %>%
   rename(cap_per_m = sthd_per_m,
@@ -543,7 +530,7 @@ gaa_pred = gaa_all %>%
   filter(!grepl('mega', Site, ignore.case = T)) %>%
   # note which sites have GAAs outside range of CHaMP sites GAAs
   mutate(inCovarRange = ifelse(Site %in% out_range_sites, F, T)) %>%
-  select(Site, one_of(gaa_covars), Lon, Lat, inCovarRange, HUC6NmNRCS, HUC8NmNRCS, HUC10NmNRC, HUC12NmNRC, chnk) %>%
+  select(Site, one_of(gaa_covars), Lon, Lat, inCovarRange, HUC6NmNRCS, HUC8NmNRCS, HUC10NmNRC, HUC12NmNRC, chnk, steel) %>%
   gather(GAA, value, one_of(gaa_num)) %>%
   left_join(gaa_summ) %>%
   mutate(norm_value = (value - metric_mean) / metric_sd) %>%
@@ -757,15 +744,29 @@ all_preds %<>%
            !Site %in% Site[duplicated(Site)])
 
 # for CHaMP sites, use direct QRF esimates, not extrapolation ones
+qrf_cap = pred_hab_sites %>%
+  select(-starts_with('chnk')) %>%
+  rename(cap_per_m = sthd_per_m,
+         cap_per_m2 = sthd_per_m2) %>%
+  mutate(Species = 'Steelhead') %>%
+  bind_rows(pred_hab_sites %>%
+              select(-starts_with('sthd')) %>%
+              select(-chnk_domain) %>%
+              rename(cap_per_m = chnk_per_m,
+                     cap_per_m2 = chnk_per_m2) %>%
+              mutate(Species = 'Chinook')) %>%
+  select(Species, everything()) %>%
+  select(Site, Species, cap_per_m, cap_per_m2)
+
 all_preds %<>%
-  left_join(mod_data %>%
+  left_join(qrf_cap %>%
               select(Site, 
                      Species,
                      cap_per_m) %>%
               spread(Species, cap_per_m) %>%
               rename(qrf_chnk_per_m = Chinook,
                      qrf_sthd_per_m = Steelhead) %>%
-              full_join(mod_data %>%
+              full_join(qrf_cap %>%
                           select(Site, 
                                  Species,
                                  cap_per_m2) %>%
@@ -820,9 +821,11 @@ all_preds_sf = all_preds %>%
 # as shapefile
 st_write(all_preds_sf,
          dsn = 'output/shapefiles/Redds_Capacity.shp',
-         driver = 'ESRI Shapefile')
+         driver = 'ESRI Shapefile',
+         delete_layer = T)
 
 # as GPKG
 st_write(all_preds_sf,
          dsn = 'output/gpkg/Redds_Capacity.gpkg',
-         driver = 'GPKG')
+         driver = 'GPKG',
+         delete_layer = T)
