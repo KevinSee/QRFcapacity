@@ -1,0 +1,15 @@
+Species,NAME,Lifestage,area,n_pts,tot_length,tot_cap,tot_cap_se
+Chinook,Chiwawa River,Redds,488.4,156,68562.6,2636,62767
+Chinook,Chiwawa River,Summer Juv.,488.4,156,68562.6,221088,70070
+Chinook,Icicle Creek,Redds,555.1,13,9416,696,11457
+Chinook,Icicle Creek,Summer Juv.,555.1,13,9416,44527,11280
+Chinook,Mission Creek,Redds,240.1,3,1305.3,8,1312
+Chinook,Mission Creek,Summer Juv.,240.1,3,1305.3,3612,1414
+Chinook,Nason Creek,Redds,281.9,71,25091.2,949,28728
+Chinook,Nason Creek,Summer Juv.,281.9,71,25091.2,87140,34124
+Chinook,Peshastin Creek,Redds,351,59,24247.3,452,27014
+Chinook,Peshastin Creek,Summer Juv.,351,59,24247.3,74971,29472
+Chinook,Wenatchee River,Redds,815.2,215,189808.1,25681,220979
+Chinook,Wenatchee River,Summer Juv.,815.2,215,189808.1,906263,226035
+Chinook,White River-Little Wenatchee River,Redds,709.2,138,53234.1,4077,42114
+Chinook,White River-Little Wenatchee River,Summer Juv.,709.2,138,53234.1,216410,44434

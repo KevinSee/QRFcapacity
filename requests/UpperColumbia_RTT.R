@@ -237,3 +237,51 @@ ent_huc12_cap %>%
             digits = 2) %>%
   write_csv('outgoing/Entiat_QRF_capacity_table.csv')
 
+
+#-----------------------------------------------------------------
+# produce tables of capacity for HUC 10's in Wenatachee
+#-----------------------------------------------------------------
+# get HUC 10 polygons
+huc10_sf = st_read('/Users/seek/OneDrive - Merck Sharp & Dohme, Corp/Data/WatershedBoundaries/WBDHU10.shp') %>%
+  st_transform(st_crs(chnk_domain))
+
+wen_huc10 = huc10_sf %>%
+  filter(grepl("17020011", HUC10)) %>%
+  mutate_at(vars(NAME),
+            list(fct_drop))
+
+# pull out points in Wenatchee
+wen_pts = uc_pts %>%
+  st_join(wen_huc10 %>%
+            select(HUC10, NAME, AREASQKM)) %>%
+  filter(!is.na(NAME))
+
+wen_huc10_cap = wen_huc10 %>%
+  mutate_at(vars(NAME),
+            list(fct_drop)) %>%
+  split(list(.$NAME)) %>%
+  map_df(.id = "NAME",
+         .f = function(x) {
+           wen_pts %>%
+             filter(chnk == 'Yes' | steel == 'Yes') %>%
+             split(list(.$Lifestage)) %>%
+             map_df(.id = 'Lifestage',
+                    .f = function(y) {
+                      calc_watershed_cap(x,
+                                         chnk_domain,
+                                         y)
+                      
+                    })
+         }) %>%
+  mutate(Species = 'Chinook') %>%
+  select(Species, everything()) %>%
+  filter(Lifestage %in% c('Redds', 'Summer Juv.')) %>%
+  mutate_at(vars(starts_with('tot_cap')),
+            list(round_half_up)) %>%
+  mutate_at(vars(area, tot_length),
+            list(round),
+            digits = 1)
+
+wen_huc10_cap %>%
+  filter(!is.na(n_pts)) %>%
+  write_csv('outgoing/Wenatchee_QRF_HUC10_capacity_table.csv')
