@@ -34,3 +34,9 @@ st_write(upSalm_pts,
          driver = 'GPKG',
          delete_layer = T)
 
+# save file
+st_write(upSalm_pts,
+         dsn = 'outgoing/shapefiles/QRF_Redd_Capacity_Salmon.shp',
+         driver = 'ESRI Shapefile',
+         delete_layer = T)
+
