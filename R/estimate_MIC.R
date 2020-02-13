@@ -36,7 +36,7 @@ estimate_MIC = function(data,
                 gather(Metric, value) %>%
                 group_by(Metric) %>%
                 summarise(var = var(value, na.rm = T),
-                          obsCV = sd(value, na.rm = T) / mean(value, na.rm = T),
+                          obsCV = sd(value, na.rm = T) / abs(mean(value, na.rm = T)),
                           non_NA = sum(!is.na(value)),
                           is_NA = sum(is.na(value)),
                           perc_NA = round(is_NA / (is_NA + non_NA), 3),
