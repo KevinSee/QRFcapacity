@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Process species ranges
 # Created: 5/14/2019
-# Last Modified: 9/17/19
+# Last Modified: 2/26/2020
 # Notes: 
 # From StreamNet: http://www.streamnet.org/data/interactive-maps-and-gis-data/
 # Bureau of Rec provided updated extents in the Upper Salmon watersheds
@@ -13,18 +13,106 @@
 library(usethis)
 library(tidyverse)
 library(sf)
+library(magrittr)
 
 #-----------------------------------------------------------------
 # set projection we'd like to use consistently
 myCRS = 5070
 
 #-----------------------------------------------------------------
+# read in stream network
+#-----------------------------------------------------------------
+rch_200 = st_read('data/raw/stream_network/crb_streams_v2_master.shp') %>%
+  st_transform(crs = myCRS) %>%
+  st_zm()
+
+#-----------------------------------------------------------------
 # get species' ranges
 #-----------------------------------------------------------------
-# read in StreamNet shapefile
-StmNt = st_read('data/raw/domain/FishDist_AllSpecies.shp') %>%
-# StmNt = st_read('data/raw/domain/StreamNet_FishDist.shp') %>%
-  st_transform(crs = myCRS)
+spr_chnk = st_read('data/raw/domain/crb_v2_spr_chnk.gpkg') %>%
+  st_transform(crs = myCRS) %>%
+  st_zm()
+
+sum_chnk = st_read('data/raw/domain/crb_v2_sum_chnk.gpkg') %>%
+  st_transform(crs = myCRS) %>%
+  st_zm()
+
+sum_sthd = st_read('data/raw/domain/crb_v2_sum_sthd.gpkg') %>%
+  st_transform(crs = myCRS) %>%
+  st_zm()
+
+# compare summer and spring chinook domains
+spr_dom = spr_chnk %>%
+  filter(chin_sprng == 1) %>%
+  select(HUC6_code,
+         BranchID,
+         ReachID,
+         UniqueID) %>%
+  as_tibble() %>%
+  select(-geom)
+
+sum_dom = sum_chnk %>%
+  filter(chin_summr == 1) %>%
+  select(HUC6_code,
+         BranchID,
+         ReachID, 
+         UniqueID) %>%
+  as_tibble() %>%
+  select(-geom)
+
+anti_join(sum_dom,
+          spr_dom)
+
+anti_join(spr_dom,
+          sum_dom)
+
+sum_chnk %>%
+  filter(chin_summr == 1) %>%
+  anti_join(spr_dom) %>%
+  mutate_at(vars(HUC6_name),
+            list(fct_drop)) %>%
+  select(HUC6_name) %>%
+  plot()
+
+# data frame containing all the spring/summer Chinook unique IDs
+chnk_dom = spr_chnk %>%
+  filter(chin_sprng == 1) %>%
+  select(UniqueID,
+         Species,
+         Run,
+         UseType) %>%
+  rbind(sum_chnk %>%
+          filter(chin_summr == 1) %>%
+          anti_join(spr_dom) %>%
+          select(UniqueID,
+                 Species,
+                 Run,
+                 UseType)) %>%
+  as_tibble() %>%
+  mutate_at(vars(Species, Run, UseType),
+            list(fct_drop)) %>%
+  select(-geom)
+  
+# add species range to 200 m reaches
+rch_200 %<>%
+  full_join(chnk_dom %>%
+              select(UniqueID,
+                     chnk_run = Run,
+                     chnk_use = UseType) %>%
+              mutate(chnk = T)) %>%
+  full_join(sum_sthd %>%
+              filter(steel_summ == 1) %>%
+              as_tibble() %>%
+              select(UniqueID,
+                     sthd_run = Run,
+                     sthd_use = UseType) %>%
+              mutate(sthd = T)) %>%
+  mutate_at(vars(chnk, sthd),
+            list(~ if_else(is.na(.), F, .)))
+
+# subset of just anadromous areas
+rch_200_and = rch_200 %>%
+  filter((chnk | sthd))
 
 
 # read in population boundaries (polygons)
@@ -34,48 +122,87 @@ sthd_pops = st_read('data/raw/domain/STHD_SUWI_All.shp') %>%
   st_transform(crs = myCRS) %>%
   filter(grepl('summer', RUN_TIMING))
 
-
-# read in watershed boundaries
-# entire interior columbia river basin (to clip StreamNet domain)
-crb = st_read('/Users/kevin/Dropbox/ISEMP/Data/DesignDocs/WatershedBoundaryLines/Shape/WBDHU4.shp') %>%
-  st_transform(myCRS) %>%
-  filter(!NAME %in% c('Kootenai-Pend Oreille-Spokane',
-                      'Puget Sound',
-                      'Oregon-Washington Coastal',
-                      'Oregon Closed Basins',
-                      # 'Upper Snake',
-                      # 'Middle Snake', 
-                      'Willamette')) %>%
-  st_union(by_feature = F) %>%
-  st_sf(tibble(NAME = 'Interior CRB'),
-        geom = .)
-
-# pull out species domains, clip to crb polygon, and join to population polygons
-chnk_domain = StmNt %>%
-  filter(Species == 'Chinook salmon' &
-           Run %in% c('Spring', 'Summer')) %>%
-  st_zm() %>%
-  st_intersection(crb) %>%
+# pull out species domains and join to population polygons
+chnk_domain = rch_200 %>%
+  filter(chnk) %>%
   mutate(Source = 'StreamNet') %>%
   st_join(chnk_pops %>%
             select(ESU_DPS:NWR_NAME),
           largest = T) %>%
   mutate_at(vars(ESU_DPS:NWR_NAME),
             list(fct_drop)) %>%
-  select(Source, StreamName, Species, SciName, UseType, ESU_DPS:NWR_NAME)
+  select(-ET_ID, -starts_with('sthd')) %>%
+  select(Source, everything())
 
-sthd_domain = StmNt %>%
-  filter(Species == 'Steelhead' &
-           Run == 'Summer') %>%
-  st_zm() %>%
+sthd_domain = rch_200 %>%
+  filter(sthd) %>%
   mutate(Source = 'StreamNet') %>%
-  st_intersection(crb) %>%
   st_join(sthd_pops %>%
             select(ESU_DPS:NWR_NAME),
           largest = T) %>%
   mutate_at(vars(ESU_DPS:NWR_NAME),
             list(fct_drop)) %>%
-  select(Source, StreamName, Species, SciName, UseType, ESU_DPS:NWR_NAME)
+  select(-ET_ID, -starts_with('chnk')) %>%
+  select(Source, everything())
+
+
+# #-----------------------------------------------------------------
+# # get species' ranges
+# #-----------------------------------------------------------------
+# # read in StreamNet shapefile
+# StmNt = st_read('data/raw/domain/FishDist_AllSpecies.shp') %>%
+# # StmNt = st_read('data/raw/domain/StreamNet_FishDist.shp') %>%
+#   st_transform(crs = myCRS)
+# 
+# # read in population boundaries (polygons)
+# chnk_pops = st_read('data/raw/domain/CHNK_SPSU_All.shp') %>%
+#   st_transform(crs = myCRS)
+# sthd_pops = st_read('data/raw/domain/STHD_SUWI_All.shp') %>%
+#   st_transform(crs = myCRS) %>%
+#   filter(grepl('summer', RUN_TIMING))
+# 
+# 
+# # read in watershed boundaries
+# # entire interior columbia river basin (to clip StreamNet domain)
+# crb = st_read('/Users/kevin/Dropbox/ISEMP/Data/DesignDocs/WatershedBoundaryLines/Shape/WBDHU4.shp') %>%
+#   st_transform(myCRS) %>%
+#   filter(!NAME %in% c('Kootenai-Pend Oreille-Spokane',
+#                       'Puget Sound',
+#                       'Oregon-Washington Coastal',
+#                       'Oregon Closed Basins',
+#                       # 'Upper Snake',
+#                       # 'Middle Snake', 
+#                       'Willamette')) %>%
+#   st_union(by_feature = F) %>%
+#   st_sf(tibble(NAME = 'Interior CRB'),
+#         geom = .)
+# 
+# # pull out species domains, clip to crb polygon, and join to population polygons
+# chnk_domain = StmNt %>%
+#   filter(Species == 'Chinook salmon' &
+#            Run %in% c('Spring', 'Summer')) %>%
+#   st_zm() %>%
+#   st_intersection(crb) %>%
+#   mutate(Source = 'StreamNet') %>%
+#   st_join(chnk_pops %>%
+#             select(ESU_DPS:NWR_NAME),
+#           largest = T) %>%
+#   mutate_at(vars(ESU_DPS:NWR_NAME),
+#             list(fct_drop)) %>%
+#   select(Source, StreamName, Species, SciName, UseType, ESU_DPS:NWR_NAME)
+# 
+# sthd_domain = StmNt %>%
+#   filter(Species == 'Steelhead' &
+#            Run == 'Summer') %>%
+#   st_zm() %>%
+#   mutate(Source = 'StreamNet') %>%
+#   st_intersection(crb) %>%
+#   st_join(sthd_pops %>%
+#             select(ESU_DPS:NWR_NAME),
+#           largest = T) %>%
+#   mutate_at(vars(ESU_DPS:NWR_NAME),
+#             list(fct_drop)) %>%
+#   select(Source, StreamName, Species, SciName, UseType, ESU_DPS:NWR_NAME)
 
 
 
@@ -86,6 +213,7 @@ sthd_domain = StmNt %>%
 uppSalmChnk = st_read('data/raw/domain/UP_Salmon_ChinookExtents_All.shp') %>%
   st_transform(myCRS) %>%
   st_zm() %>%
+  # rename(StreamName = GNIS_Name) %>%
   # all NAs for Basin are in North Fork Salmon
   mutate(Basin = fct_explicit_na(Basin, na_level = 'North Fork Salmon')) %>%
   mutate(Basin = recode(Basin,
@@ -93,8 +221,7 @@ uppSalmChnk = st_read('data/raw/domain/UP_Salmon_ChinookExtents_All.shp') %>%
                         'Lemhi' = 'Lemhi River',
                         'North Fork Salmon' = 'North Fork Salmon River',
                         'Pahsimeroi' = 'Pahsimeroi River',
-                        'Upper Salmon' = 'Salmon River Upper Mainstem above Redfish Lake')) %>%
-  rename(StreamName = GNIS_Name)
+                        'Upper Salmon' = 'Salmon River Upper Mainstem above Redfish Lake'))
 
 p1 = chnk_domain %>%
   filter(MPG == 'Upper Salmon River',
@@ -123,6 +250,48 @@ ggpubr::ggarrange(plotlist = list(p1, p2),
                   legend = 'bottom')
 
 # drop areas of Upper Salmon MPG from StreamNet and replace with BoR ranges
+uppSalmChnk_buff = uppSalmChnk %>%
+  select(Basin,
+         GNIS_Name,
+         ReachCode,
+         OBJECTID) %>%
+  mutate(HUC8_code = str_sub(ReachCode, 1, 8)) %>%
+  st_buffer(dist = 200,
+            endCapStyle = 'SQUARE')
+
+
+uppSalmChnk_tab = rch_200 %>%
+  filter(HUC8_code %in% unique(uppSalmChnk_buff$HUC8_code)) %>%
+  st_intersection(uppSalmChnk_buff) %>%
+  mutate_at(vars(starts_with("GNIS_Name")),
+            list(as.character)) %>%
+  filter(GNIS_Name == GNIS_Name.1) %>%
+  mutate(lngth = st_length(.)) %>%
+  group_by(UniqueID) %>%
+  summarise(OBJECTID = OBJECTID[which.max(lngth)],
+            ReachCode = ReachCode[which.max(lngth)],
+            lngth = max(lngth)) %>%
+  ungroup() %>%
+  as_tibble() %>%
+  select(-geometry) %>%
+  filter(as.numeric(lngth) >= 100)
+  
+rch_200_uppSalmChnk = inner_join(rch_200,
+                                 uppSalmChnk_tab %>%
+                                   select(UniqueID, lngth))
+
+rch_200 %>%
+  mutate(chnk = if_else(UniqueID %in% rch_200_upSalmChnk$UniqueID,
+                        T, chnk)) %>%
+  filter(chnk, is.na(chnk_use)) %>%
+  xtabs(~ ecoregion, ., drop.unused.levels = T)
+  
+
+
+
+
+
+
 chnk_domain %>%
   filter(!(MPG == 'Upper Salmon River' & StreamName != 'Salmon River')) %>%
   rbind(uppSalmChnk %>%
