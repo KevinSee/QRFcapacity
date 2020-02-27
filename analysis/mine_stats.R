@@ -18,13 +18,19 @@ theme_set(theme_bw())
 
 #-----------------------------------------------------------------
 # determine which set of fish/habitat data to use
-# summmer juvenilts
+# summmer juveniles with CHaMP metrics
 data("fh_sum_champ_2017")
 fish_hab = fh_sum_champ_2017 %>%
   mutate_at(vars(Watershed, Year),
             list(as.factor)) %>%
   rename(LON_DD = Lon,
          LAT_DD = Lat)
+
+# summer juveniles with DASH metrics
+data("fh_sum_dash_2014_17")
+fish_hab = fh_sum_dash_2014_17 %>%
+  mutate_at(vars(Watershed, Year),
+            list(as.factor))
 
 # redds
 data("fh_redds_champ_2017")
