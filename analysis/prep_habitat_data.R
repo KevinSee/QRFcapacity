@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep habitat data
 # Created: 5/14/2019
-# Last Modified: 1/12/2020
+# Last Modified: 2/25/2020
 # Notes: some data downloaded from CHaMP webpage on 9/16/2015
 # final champ dataset downloaded on 3/8/2018
 # Richie joined the NorWeST temperature data to the master sample points
@@ -167,6 +167,44 @@ gaa_meta = readxl::read_excel('data/raw/master_sample_pts/GAA_Metadata_20150506.
          FieldName,
          UnitOfMeasureAbbrv = Units) %>%
   mutate(ShortName = str_remove(ShortName, '_TB$'))
+
+#-----------------------------------------------------------------
+# read in HUC 6 polygons and attach NatPrin1, NatPrin2 & DistPrin1 to each
+#-----------------------------------------------------------------
+huc12 = st_read('data/raw/watershed_boundaries/WBDHU12.shp') %>%
+  st_transform(st_crs(chnk_domain))
+
+huc_pca = read_excel('data/raw/habitat/Final_HUC6_classes_with_PCA_20110704.xlsx',
+                     sheet = 'Eastside') %>%
+  rename(HUC12 = subwat) %>%
+  mutate_at(vars(HUC12),
+            list(~ as.factor(as.character(.)))) %>%
+  select(-west_nat_feat_class,
+         -mountains_nat_feat_class,
+         # -LAT, -LON,
+         -SUBWAT)
+
+
+huc12 %>%
+  inner_join(huc_pca) %>%
+  mutate(huc_pre = str_sub(HUC12, 1, 4)) %>%
+  janitor::tabyl(huc_pre)
+
+huc12 %>%
+  anti_join(huc_pca) %>%
+  mutate(huc_pre = str_sub(HUC12, 1, 4)) %>%
+  # janitor::tabyl(huc_pre)
+  select(huc_pre) %>%
+  plot()
+
+huc_pca %>%
+  rowwise() %>%
+  mutate(inHUC_bdry = if_else(HUC12 %in% huc12$HUC12, T, F)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c('LON', 'LAT'),
+           crs = 4326) %>%
+  ggplot() +
+  geom_sf(aes(color = inHUC_bdry))
 
 #-----------------------------------------------------------------
 # get CHaMP data from 2011 - 2014
