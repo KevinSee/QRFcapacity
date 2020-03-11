@@ -62,10 +62,6 @@ hab_data = champ_cu %>%
                      Sin,
                      SubD50))
 
-fish_hab %<>%
-  left_join(champ_site_2011_17 %>%
-              select(VisitID, Elev_M, CUMDRAINAG, LON_DD, LAT_DD))
-
 # average habitat == latest channel unit habitat
 data("champ_site_2011_17_avg")
 

@@ -359,14 +359,23 @@ cu_df = champ_cu %>%
   left_join(champ_site_2011_17 %>%
               filter(VisitObjective == 'Primary Visit',
                      VisitStatus == 'Released to Public') %>%
-              select(VisitID, 
-                     Site, 
-                     Watershed,
+              select(Site, Watershed, VisitID, VisitYear,
                      SampleDate,
-                     CUMDRAINAG,
-                     SubD50,
+                     Channel_Type, Elev_M, CUMDRAINAG, 
+                     LON_DD, LAT_DD,
+                     Discharge = Q,
+                     Lgth_Wet, Area_Wet,
+                     CU_Freq,
                      Sin,
-                     CU_Freq)) %>%
+                     SubD50)) %>%
+              # select(VisitID, 
+              #        Site, 
+              #        Watershed,
+              #        SampleDate,
+              #        CUMDRAINAG,
+              #        SubD50,
+              #        Sin,
+              #        CU_Freq)) %>%
   group_by(Site, ChUnitNumber) %>%
   filter(SampleDate == max(SampleDate, na.rm = T)) %>%
   ungroup() %>%
