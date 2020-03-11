@@ -388,7 +388,8 @@ cu_df = champ_cu %>%
 fh_win_champ_2017 = fish_win_est %>%
   rename(fishSampDate = SampleDate,
          Tier1_fish = Tier1,
-         Tier2_fish = Tier2) %>%
+         Tier2_fish = Tier2,
+         Discharge_fish = Discharge) %>%
   select(-Stream) %>%
   inner_join(cu_df %>%
                rename(habSampDate = SampleDate) %>%
