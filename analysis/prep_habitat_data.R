@@ -376,7 +376,7 @@ champ_site_2011_17 = siteData %<>%
   # add one more metric related to cnt and freq of channel units
   mutate(CU_Ct = SlowWater_Ct + FstTurb_Ct + FstNT_Ct,
          CU_Freq = CU_Ct / (Lgth_Wet / 100)) %>%
-  #
+  # add Sin_CL
   mutate(Sin_CL = Sin) %>%
   # get any missing lat/longs from GAA data
   left_join(gaa_locs) %>%
