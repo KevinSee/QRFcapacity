@@ -567,8 +567,9 @@ use_data(champ_dash, champ_dash_avg,
 #-----------------------------------------------------------------
 # associate each CHaMP site with a 200 - meter reach
 #-----------------------------------------------------------------
-data("rch_200")
 data("champ_site_2011_17")
+data("rch_200")
+
 
 champ_sf = champ_site_2011_17 %>%
   filter(! Watershed %in% c('Big-Navarro-Garcia (CA)',
@@ -595,42 +596,24 @@ champ_sf = champ_site_2011_17 %>%
 
 # save to be processed by QGIS
 st_write(champ_sf,
-         dsn = 'data/prepped/CHaMP_Site_locs.gpkg')
+         dsn = 'data/prepped/200m_reaches/CHaMP_Site_locs.gpkg')
 
 # used the NNjoin plugin with QGIS to join each point to it's closest 200 m reach
-champ_rch = st_read('data/prepped/CHaMP_site_reach.gpkg') %>%
+champ_rch = st_read('data/prepped/200m_reaches/CHaMP_site_reach.gpkg') %>%
   rename(UniqueID = join_UniqueID,
-         GNIS_Name = join_GNIS_Name)
+         GNIS_Name = join_GNIS_Name) %>%
+  rename(geometry = geom)
+<<<<<<< HEAD
+<<<<<<< HEAD
 
 
-# champ_rch %>%
-#   left_join(gaa %>%
-#               select(Site, CUMDRAI, GNIS_NA)) %>%
-#   filter(CUMDRAI < 0.01)
-#   filter(GNIS_Name != GNIS_NA) %>%
-#   filter(StreamName != GNIS_NA)
-#   xtabs(~ (StreamName == GNIS_NA), .)
+=======
 
-champ_rch %>%
-  left_join(champ_site_2011_17 %>%
-              filter(!is.na(CUMDRAINAG)) %>%
-              select(Site, CUMDRAINAG) %>%
-              distinct()) %>%
-  filter(CUMDRAINAG < 0.01) %>%
-  left_join(gaa %>%
-              select(Site, CUMDRAI, GNIS_NA))
-            
-champ_site_2011_17 %>%
-  filter(!is.na(CUMDRAINAG)) %>%
-  select(Site, Watershed, StreamName, CUMDRAINAG) %>%
-  distinct() %>%
-  left_join(gaa %>%
-              select(Site, CUMDRAI, GNIS_NA)) %>%
-  mutate_at(vars(CUMDRAINAG, CUMDRAI),
-            list(round),
-            digits = 2) %>%
-  filter(CUMDRAINAG != CUMDRAI)
+=======
 
+>>>>>>> 29f98beec45b23fdc378343e5732e170e0557948
+
+>>>>>>> 29f98beec45b23fdc378343e5732e170e0557948
 # which sites seemed to get snapped a bit far?
 champ_rch %>%
   filter(distance > 200) %>%
@@ -639,8 +622,9 @@ champ_rch %>%
 
 # which sites may have been snapped to the wrong place?
 # Stream names don't match, or they do but distance seems far
+# maximum acceptable distance to have point moved
 max_dist = 100
-max_dist = 50
+# max_dist = 50
 snap_issues = champ_rch %>%
   mutate_at(vars(StreamName, GNIS_Name),
             list(as.character)) %>%
@@ -656,39 +640,121 @@ snap_issues = champ_rch %>%
                                          "Missing StreamName",
                                          as.character(NA)))))
 
+# save to send to Richie
 snap_issues %>%
-  st_write('/Users/seek/Desktop/Lemhi/SnapIssues.gpkg')
+  st_write('data/prepped/200m_reaches/SnapIssues.gpkg')
+# # save as shapefile
+# snap_issues %>%
+#   st_write('data/prepped/200m_reaches/SnapIssues.shp')
+
+# Richie sent this file back, with some points fixed (new UniqueID, called UniqueID_2)
+snap_issues_fix = st_read('data/prepped/200m_reaches/SnapIssues_Fixed/SnapIssues_Fixed_RC.shp')
+<<<<<<< HEAD
+<<<<<<< HEAD
+
+snap_issues_fix %>%
+  filter(grepl('Need to add line', Action))
+
+snap_issues_fix %>%
+  filter(UniqueID_2 == 0)
 
 snap_issues %>%
-  st_write('/Users/seek/Desktop/Lemhi/SnapIssues.shp')
+  filter(Site == "CBW05583-353711")
 
-snap_issues %>%
+# 
+champ_rch_2 = champ_rch %>%
+  anti_join(snap_issues %>%
+              st_drop_geometry(),
+            by = "Site") %>%
+  rbind(rch_200 %>%
+          select(one_of(names(champ_rch)), geometry) %>%
+          inner_join(snap_issues_fix %>%
+                       filter(UniqueID_2 != 0) %>%
+                       st_drop_geometry() %>%
+                       select(Site, Watershed, StreamName, UniqueID = UniqueID_2)) %>%
+          mutate(distance = NA) %>%
+          select(one_of(names(champ_rch))))
+
+champ_rch %>%
+  anti_join(champ_rch_2 %>%
+              st_drop_geometry(),
+            by = "Site") %>%
+  left_join(snap_issues_fix %>%
+              st_drop_geometry() %>%
+              select(Site, UniqueID_2, Notes, Action)) %>%
+  xtabs(~ UniqueID_2, .)
+
+champ_site_rch = champ_rch_2 %>%
   st_drop_geometry() %>%
-  tabyl(Watershed, issue, show_missing_levels = F) %>%
-  adorn_totals()
+  select(Site, Watershed, UniqueID)
 
+# save to use as data object in package
+use_data(champ_site_rch,
+         overwrite = T,
+         version = 2)
+=======
+>>>>>>> 29f98beec45b23fdc378343e5732e170e0557948
+
+snap_issues_fix %>%
+  filter(grepl('Need to add line', Action))
+
+snap_issues_fix %>%
+  filter(UniqueID_2 == 0)
+
+<<<<<<< HEAD
+rch_200 %>%
+  inner_join(champ_site_rch) %>%
+  # filter((!chnk & !sthd)) %>%
+  filter(chnk,
+         !sthd) %>%
+  xtabs(~ Watershed, .,
+        drop.unused.levels = T)
+
+rch_200 %>%
+  xtabs(~ chnk + sthd, .)
+=======
+=======
+
+snap_issues_fix %>%
+  filter(grepl('Need to add line', Action))
+
+snap_issues_fix %>%
+  filter(UniqueID_2 == 0)
+
+>>>>>>> 29f98beec45b23fdc378343e5732e170e0557948
 snap_issues %>%
-  filter(#issue == 'Missing StreamName',
-         Watershed != 'Lemhi')
+  filter(Site == "CBW05583-353711")
 
+# 
+champ_rch_2 = champ_rch %>%
+  anti_join(snap_issues %>%
+              st_drop_geometry(),
+            by = "Site") %>%
+  rbind(rch_200 %>%
+          select(one_of(names(champ_rch)), geometry) %>%
+          inner_join(snap_issues_fix %>%
+                       filter(UniqueID_2 != 0) %>%
+                       st_drop_geometry() %>%
+                       select(Site, Watershed, StreamName, UniqueID = UniqueID_2)) %>%
+          mutate(distance = NA) %>%
+          select(one_of(names(champ_rch))))
 
-champ_site_2011_17 %>%
-  filter(! Watershed %in% c('Big-Navarro-Garcia (CA)',
-                            'Region 17',
-                            'CHaMP Training')) %>%
-  select(Site, Watershed) %>%
-  distinct() %>%
-  anti_join(champ_rch)
+champ_rch %>%
+  anti_join(champ_rch_2 %>%
+              st_drop_geometry(),
+            by = "Site") %>%
+  left_join(snap_issues_fix %>%
+              st_drop_geometry() %>%
+              select(Site, UniqueID_2, Notes, Action)) %>%
+  xtabs(~ UniqueID_2, .)
 
-sum(duplicated(champ_sf$Site))
-champ_sf %>%
-  filter(Site %in% Site[duplicated(Site)])
-
-xtabs(~ Watershed, champ_sf)
-
-
-
-
+champ_site_rch = champ_rch_2 %>%
+  st_drop_geometry() %>%
+  select(Site, UniqueID)
+<<<<<<< HEAD
+>>>>>>> 29f98beec45b23fdc378343e5732e170e0557948
+=======
+>>>>>>> 29f98beec45b23fdc378343e5732e170e0557948
 
 #-----------------------------------------------------------------
 # prep CHaMP frame
