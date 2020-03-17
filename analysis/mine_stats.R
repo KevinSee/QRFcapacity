@@ -47,20 +47,28 @@ fish_hab_list = list('Redds' = fh_redds_champ_2017 %>%
                        mutate_at(vars(Watershed, Year),
                                  list(as.factor)))
 
-# alter a few metrics consistently
+# alter a few metrics consistently across all datasets
 fish_hab_list %<>%
   map(.f = function(x) {
     # scale some metrics by site length
-    x %<>%
+    x %>%
       mutate_at(vars(starts_with('LWVol'),
                      ends_with('_Vol')),
                 list(~ . / Lgth_Wet * 100))
     
     # add a metric showing "some" riparian canopy
-    if(RipCovCanNone %in% names(x)) {
+    if("RipCovCanNone" %in% names(x)) {
       x %<>%
         mutate(RipCovCanSome = 100 - RipCovCanNone)
     }
+    
+    # add a metric showing "some" fish cover
+    if("FishCovNone" %in% names(x)) {
+      x %<>%
+        mutate(FishCovSome = 100 - FishCovNone)
+    }
+    
+    return(x)
   })
 
 
@@ -88,7 +96,19 @@ hab_dict %<>%
               filter(ShortName == "RipCovCanNone") %>%
               mutate(ShortName = "RipCovCanSome",
                      Name = "Riparian Cover: Some Canopy",
-                     DescriptiveText = "Percent of riparian canopy with some vegetation."))
+                     DescriptiveText = "Percent of riparian canopy with some vegetation.")) %>%
+  # add description for no riparian ground cover
+  bind_rows(hab_dict_2017 %>%
+              filter(ShortName == "RipCovGrnd") %>%
+              mutate(ShortName = "RipCovGrndNone",
+                     Name = "Riparian Cover: No Ground",
+                     DescriptiveText = "Percent of groundcover with no vegetation.")) %>%
+  # add description for some fish cover
+  bind_rows(hab_dict_2017 %>%
+              filter(ShortName == "FishCovNone") %>%
+              mutate(ShortName = "FishCovSome",
+                     Name = "Fish Cover: Some Cover",
+                     DescriptiveText = "Percent of wetted area with some form of fish cover"))
 
 #-----------------------------------------------------------------
 # clip Chinook data to Chinook domain
@@ -142,22 +162,7 @@ fish_hab_list %<>%
   })
 
 #-----------------------------------------------------------------
-# # what are some possible habitat covariates?
-# poss_hab_mets = hab_dict %>%
-#   filter(MetricCategory != 'Categorical') %>%
-#   filter(ShortName %in% names(fish_hab)) %>%
-#   pull(ShortName) %>%
-#   unique()
-
-# poss_hab_mets = fish_hab_list %>%
-#   map(.f = function(x) {
-#     hab_dict %>%
-#       filter(MetricCategory != 'Categorical') %>%
-#       filter(ShortName %in% names(x)) %>%
-#       pull(ShortName) %>%
-#       unique()
-#   })
-
+# what are some possible habitat covariates?
 poss_hab_mets = fish_hab_list %>%
   map_df(.f = function(x) tibble(ShortName = names(x))) %>%
   distinct() %>%
@@ -238,12 +243,8 @@ poss_hab_mets = fish_hab_list %>%
 #                                      ShortName %in% c("Elev_M"),
 #                                    'GAA',
 #                                    MetricGroupName))
-# 
-# 
-# 
-# 
 # poss_hab_mets %>%
-#   # filter(is.na(MetricGroupName))
+#   filter(is.na(MetricGroupName))
 #   tabyl(MetricGroupName)
 
 #-----------------------------------------------------------------
@@ -359,8 +360,6 @@ mine_p2 = mine_plot_list %>%
             axis.text = element_text(size = 5))
   })
 
-
-
 mine_chnk_p = mine_plot_list %>%
   map(.f = function(x) {
     x %>%
@@ -382,137 +381,186 @@ mine_chnk_p = mine_plot_list %>%
             axis.text = element_text(size = 6))
   })
 
-mine_chnk_p
+# save the plots to look at later
+pdf('output/figures/MINE_Catg_All.pdf',
+    width = 8,
+    height = 9)
+for(i in 1:length(mine_p)) {
+  print(mine_p[[i]])
+}
+dev.off()
+
+pdf('output/figures/MINE_All.pdf',
+    width = 8,
+    height = 9)
+for(i in 1:length(mine_p2)) {
+  print(mine_p2[[i]])
+}
+dev.off()
+
+pdf('output/figures/MINE_Chnk.pdf',
+    width = 8,
+    height = 9)
+for(i in 1:length(mine_chnk_p)) {
+  print(mine_chnk_p[[i]])
+}
+dev.off()
+
+
 
 #-----------------------------------------------------------------
 # look at correlations between habitat metrics
 #-----------------------------------------------------------------
 library(corrr)
-library(ggcorrplot)
-library(GGally)
+library(corrplot)
 
-sel_mets = poss_hab_mets
-sel_mets = mine_plot_df %>%
-  group_by(MetricCategory) %>%
-  slice(1:4) %>%
-  ungroup() %>%
-  filter(MIC > 0.2) %>%
-  pull(Metric) %>%
-  unique() %>%
-  as.character()
+data("champ_cu")
+data("champ_dash_avg")
+data("champ_site_2011_17_avg")
 
-# take a few out that are very correlated or similar to others
-sel_mets = sel_mets[!grepl('^SubEmbed', sel_mets)]
-sel_mets = sel_mets[!sel_mets %in% c('CU_Freq', 'FstTurb_Freq', 'UcutLgth_Pct', 'Alk', 'WetWdth_Avg', "RipCovCanNone", "RipCovCanSome", "DpthBf_Avg", "BfWDRat_CV", "FishCovAqVeg", "CUMDRAINAG", "SubLT6")]
+hab_data_list = list('CHaMP' = champ_site_2011_17_avg,
+                     'DASH' = champ_dash_avg,
+                     'ChnlUnit' = champ_cu)
 
+# transform a few metrics consistently across datasets
+hab_data_list %<>%
+  map(.f = function(x) {
+    # scale some metrics by site length
+    x %>%
+      mutate_at(vars(starts_with('LWVol'),
+                     ends_with('_Vol')),
+                list(~ . / Lgth_Wet * 100))
+    
+    # add a metric showing "some" riparian canopy
+    if("RipCovCanNone" %in% names(x)) {
+      x %<>%
+        mutate(RipCovCanSome = 100 - RipCovCanNone)
+    }
+    
+    # add a metric showing "some" fish cover
+    if("FishCovNone" %in% names(x)) {
+      x %<>%
+        mutate(FishCovSome = 100 - FishCovNone)
+    }
+    
+    return(x)
+  })
 
-
-corr_mat = fish_hab %>%
-  select(one_of(sel_mets)) %>%
-  corrr::correlate()
-
-corr_mat %>%
-  rearrange(absolute = F) %>%
-  shave(upper = T) %>% 
-  stretch() %>%
-  filter(!is.na(r)) %>%
-  left_join(hab_dict %>%
-              select(x = ShortName,
-                     x_category = MetricCategory)) %>%
-  left_join(hab_dict %>%
-              select(y = ShortName,
-                     y_category = MetricCategory)) %>%
-  distinct() %>%
-  # filter(x_category == y_category) %>%
-  arrange(x_category, 
-          desc(abs(r))) %>%
-  filter(abs(r) > 0.5)
-
-corr_p1 = corr_mat %>%
-  rearrange(absolute = F) %>%
-  shave(upper = T) %>% 
-  rplot(legend = T,
-        print_cor = T)
-
-corr_p1
-
-corr_p2 = fish_hab %>%
-  select(one_of(sel_mets)) %>%
-  cor(use = 'pairwise') %>%
-  ggcorrplot(method = 'square',
-             hc.order = T,
-             lab = T,
-             type = "lower")
-corr_p2
-
-fish_hab %>%
-  select(one_of(sel_mets)) %>%
-  ggcorr()
-
-
-
-#-----------------------------------------------------------------
-# test out a QRF model 
-#-----------------------------------------------------------------
-sel_hab_mets = crossing(Species = c('Chinook', 
-                                    'Steelhead'),
-                        Metric = sel_mets)
-# impute missing values
-qrf_data = impute_missing_data(data = fish_hab %>%
-                                   select(-(maxYr:maxReddsPerMsq)) %>%
-                                   distinct(),
-                                 covars = sel_mets,
-                                 impute_vars = c('Watershed', 'Elev_M', 'Sin', 'CUMDRAINAG'),
-                                 method = 'missForest') %>%
-  left_join(fish_hab %>%
-              select(Species:Site, maxYr:maxReddsPerMsq)) %>%
-  mutate(fish_dens = maxReddsPerMsq) %>%
-  select(Species, Site, Watershed, maxYr, LON_DD, LAT_DD, fish_dens, one_of(sel_mets))
-
-
-# fit the QRF model
-# set the density offset (to accommodate 0s)
-# dens_offset = 0.005
-dens_offset = 0
-
-# fit random forest models
-qrf_mod_df = qrf_data %>%
-  group_by(Species) %>%
-  nest() %>%
-  mutate(mod_data = map2(Species,
-                         data,
-                         function(x, y) {
-                           covars = sel_hab_mets %>%
-                             filter(Species == x) %>%
-                             pull(Metric)
-                           y %>%
-                             select(fish_dens, one_of(covars)) %>%
-                             return()
-                         })) %>%
-  mutate(qrf_mod = map(mod_data,
-                       .f = function(z) {
-                         set.seed(3)
-                         qrf_mod = quantregForest(x = z %>%
-                                                    select(-fish_dens) %>%
-                                                    as.matrix,
-                                                  y = z %>%
-                                                    mutate_at(vars(fish_dens),
-                                                              # list(~ log(. * 1000))) %>%
-                                                              list(~ log(. + dens_offset))) %>%
-                                                    select(fish_dens) %>%
-                                                    as.matrix(),
-                                                  keep.inbag = T,
-                                                  ntree = 1000)
-                         return(qrf_mod)
-                       }))
-
-qrf_mods = qrf_mod_df$qrf_mod %>%
-  rlang::set_names(qrf_mod_df$Species)
+hab_corr = tibble(dataset = names(hab_data_list),
+                  hab_data = hab_data_list) %>%
+  mutate(metrics = map(hab_data,
+                       .f = function(x) {
+                         mets = poss_hab_mets %>%
+                           filter(ShortName %in% names(x)) %>%
+                           pull(ShortName)
+                         x %>%
+                           select(one_of(mets)) %>%
+                           gather(Metric, value) %>%
+                           group_by(Metric) %>%
+                           summarise(n_tot = n(),
+                                     n_NA = sum(is.na(value)),
+                                     non_0 = sum(value != 0, na.rm = T)) %>%
+                           mutate(perc_NA = n_NA / n_tot,
+                                  perc_non_0 = non_0 / n_tot) %>%
+                           filter(perc_NA < 0.5,
+                                  non_0 > 100) %>%
+                           filter(!grepl('Area$', Metric),
+                                  !grepl('Vol$', Metric),
+                                  !Metric %in% c('Lgth_Wet', 
+                                                 'Lgth_BfChnl',
+                                                 'Lgth_WetChnl',
+                                                 'Area_Wet', 
+                                                 'Area_Bf', 
+                                                 'WetVol', 
+                                                 'BfVol')) %>%
+                           pull(Metric)
+                       }),
+         cor_mat = map2(hab_data,
+                        metrics,
+                        .f = function(x, y) {
+                          x %>%
+                            select(one_of(y)) %>%
+                            cor(use = 'pairwise',
+                                method = 'spearman')
+                        }),
+         corr_mat = map(cor_mat,
+                        .f = as_cordf),
+         catg_cor = map2(hab_data,
+                         metrics,
+                         .f = function(x, y) {
+                           catg_list = try(poss_hab_mets %>%
+                                             filter(ShortName %in% y) %>%
+                                             split(list(.$MetricCategory)) %>%
+                                             map(.f = function(z) {
+                                               if(nrow(z) == 1) {
+                                                 return(NULL)
+                                               } else {
+                                                 x %>%
+                                                   select(one_of(z$ShortName)) %>%
+                                                   cor(use = 'pairwise',
+                                                       method = 'spearman')
+                                               }
+                                               }))
+                           return(catg_list)
+                                             }))
 
 
-plot_partial_dependence(qrf_mods$Chinook,
-                        data = qrf_data %>%
-                          filter(Species == 'Chinook'),
-                        data_dict = hab_dict,
-                        log_offset = dens_offset,
-                        scales = 'free')
+# pull out highly correlated metrics
+corr_df = hab_corr$corr_mat %>%
+  map_df(.id = 'dataset',
+         .f = function(x) {
+           x %>%
+             rearrange(absolute = F) %>%
+             shave(upper = T) %>% 
+             stretch() %>%
+             filter(!is.na(r)) %>%
+             left_join(poss_hab_mets %>%
+                         select(x = ShortName,
+                                x_category = MetricCategory)) %>%
+             left_join(poss_hab_mets %>%
+                         select(y = ShortName,
+                                y_category = MetricCategory)) %>%
+             distinct() %>%
+             # filter(x_category == y_category) %>%
+             arrange(x_category, 
+                     desc(abs(r)))
+         })
+
+corr_df %>%
+  filter(abs(r) > 0.7) %>%
+  filter(x_category == y_category) %>%
+  group_by(dataset) %>%
+  arrange(abs(r)) %>%
+  slice(1:10) %>%
+  as.data.frame()
+
+
+# print correlation plots for all metrics
+for(i in 1:nrow(hab_corr)) {
+  pdf(paste0('output/figures/corr_plot_all_', hab_corr$dataset[i], '.pdf'),
+      width = 10,
+      height = 10)
+
+  corrplot::corrplot.mixed(hab_corr$cor_mat[[i]],
+                           upper = 'ellipse',
+                           tl.pos = 'lt',
+                           tl.cex = 0.5,
+                           number.cex = 0.7,
+                           order = 'FPC')
+  
+  dev.off()
+}
+
+# print correlation plots by metric category
+for(i in 1:nrow(hab_corr)) {
+  pdf(paste0('output/figures/corr_plot_catg_', hab_corr$dataset[i], '.pdf'),
+      width = 8,
+      height = 8)
+  hab_corr$catg_cor[[i]][!sapply(hab_corr$catg_cor[[i]], is.null)] %>%
+    map(.f = corrplot::corrplot.mixed,
+        upper = 'ellipse',
+        tl.pos = 'lt',
+        order = 'FPC')
+  dev.off()
+}
+
