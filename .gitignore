@@ -15,3 +15,4 @@ RepoDesign.txt
 inst/doc
 output/shapefiles
 output/gpkg
+data/prepped/*.gpkg
