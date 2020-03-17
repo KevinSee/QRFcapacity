@@ -565,6 +565,132 @@ use_data(champ_dash, champ_dash_avg,
          version = 2)
 
 #-----------------------------------------------------------------
+# associate each CHaMP site with a 200 - meter reach
+#-----------------------------------------------------------------
+data("rch_200")
+data("champ_site_2011_17")
+
+champ_sf = champ_site_2011_17 %>%
+  filter(! Watershed %in% c('Big-Navarro-Garcia (CA)',
+                            # 'Region 17',
+                            'CHaMP Training')) %>%
+  select(Site, Watershed, StreamName, LON_DD, LAT_DD) %>%
+  mutate_at(vars(Watershed, StreamName),
+            list(str_trim)) %>%
+  mutate_at(vars(StreamName),
+            list(fct_explicit_na)) %>%
+  distinct() %>%
+  group_by(Site, Watershed, StreamName) %>%
+  summarise_at(vars(LON_DD, LAT_DD),
+            list(mean),
+            na.rm = T) %>%
+  ungroup() %>%
+  filter(!is.na(LON_DD)) %>%
+  arrange(Site, Watershed, StreamName) %>%
+  mutate_at(vars(Watershed),
+            list(fct_drop)) %>%
+  st_as_sf(coords = c("LON_DD", "LAT_DD"),
+           crs = 4326) %>%
+  st_transform(st_crs(rch_200))
+
+# save to be processed by QGIS
+st_write(champ_sf,
+         dsn = 'data/prepped/CHaMP_Site_locs.gpkg')
+
+# used the NNjoin plugin with QGIS to join each point to it's closest 200 m reach
+champ_rch = st_read('data/prepped/CHaMP_site_reach.gpkg') %>%
+  rename(UniqueID = join_UniqueID,
+         GNIS_Name = join_GNIS_Name)
+
+
+# champ_rch %>%
+#   left_join(gaa %>%
+#               select(Site, CUMDRAI, GNIS_NA)) %>%
+#   filter(CUMDRAI < 0.01)
+#   filter(GNIS_Name != GNIS_NA) %>%
+#   filter(StreamName != GNIS_NA)
+#   xtabs(~ (StreamName == GNIS_NA), .)
+
+champ_rch %>%
+  left_join(champ_site_2011_17 %>%
+              filter(!is.na(CUMDRAINAG)) %>%
+              select(Site, CUMDRAINAG) %>%
+              distinct()) %>%
+  filter(CUMDRAINAG < 0.01) %>%
+  left_join(gaa %>%
+              select(Site, CUMDRAI, GNIS_NA))
+            
+champ_site_2011_17 %>%
+  filter(!is.na(CUMDRAINAG)) %>%
+  select(Site, Watershed, StreamName, CUMDRAINAG) %>%
+  distinct() %>%
+  left_join(gaa %>%
+              select(Site, CUMDRAI, GNIS_NA)) %>%
+  mutate_at(vars(CUMDRAINAG, CUMDRAI),
+            list(round),
+            digits = 2) %>%
+  filter(CUMDRAINAG != CUMDRAI)
+
+# which sites seemed to get snapped a bit far?
+champ_rch %>%
+  filter(distance > 200) %>%
+  xtabs(~ Watershed, .,
+        drop.unused.levels = T)
+
+# which sites may have been snapped to the wrong place?
+# Stream names don't match, or they do but distance seems far
+max_dist = 100
+max_dist = 50
+snap_issues = champ_rch %>%
+  mutate_at(vars(StreamName, GNIS_Name),
+            list(as.character)) %>%
+  filter((StreamName != GNIS_Name & StreamName != '(Missing)') |
+           (StreamName == GNIS_Name & distance > max_dist) |
+           (StreamName == "(Missing)" & distance > max_dist) ) %>%
+  arrange(desc(distance)) %>%
+  mutate(issue = if_else(StreamName != GNIS_Name & StreamName != '(Missing)',
+                         "Mismatch StreamName",
+                         if_else(StreamName == GNIS_Name & distance > max_dist,
+                                 "Large Snap Distance",
+                                 if_else(StreamName == "(Missing)" & distance > max_dist,
+                                         "Missing StreamName",
+                                         as.character(NA)))))
+
+snap_issues %>%
+  st_write('/Users/seek/Desktop/Lemhi/SnapIssues.gpkg')
+
+snap_issues %>%
+  st_write('/Users/seek/Desktop/Lemhi/SnapIssues.shp')
+
+snap_issues %>%
+  st_drop_geometry() %>%
+  tabyl(Watershed, issue, show_missing_levels = F) %>%
+  adorn_totals()
+
+snap_issues %>%
+  filter(#issue == 'Missing StreamName',
+         Watershed != 'Lemhi')
+
+
+champ_site_2011_17 %>%
+  filter(! Watershed %in% c('Big-Navarro-Garcia (CA)',
+                            'Region 17',
+                            'CHaMP Training')) %>%
+  select(Site, Watershed) %>%
+  distinct() %>%
+  anti_join(champ_rch)
+
+sum(duplicated(champ_sf$Site))
+champ_sf %>%
+  filter(Site %in% Site[duplicated(Site)])
+
+xtabs(~ Watershed, champ_sf)
+
+
+
+
+
+#-----------------------------------------------------------------
 # prep CHaMP frame
 #-----------------------------------------------------------------
 # read in entire CHaMP frame (Secesh was modified by Jean Olson to correct extent of spring Chinook)
