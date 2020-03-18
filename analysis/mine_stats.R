@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Calculate MINE statistics on various fish/habitat datasets
 # Created: 2/13/2020
-# Last Modified: 3/13/2020
+# Last Modified: 3/18/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -357,7 +357,8 @@ mine_p2 = mine_plot_list %>%
                         guide = guide_legend(nrow = 1),
                         name = 'Species') +
       theme(legend.position = 'bottom',
-            axis.text = element_text(size = 5))
+            axis.text = element_text(size = 5)) +
+      labs(title = unique(x$dataset))
   })
 
 mine_chnk_p = mine_plot_list %>%
@@ -378,7 +379,9 @@ mine_chnk_p = mine_plot_list %>%
       scale_fill_brewer(palette = 'Set3',
                         guide = guide_legend(nrow = 2)) +
       theme(legend.position = 'bottom',
-            axis.text = element_text(size = 6))
+            axis.text = element_text(size = 6)) +
+      labs(title = unique(x$dataset),
+           fill = 'Category')
   })
 
 # save the plots to look at later
