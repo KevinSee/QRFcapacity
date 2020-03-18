@@ -604,6 +604,8 @@ champ_rch = st_read('data/prepped/200m_reaches/CHaMP_site_reach.gpkg') %>%
          GNIS_Name = join_GNIS_Name) %>%
   rename(geometry = geom)
 
+identical(n_distinct(champ_sf$Site),
+          n_distinct(champ_rch$Site))
 
 # which sites seemed to get snapped a bit far?
 champ_rch %>%
@@ -639,16 +641,18 @@ snap_issues %>%
 #   st_write('data/prepped/200m_reaches/SnapIssues.shp')
 
 # Richie sent this file back, with some points fixed (new UniqueID, called UniqueID_2)
-snap_issues_fix = st_read('data/prepped/200m_reaches/SnapIssues_Fixed/SnapIssues_Fixed_RC.shp')
+snap_issues_fix = st_read('data/prepped/200m_reaches/SnapIssues_Fixed/SnapIssues_Fixed_RC.shp') %>%
+  mutate(Use = if_else(is.na(Use), 0, Use)) %>%
+  mutate_at(vars(Use),
+            list(as.factor))
+
+xtabs(~ Use + (UniqueID_2 == 0), snap_issues_fix)
 
 snap_issues_fix %>%
-  filter(grepl('Need to add line', Action))
+  filter(Use == 3)
 
-snap_issues_fix %>%
-  filter(UniqueID_2 == 0)
 
-snap_issues %>%
-  filter(Site == "CBW05583-353711")
+
 
 # 
 champ_rch_2 = champ_rch %>%
@@ -658,23 +662,30 @@ champ_rch_2 = champ_rch %>%
   rbind(rch_200 %>%
           select(one_of(names(champ_rch)), geometry) %>%
           inner_join(snap_issues_fix %>%
-                       filter(UniqueID_2 != 0) %>%
                        st_drop_geometry() %>%
-                       select(Site, Watershed, StreamName, UniqueID = UniqueID_2)) %>%
+                       filter(Use %in% c(1, 3)) %>%
+                       mutate(UniqueID = if_else(Use == 1,
+                                                 UniqueID_2,
+                                                 UniqueID)) %>%
+                       select(Site, Watershed, StreamName, 
+                              UniqueID)) %>%
           mutate(distance = NA) %>%
           select(one_of(names(champ_rch))))
 
+# which sites got dropped? Should they all have been dropped?
 champ_rch %>%
   anti_join(champ_rch_2 %>%
               st_drop_geometry(),
             by = "Site") %>%
   left_join(snap_issues_fix %>%
               st_drop_geometry() %>%
-              select(Site, UniqueID_2, Notes, Action)) %>%
-  xtabs(~ UniqueID_2, .)
+              select(Site, UniqueID_2, Notes, Action, Use)) %>%
+  xtabs(~ Use, .)
 
+# create a dataframe for use in the package
 champ_site_rch = champ_rch_2 %>%
   st_drop_geometry() %>%
+  as_tibble() %>%
   select(Site, Watershed, UniqueID)
 
 # save to use as data object in package
