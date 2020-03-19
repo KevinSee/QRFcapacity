@@ -121,6 +121,21 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                    'avg_aug_temp',
                                    'SubEstGrvl'))
 
+# updated on 3/19/20
+sel_hab_mets = crossing(Species = c('Chinook', 
+                                    'Steelhead'),
+                        Metric = c('SubEstGrvl',
+                                   'SubLT2',
+                                   'CU_Freq',
+                                   "DetrendElev_SD",
+                                   "FishCovSome",
+                                   "UcutLgth_Pct",
+                                   "RipCovCanSome",
+                                   "Discharge",
+                                   "PoolResidDpth",
+                                   "avg_aug_temp",
+                                   "LWFreq_Wet"))
+
 #-----------------------------------------------------------------
 # Fit QRF model
 #-----------------------------------------------------------------
