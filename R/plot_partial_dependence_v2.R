@@ -187,7 +187,7 @@ plot_partial_dependence_v2 = function(rf_mod,
     theme_bw() +
     theme(legend.position = 'bottom') +
     labs(x = "Covariate Value",
-         y = "Prediction (per m)") +
+         y = expression(Prediction~(per~m^2))) +
     # labs(y = 'Prediction (per m)',
     #      x = 'Covariate Value',
     #      color = 'Watershed') +
@@ -203,7 +203,7 @@ plot_partial_dependence_v2 = function(rf_mod,
     geom_bar(aes(fill = Tier1),
              stat = "identity") +
     scale_fill_brewer(palette = "Set1") +
-    labs(y = "Prediction (per m)")
+    labs(y = expression(Prediction~(per~m^2)))
   
   my_p = ggpubr::ggarrange(plotlist = list(num_p, fct_p),
                            nrow = 1,
