@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Calculate MINE statistics on various fish/habitat datasets
 # Created: 2/13/2020
-# Last Modified: 3/18/2020
+# Last Modified: 3/20/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -112,54 +112,89 @@ hab_dict %<>%
 
 #-----------------------------------------------------------------
 # clip Chinook data to Chinook domain
-data("chnk_domain")
+data("rch_200")
+data("champ_site_rch")
 
-# which sites were sampled for Chinook? 
-chnk_samps = fish_hab_list %>%
-  map_df(.id = 'dataset',
-         .f = function(x) {
-           x %>%
-             filter(Species == 'Chinook') %>%
-             select(Site, LON_DD, LAT_DD, fish_dens) %>%
-             distinct()
-         }) %>%
-  filter(!is.na(LON_DD)) %>%
-  st_as_sf(coords = c('LON_DD', 'LAT_DD'),
-           crs = 4326) %>%
-  st_transform(st_crs(chnk_domain))
-
-# chnk_samps %>%
-#   group_by(Site) %>%
-#   summarise(n_datasets = n_distinct(dataset)) %>%
-#   ungroup() %>%
-#   tabyl(n_datasets)
-
-# set snap distance (in meters)
-st_crs(chnk_samps)
-snap_dist = 1000
-
-# which of those sites are in Chinook domain?
-chnk_sites = chnk_samps %>%
-  as_Spatial() %>%
-  maptools::snapPointsToLines(chnk_domain %>%
-                                mutate(id = 1:n()) %>%
-                                select(id, MPG) %>%
-                                as_Spatial(),
-                              maxDist = snap_dist,
-                              withAttrs = T,
-                              idField = 'id') %>%
-  as('sf') %>%
-  as_tibble() %>%
+chnk_sites = champ_site_rch %>%
+  inner_join(rch_200 %>%
+               select(UniqueID, chnk)) %>%
+  filter(chnk) %>%
   pull(Site) %>%
+  as.character()
+
+# add Big Springs and Little Springs sites in the Lemhi
+chnk_sites = c(chnk_sites,
+               fish_hab_list %>%
+                 map_df(.id = 'dataset',
+                        .f = function(x) {
+                          x %>%
+                            filter(grepl('Big0Springs', Site) | grepl('Little0Springs', Site)) %>%
+                            select(Site) %>%
+                            distinct()
+                        }) %>%
+                 pull(Site) %>%
+                 unique()) %>%
   unique()
 
-# only keep Chinook data from sites in Chinook domain
+
+# only keep Chinook data from sites in Chinook domain (or with positive Chinook density)
 fish_hab_list %<>%
   map(.f = function(x) {
     x %>%
       filter(Species == 'Steelhead' |
-               (Species == 'Chinook' & Site %in% chnk_sites))
+               (Species == 'Chinook' & (Site %in% chnk_sites | fish_dens > 0)))
   })
+
+
+# #-------------------------------
+# data("chnk_domain")
+# 
+# # which sites were sampled for Chinook? 
+# chnk_samps = fish_hab_list %>%
+#   map_df(.id = 'dataset',
+#          .f = function(x) {
+#            x %>%
+#              filter(Species == 'Chinook') %>%
+#              select(Site, LON_DD, LAT_DD, fish_dens) %>%
+#              distinct()
+#          }) %>%
+#   filter(!is.na(LON_DD)) %>%
+#   st_as_sf(coords = c('LON_DD', 'LAT_DD'),
+#            crs = 4326) %>%
+#   st_transform(st_crs(chnk_domain))
+# 
+# # chnk_samps %>%
+# #   group_by(Site) %>%
+# #   summarise(n_datasets = n_distinct(dataset)) %>%
+# #   ungroup() %>%
+# #   tabyl(n_datasets)
+# 
+# # set snap distance (in meters)
+# st_crs(chnk_samps)
+# snap_dist = 1000
+# 
+# # which of those sites are in Chinook domain?
+# chnk_sites = chnk_samps %>%
+#   as_Spatial() %>%
+#   maptools::snapPointsToLines(chnk_domain %>%
+#                                 mutate(id = 1:n()) %>%
+#                                 select(id, MPG) %>%
+#                                 as_Spatial(),
+#                               maxDist = snap_dist,
+#                               withAttrs = T,
+#                               idField = 'id') %>%
+#   as('sf') %>%
+#   as_tibble() %>%
+#   pull(Site) %>%
+#   unique()
+# 
+# # only keep Chinook data from sites in Chinook domain
+# fish_hab_list %<>%
+#   map(.f = function(x) {
+#     x %>%
+#       filter(Species == 'Steelhead' |
+#                (Species == 'Chinook' & Site %in% chnk_sites))
+#   })
 
 #-----------------------------------------------------------------
 # what are some possible habitat covariates?
@@ -167,7 +202,7 @@ poss_hab_mets = fish_hab_list %>%
   map_df(.f = function(x) tibble(ShortName = names(x))) %>%
   distinct() %>%
   left_join(hab_dict %>%
-              filter(MetricGroupName %in% c('Channel Unit', 'Visit Metric')) %>%
+              filter(! MetricGroupName %in% c('Tier 1 Summary', 'Tier 2 Summary')) %>%
               select(ShortName, MetricGroupName, Name, MetricCategory) %>%
               distinct()) %>%
   filter(is.na(MetricCategory) | MetricCategory != 'Categorical') %>%
@@ -274,7 +309,7 @@ mine_res = crossing(dataset = names(fish_hab_list),
                                                 response = 'fish_dens'))
                            } else {
                              try(x %>%
-                                   mutate(fish_dens = log(fish_dens + 0.001)) %>%
+                                   mutate(fish_dens = log(fish_dens + 0.005)) %>%
                                    estimate_MIC(covars = y,
                                                 response = 'fish_dens'))
                            }
