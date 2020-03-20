@@ -1,13 +1,13 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to winter juvenile parr data, using CHaMP habitat data
 # Created: 1/12/2020
-# Last Modified: 3/19/2020
+# Last Modified: 3/20/2020
 # Notes: fish density is in units of fish / m^2
 
 #-----------------------------------------------------------------
 # load needed libraries
 library(QRFcapacity)
-library(maptools)
+# library(maptools)
 library(tidyverse)
 library(janitor)
 library(magrittr)
@@ -141,6 +141,7 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                    'SubD50',
                                    'DpthResid',
                                    'FishCovSome',
+                                   'DistPrin1',
                                    'LWCount',
                                    'SubEstSandFines'))
 
@@ -150,23 +151,23 @@ sel_hab_mets = crossing(Species = c('Chinook',
 # impute missing data in fish / habitat dataset
 
 # impute missing habitat metrics once, for both species
-covars = sel_hab_mets %>%
+all_covars = sel_hab_mets %>%
   pull(Metric) %>%
   unique()
 
-sum(!covars %in% names(fish_hab))
+all_covars[!all_covars %in% names(fish_hab)]
 
 qrf_mod_df = impute_missing_data(data = fish_hab %>%
                                    select(-(count:Nmethod), -fish_dens) %>%
                                    distinct(),
-                                 covars = covars,
+                                 covars = all_covars,
                                  impute_vars = c('Watershed', 'Elev_M', 'Sin', 'Year', 'CUMDRAINAG'),
                                  method = 'missForest') %>%
   left_join(fish_hab %>%
               select(Year:ChUnitNumber, Species, fish_dens, VisitID, Tier1)) %>%
-  select(Species, Site, Watershed, Year, ChUnitNumber, SiteUnit, LON_DD, LAT_DD, fish_dens, VisitID, one_of(covars))
+  select(Species, Site, Watershed, Year, ChUnitNumber, SiteUnit, LON_DD, LAT_DD, fish_dens, VisitID, one_of(all_covars))
 
-rm(covars)
+rm(all_covars)
 
 # fit the QRF model
 # set the density offset (to accommodate 0s)
@@ -237,11 +238,17 @@ for(i in 1:length(rel_imp_p)) {
     labs(title = names(qrf_mods)[[i]])
 }
 
+ggpubr::ggarrange(plotlist = rel_imp_p,
+                  nrow = 2,
+                  ncol = 1)
+
+
 # for Chinook
 chnk_pdp = plot_partial_dependence_v2(qrf_mods[['Chinook']],
                                       data = qrf_mod_df %>%
                                         filter(Species == 'Chinook'),
                                       data_dict = hab_dict,
+                                      log_offset = dens_offset,
                                       scales = 'free') +
   labs(title = 'Chinook')
 
@@ -250,6 +257,7 @@ sthd_pdp = plot_partial_dependence_v2(qrf_mods[['Steelhead']],
                                       data = qrf_mod_df %>%
                                         filter(Species == 'Steelhead'),
                                       data_dict = hab_dict,
+                                      log_offset = dens_offset,
                                       scales = 'free') +
   labs(title = 'Steelhead')
 
