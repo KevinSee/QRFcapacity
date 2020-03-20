@@ -86,6 +86,28 @@ hab_data = champ_site_2011_17
 data("champ_site_2011_17_avg")
 hab_avg = champ_site_2011_17_avg
 
+# alter a few metrics
+hab_data %<>%
+  # scale some metrics by site length
+  mutate_at(vars(starts_with('LWVol'),
+                 ends_with('_Vol')),
+            list(~ . / Lgth_Wet * 100)) %>%
+  # add a metric showing "some" riparian canopy
+  mutate(RipCovCanSome = 100 - RipCovCanNone) %>%
+  # add a metric showing "some" fish cover
+  mutate(FishCovSome = 100 - FishCovNone)
+
+hab_avg %<>%
+  # scale some metrics by site length
+  mutate_at(vars(starts_with('LWVol'),
+                 ends_with('_Vol')),
+            list(~ . / Lgth_Wet * 100)) %>%
+  # add a metric showing "some" riparian canopy
+  mutate(RipCovCanSome = 100 - RipCovCanNone) %>%
+  # add a metric showing "some" fish cover
+  mutate(FishCovSome = 100 - FishCovNone)
+
+
 # add temperature metrics
 data("champ_temps")
 hab_avg %<>%
