@@ -1,13 +1,13 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to redd data, using CHaMP habitat 2011-2017
 # Created: 12/31/2019
-# Last Modified: 3/19/2020
+# Last Modified: 3/20/2020
 # Notes: 
 
 #-----------------------------------------------------------------
 # load needed libraries
 library(QRFcapacity)
-library(maptools)
+# library(maptools)
 library(tidyverse)
 library(janitor)
 library(magrittr)
@@ -176,44 +176,44 @@ fish_hab %<>%
 #   tabyl(Watershed,
 #         show_missing_levels = F)
 
-#-------------------------------
-data("chnk_domain")
-
-# which sites were sampled for Chinook? 
-chnk_samps = fish_hab %>%
-  filter(Species == 'Chinook') %>%
-  select(Site, Watershed, LON_DD, LAT_DD) %>%
-  distinct() %>%
-  st_as_sf(coords = c('LON_DD', 'LAT_DD'),
-           crs = 4326) %>%
-  st_transform(st_crs(chnk_domain))
-
-# set snap distance (in meters)
-st_crs(chnk_samps)
-snap_dist = 1000
-
-# which of those sites are in Chinook domain?
-chnk_sites = chnk_samps %>%
-  as_Spatial() %>%
-  maptools::snapPointsToLines(chnk_domain %>%
-                                mutate(id = 1:n()) %>%
-                                select(id, MPG) %>%
-                                as_Spatial(),
-                              maxDist = snap_dist,
-                              withAttrs = T,
-                              idField = 'id') %>%
-  as('sf')
-
-# ggplot() +
-#   geom_sf(data = chnk_samps,
-#           aes(color = 'Sampled')) +
-#   geom_sf(data = chnk_sites,
-#           aes(color = 'In Chnk Range')) +
-#   theme(axis.text = element_blank())
-
-fish_hab %<>%
-  filter(Species == 'Steelhead' |
-           (Species == 'Chinook' & Site %in% chnk_sites$Site))
+# #-------------------------------
+# data("chnk_domain")
+# 
+# # which sites were sampled for Chinook? 
+# chnk_samps = fish_hab %>%
+#   filter(Species == 'Chinook') %>%
+#   select(Site, Watershed, LON_DD, LAT_DD) %>%
+#   distinct() %>%
+#   st_as_sf(coords = c('LON_DD', 'LAT_DD'),
+#            crs = 4326) %>%
+#   st_transform(st_crs(chnk_domain))
+# 
+# # set snap distance (in meters)
+# st_crs(chnk_samps)
+# snap_dist = 1000
+# 
+# # which of those sites are in Chinook domain?
+# chnk_sites = chnk_samps %>%
+#   as_Spatial() %>%
+#   maptools::snapPointsToLines(chnk_domain %>%
+#                                 mutate(id = 1:n()) %>%
+#                                 select(id, MPG) %>%
+#                                 as_Spatial(),
+#                               maxDist = snap_dist,
+#                               withAttrs = T,
+#                               idField = 'id') %>%
+#   as('sf')
+# 
+# # ggplot() +
+# #   geom_sf(data = chnk_samps,
+# #           aes(color = 'Sampled')) +
+# #   geom_sf(data = chnk_sites,
+# #           aes(color = 'In Chnk Range')) +
+# #   theme(axis.text = element_blank())
+# 
+# fish_hab %<>%
+#   filter(Species == 'Steelhead' |
+#            (Species == 'Chinook' & Site %in% chnk_sites$Site))
 
 
 #-----------------------------------------------------------------
@@ -238,6 +238,7 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                    "UcutLgth_Pct",
                                    "RipCovCanSome",
                                    "Q",
+                                   "DistPrin1",
                                    "PoolResidDpth",
                                    "avg_aug_temp",
                                    "LWFreq_Wet"))
@@ -248,22 +249,25 @@ sel_hab_mets = crossing(Species = c('Chinook',
 # impute missing data in fish / habitat dataset
 
 # impute missing habitat metrics once, for both species
-covars = sel_hab_mets %>%
+all_covars = sel_hab_mets %>%
   pull(Metric) %>%
   unique()
+
+# are all covars present in fish/habitat data?
+all_covars[!all_covars %in% names(fish_hab)]
 
 qrf_mod_df = impute_missing_data(data = fish_hab %>%
                                    select(-(maxYr:maxReddsPerMsq)) %>%
                                    distinct(),
-                                 covars = covars,
+                                 covars = all_covars,
                                  impute_vars = c('Watershed', 'Elev_M', 'Sin', 'CUMDRAINAG'),
                                  method = 'missForest') %>%
   left_join(fish_hab %>%
               select(Species:Site, maxYr:maxReddsPerMsq)) %>%
   mutate(fish_dens = maxReddsPerMsq) %>%
-  select(Species, Site, Watershed, maxYr, LON_DD, LAT_DD, fish_dens, one_of(covars))
+  select(Species, Site, Watershed, maxYr, LON_DD, LAT_DD, fish_dens, one_of(all_covars))
 
-rm(covars)
+rm(all_covars)
 
 # fit the QRF model
 # set the density offset (to accommodate 0s)
@@ -336,6 +340,10 @@ for(i in 1:length(rel_imp_p)) {
   rel_imp_p[[i]] = rel_imp_p[[i]] +
     labs(title = names(qrf_mods)[[i]])
 }
+
+ggpubr::ggarrange(plotlist = rel_imp_p,
+                  nrow = 2,
+                  ncol = 1)
 
 # for Chinook
 chnk_pdp = plot_partial_dependence(qrf_mods[['Chinook']],
