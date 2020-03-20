@@ -1,8 +1,8 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to winter juvenile parr data, using CHaMP habitat data
 # Created: 1/12/2020
-# Last Modified: 1/14/2020
-# Notes: 
+# Last Modified: 3/19/2020
+# Notes: fish density is in units of fish / m^2
 
 #-----------------------------------------------------------------
 # load needed libraries
@@ -33,7 +33,13 @@ hab_dict = hab_dict_2017 %>%
               filter(ShortName == 'Q') %>%
               mutate(ShortName = 'Discharge')) %>%
   filter(ShortName != "DpthThlwgExit" |
-           (ShortName == "DpthThlwgExit" & MetricGroupName == 'Channel Unit'))
+           (ShortName == "DpthThlwgExit" & MetricGroupName == 'Channel Unit')) %>%
+  bind_rows(tibble(ShortName = 'LWCount',
+                   Name = 'Large Wood Count',
+                   MetricGroupName = 'Channel Unit',
+                   DescriptiveText = 'Total number of qualifying pieces of large wood',
+                   UnitOfMeasure = 'count',
+                   MetricCategory = 'Wood'))
 
 # all the related habitat data
 data("champ_cu")
@@ -96,11 +102,36 @@ hab_avg = champ_cu %>%
                      Sin,
                      SubD50))
 
+# add a metric showing "some" fish cover
+fish_hab %<>%
+  mutate(FishCovSome = 100 - FishCovNone)
+
+hab_dict %<>%
+  bind_rows(hab_dict_2017 %>%
+              filter(ShortName == "FishCovNone") %>%
+              mutate(ShortName = "FishCovSome",
+                     Name = "Fish Cover: Some Cover",
+                     DescriptiveText = "Percent of wetted area with some form of fish cover"))
+
+
+
 # all sites within Chinook domain by design
 
 #-----------------------------------------------------------------
 # select which habitat metrics to use in QRF model
 # based on conversation with Mike and Richie
+# sel_hab_mets = crossing(Species = c('Chinook', 
+#                                     'Steelhead'),
+#                         Metric = c('Tier1',
+#                                    'Discharge',
+#                                    'CU_Freq',
+#                                    'Sin',
+#                                    'SubD50',
+#                                    'DpthThlwgExit',
+#                                    'FishCovLW',
+#                                    'SubEstGrvl'))
+
+# updated on 3/19/20
 sel_hab_mets = crossing(Species = c('Chinook', 
                                     'Steelhead'),
                         Metric = c('Tier1',
@@ -108,9 +139,10 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                    'CU_Freq',
                                    'Sin',
                                    'SubD50',
-                                   'DpthThlwgExit',
-                                   'FishCovLW',
-                                   'SubEstGrvl'))
+                                   'DpthResid',
+                                   'FishCovSome',
+                                   'LWCount',
+                                   'SubEstSandFines'))
 
 #-----------------------------------------------------------------
 # Fit QRF model
@@ -121,6 +153,8 @@ sel_hab_mets = crossing(Species = c('Chinook',
 covars = sel_hab_mets %>%
   pull(Metric) %>%
   unique()
+
+sum(!covars %in% names(fish_hab))
 
 qrf_mod_df = impute_missing_data(data = fish_hab %>%
                                    select(-(count:Nmethod), -fish_dens) %>%
@@ -167,6 +201,7 @@ save(fish_hab,
      qrf_mod_df,
      dens_offset,
      qrf_mods,
+     hab_dict,
      file = 'output/modelFits/qrf_juv_winter.rda')
 
 #-----------------------------------------------------------------
@@ -196,20 +231,27 @@ rel_imp_p = qrf_mods %>%
            y = 'Relative Importance')
     
   })
+# add species name to each plot
+for(i in 1:length(rel_imp_p)) {
+  rel_imp_p[[i]] = rel_imp_p[[i]] +
+    labs(title = names(qrf_mods)[[i]])
+}
 
 # for Chinook
 chnk_pdp = plot_partial_dependence_v2(qrf_mods[['Chinook']],
                                       data = qrf_mod_df %>%
                                         filter(Species == 'Chinook'),
                                       data_dict = hab_dict,
-                                      scales = 'free')
+                                      scales = 'free') +
+  labs(title = 'Chinook')
 
 # for steelhead
 sthd_pdp = plot_partial_dependence_v2(qrf_mods[['Steelhead']],
                                       data = qrf_mod_df %>%
                                         filter(Species == 'Steelhead'),
                                       data_dict = hab_dict,
-                                      scales = 'free')
+                                      scales = 'free') +
+  labs(title = 'Steelhead')
 
 
 #-----------------------------------------------------------------
