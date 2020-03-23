@@ -204,7 +204,8 @@ huc_pca %>%
   st_as_sf(coords = c('LON', 'LAT'),
            crs = 4326) %>%
   ggplot() +
-  geom_sf(aes(color = inHUC_bdry))
+  geom_sf(aes(color = inHUC_bdry)) +
+  theme(axis.text = element_blank())
 
 #-----------------------------------------------------------------
 # get CHaMP data from 2011 - 2014
