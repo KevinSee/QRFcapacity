@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to summer parr data, using CHaMP habitat 2011-2017
 # Created: 12/4/2019
-# Last Modified: 1/14/2020
+# Last Modified: 3/25/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -25,9 +25,55 @@ fish_hab = fh_sum_champ_2017 %>%
   mutate_at(vars(Watershed, Year),
             list(as.factor))
 
+# alter a few metrics
+fish_hab %<>%
+  # scale some metrics by site length
+  mutate_at(vars(starts_with('LWVol'),
+                 ends_with('_Vol')),
+            list(~ . / Lgth_Wet * 100)) %>%
+  # add a metric showing "some" riparian canopy
+  mutate(RipCovCanSome = 100 - RipCovCanNone) %>%
+  # add a metric showing "some" fish cover
+  mutate(FishCovSome = 100 - FishCovNone)
+
+
 # and the appropriate habitat dictionrary to go with it
 data("hab_dict_2017")
 hab_dict = hab_dict_2017
+
+# change some of the descriptions for large wood volume
+hab_dict %<>%
+  mutate(DescriptiveText = if_else(grepl("^LWVol", ShortName),
+                                   paste0(str_remove(DescriptiveText, ".$"),
+                                          ", scaled by site length."),
+                                   DescriptiveText),
+         UnitOfMeasure = if_else(grepl("^LWVol", ShortName),
+                                 paste0(UnitOfMeasure,
+                                        " per 100 meters"),
+                                 UnitOfMeasure),
+         UnitOfMeasureAbbrv = if_else(grepl("^LWVol", ShortName),
+                                      paste0(UnitOfMeasureAbbrv,
+                                             "/100m"),
+                                      UnitOfMeasureAbbrv)) %>%
+  # add description for some riparian canopy
+  bind_rows(hab_dict_2017 %>%
+              filter(ShortName == "RipCovCanNone") %>%
+              mutate(ShortName = "RipCovCanSome",
+                     Name = "Riparian Cover: Some Canopy",
+                     DescriptiveText = "Percent of riparian canopy with some vegetation.")) %>%
+  # add description for no riparian ground cover
+  bind_rows(hab_dict_2017 %>%
+              filter(ShortName == "RipCovGrnd") %>%
+              mutate(ShortName = "RipCovGrndNone",
+                     Name = "Riparian Cover: No Ground",
+                     DescriptiveText = "Percent of groundcover with no vegetation.")) %>%
+  # add description for some fish cover
+  bind_rows(hab_dict_2017 %>%
+              filter(ShortName == "FishCovNone") %>%
+              mutate(ShortName = "FishCovSome",
+                     Name = "Fish Cover: Some Cover",
+                     DescriptiveText = "Percent of wetted area with some form of fish cover"))
+
 
 # all the related habitat data
 data("champ_site_2011_17")
@@ -35,6 +81,28 @@ hab_data = champ_site_2011_17
 
 data("champ_site_2011_17_avg")
 hab_avg = champ_site_2011_17_avg
+
+# alter a few metrics
+hab_data %<>%
+  # scale some metrics by site length
+  mutate_at(vars(starts_with('LWVol'),
+                 ends_with('_Vol')),
+            list(~ . / Lgth_Wet * 100)) %>%
+  # add a metric showing "some" riparian canopy
+  mutate(RipCovCanSome = 100 - RipCovCanNone) %>%
+  # add a metric showing "some" fish cover
+  mutate(FishCovSome = 100 - FishCovNone)
+
+hab_avg %<>%
+  # scale some metrics by site length
+  mutate_at(vars(starts_with('LWVol'),
+                 ends_with('_Vol')),
+            list(~ . / Lgth_Wet * 100)) %>%
+  # add a metric showing "some" riparian canopy
+  mutate(RipCovCanSome = 100 - RipCovCanNone) %>%
+  # add a metric showing "some" fish cover
+  mutate(FishCovSome = 100 - FishCovNone)
+
 
 # add temperature metrics
 data("champ_temps")
@@ -67,50 +135,85 @@ hab_data %<>%
 
 #-----------------------------------------------------------------
 # clip Chinook data to Chinook domain
-data("chnk_domain")
+data("rch_200")
+data("champ_site_rch")
 
-# which sites were sampled for Chinook? 
-chnk_samps = fish_hab %>%
-  filter(Species == 'Chinook') %>%
-  select(Site:Lon, N) %>%
-  distinct() %>%
-  st_as_sf(coords = c('Lon', 'Lat'),
-           crs = 4326) %>%
-  st_transform(st_crs(chnk_domain))
+chnk_sites = champ_site_rch %>%
+  inner_join(rch_200 %>%
+               select(UniqueID, chnk)) %>%
+  filter(chnk) %>%
+  pull(Site) %>%
+  as.character()
 
-# set snap distance (in meters)
-st_crs(chnk_samps)
-snap_dist = 1000
+# add Big Springs and Little Springs sites in the Lemhi
+chnk_sites = c(chnk_sites,
+               hab_data %>%
+                 filter(grepl('Big0Springs', Site) | grepl('Little0Springs', Site)) %>%
+                 pull(Site) %>%
+                 unique()) %>%
+  unique()
 
-# which of those sites are in Chinook domain?
-chnk_sites = chnk_samps %>%
-  as_Spatial() %>%
-  maptools::snapPointsToLines(chnk_domain %>%
-                                mutate(id = 1:n()) %>%
-                                select(id, MPG) %>%
-                                as_Spatial(),
-                              maxDist = snap_dist,
-                              withAttrs = T,
-                              idField = 'id') %>%
-  as('sf') #%>%
-  # select(-nearest_line_id, -snap_dist) %>%
-  # # include some sites in the John Day where Chinook were found (or seemed to be close to sites where Chinook were found)
-  # rbind(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-  #               quiet = T) %>%
-  #         st_transform(st_crs(chnk_domain)) %>%
-  #         select(-in_range))
-
-# ggplot() +
-#   geom_sf(data = chnk_samps,
-#           aes(color = 'Sampled')) +
-#   geom_sf(data = chnk_sites,
-#           aes(color = 'In Chnk Range')) +
-#   theme(axis.text = element_blank())
 
 # only keep Chinook data from sites in Chinook domain
 fish_hab %<>%
   filter(Species == 'Steelhead' |
-           (Species == 'Chinook' & Site %in% chnk_sites$Site))
+           (Species == 'Chinook' & (Site %in% chnk_sites | fish_dens > 0)))
+
+
+# fish_hab %>%
+#   anti_join(champ_site_rch) %>%
+#   filter(Species == "Chinook") %>%
+#   filter(fish_dens > 0) %>%
+#   select(Watershed, Site, Year, N, fish_dens)
+#   tabyl(Watershed,
+#         show_missing_levels = F)
+# 
+# 
+# 
+# fish_hab %>%
+#   filter(!(Site %in% chnk_sites),
+#          Species == 'Chinook',
+#          fish_dens > 0) %>%
+#   select(Watershed, Site, StreamName, Year, Pass1.M, N, p, fish_dens) %>%
+#   # filter(is.na(Pass1.M)) %>%
+#   # arrange(desc(N))
+#   tabyl(Watershed,
+#         show_missing_levels = F)
+# 
+# #-------------------------------
+# data("chnk_domain")
+# 
+# # which sites were sampled for Chinook? 
+# chnk_samps = fish_hab %>%
+#   filter(Species == 'Chinook') %>%
+#   select(Site:Lon, N) %>%
+#   distinct() %>%
+#   st_as_sf(coords = c('Lon', 'Lat'),
+#            crs = 4326) %>%
+#   st_transform(st_crs(chnk_domain))
+# 
+# # set snap distance (in meters)
+# st_crs(chnk_samps)
+# snap_dist = 1000
+# 
+# # which of those sites are in Chinook domain?
+# chnk_sites = chnk_samps %>%
+#   as_Spatial() %>%
+#   maptools::snapPointsToLines(chnk_domain %>%
+#                                 mutate(id = 1:n()) %>%
+#                                 select(id, MPG) %>%
+#                                 as_Spatial(),
+#                               maxDist = snap_dist,
+#                               withAttrs = T,
+#                               idField = 'id') %>%
+#   as('sf') %>%
+#   st_drop_geometry() %>%
+#   pull(Site)
+# 
+# # only keep Chinook data from sites in Chinook domain
+# fish_hab %<>%
+#   filter(Species == 'Steelhead' |
+#            (Species == 'Chinook' & Site %in% chnk_sites$Site))
 
 
 #-----------------------------------------------------------------
@@ -118,25 +221,28 @@ fish_hab %<>%
 # based on conversation with Mike and Richie
 sel_hab_mets = crossing(Species = c('Chinook', 
                                     'Steelhead'),
-                        Metric = c('UcutArea_Pct',
-                                   'FishCovNone',
-                                   'SubEstGrvl',
-                                   'FstTurb_Freq',
-                                   'FstNT_Freq',
-                                   'CU_Freq',
+                        Metric = c('CU_Freq',
                                    'SlowWater_Pct',
-                                   'NatPrin1',
-                                   'DistPrin1',
-                                   'avg_aug_temp',
-                                   # 'Sin_CL',
+                                   'BfWdth_CV',
+                                   'DpthWet_SD',
+                                   'WetWDRat_Avg',
                                    'Sin',
-                                   'WetWdth_CV',
                                    'WetBraid',
+                                   'FishCovSome',
+                                   'UcutLgth_Pct',
+                                   'DistPrin1',
+                                   'RipCovBigTree',
+                                   'RipCovGrnd',
                                    'WetSC_Pct',
-                                   'Q',
-                                   'WetWdth_Int',
-                                   'LWFreq_Wet',
-                                   'LWVol_WetFstTurb'))
+                                   'WetWdth_Avg',
+                                   'Grad',
+                                   'SubD50',
+                                   'SubLT6',
+                                   'SubEstCbl',
+                                   'avg_aug_temp',
+                                   'Cond',
+                                   # 'LWVol_Bf',
+                                   'LWVol_BfSlow'))
 
 #-----------------------------------------------------------------
 # Fit QRF model
@@ -144,21 +250,21 @@ sel_hab_mets = crossing(Species = c('Chinook',
 # impute missing data in fish / habitat dataset
 
 # impute missing habitat metrics once, for both species
-covars = sel_hab_mets %>%
+all_covars = sel_hab_mets %>%
   pull(Metric) %>%
   unique()
 
 qrf_mod_df = impute_missing_data(data = fish_hab %>%
                                    select(-(FishSite:fish_dens)) %>%
                                    distinct(),
-                                 covars = covars,
+                                 covars = all_covars,
                                  impute_vars = c('Watershed', 'Elev_M', 'Sin', 'Year', 'CUMDRAINAG'),
                                  method = 'missForest') %>%
   left_join(fish_hab %>%
               select(Year:fish_dens, VisitID)) %>%
   select(Species, Site, Watershed, Year, LON_DD, LAT_DD, fish_dens, VisitID, one_of(covars))
 
-rm(covars)
+rm(all_covars)
 
 # fit the QRF model
 # set the density offset (to accommodate 0z)
@@ -194,14 +300,13 @@ save(fish_hab,
      qrf_mod_df,
      dens_offset,
      qrf_mods,
+     hab_dict,
      file = 'output/modelFits/qrf_juv_summer.rda')
 
 #-----------------------------------------------------------------
 # create a few figures
 #-----------------------------------------------------------------
 load('output/modelFits/qrf_juv_summer.rda')
-data("hab_dict_2017")
-hab_dict = hab_dict_2017
 
 # relative importance of habtiat covariates
 rel_imp_p = qrf_mods %>%
@@ -224,20 +329,34 @@ rel_imp_p = qrf_mods %>%
            y = 'Relative Importance')
     
   })
+# add species name to each plot
+for(i in 1:length(rel_imp_p)) {
+  rel_imp_p[[i]] = rel_imp_p[[i]] +
+    labs(title = names(qrf_mods)[[i]])
+}
+
+ggpubr::ggarrange(plotlist = rel_imp_p,
+                  nrow = 1,
+                  ncol = 2)
+
 
 # for Chinook
 chnk_pdp = plot_partial_dependence(qrf_mods[['Chinook']],
                                    qrf_mod_df %>%
                                      filter(Species == 'Chinook'),
                                    data_dict = hab_dict,
-                                   scales = 'free')
+                                   log_offset = dens_offset,
+                                   scales = 'free') +
+  labs(title = 'Chinook')
 
 # for steelhead
 sthd_pdp = plot_partial_dependence(qrf_mods[['Steelhead']],
                                    qrf_mod_df %>%
                                      filter(Species == 'Steelhead'),
                                    data_dict = hab_dict,
-                                   scales = 'free')
+                                   log_offset = dens_offset,
+                                   scales = 'free') +
+  labs(title = 'Steelhead')
 
 
 #-----------------------------------------------------------------
