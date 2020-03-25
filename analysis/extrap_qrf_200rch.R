@@ -82,7 +82,11 @@ hab_data %<>%
 #-----------------------------------------------------------------
 # load model fit
 #-----------------------------------------------------------------
-load('output/modelFits/qrf_juv_summer_dash.rda')
+mod_choice = c('juv_summer',
+               'juv_summer_dash',
+               'redds')[2]
+
+load(paste0('output/modelFits/qrf', mod_choice, '.rda'))
 
 #-----------------------------------------------------------------
 # predict capacity at all CHaMP sites
@@ -610,11 +614,11 @@ save(extrap_covars,
      mod_data_weights,
      model_svy_df,
      all_preds,
-     file = 'output/modelFits/extrap_200rch_juv_summer_dash.rda')
+     file = paste0('output/modelFits/extrap_200rch_', mod_choice, '.rda'))
 
 #---------------------------
 # create a shapefile
-load('output/modelFits/extrap_200rch_juv_summer_dash.rda')
+load(paste0('output/modelFits/extrap_200rch_', mod_choice, '.rda'))
 data("rch_200")
 
 rch_200_cap = rch_200 %>%
@@ -631,12 +635,12 @@ rm(rch_200, all_preds)
 # save it
 # as GPKG
 st_write(rch_200_cap,
-         dsn = 'output/gpkg/Rch_Sum_Juv_Capacity_DASH.gpkg',
+         dsn = paste0('output/gpkg/Rch_Cap_', mod_choice, '.gpkg'),
          driver = 'GPKG')
 
 
 # as shapefile
 st_write(rch_200_cap,
-         dsn = 'output/shapefiles/Rch_Sum_Juv_Capacity_DASH.shp',
+         dsn = paste0('output/shapefiles/Rch_Cap_', mod_choice, '.shp'),
          driver = 'ESRI Shapefile')
 
