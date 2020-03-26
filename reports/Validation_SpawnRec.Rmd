@@ -1,0 +1,69 @@
+---
+title: "Capacity Comparisons: QRF and Spawner-Recruit Curves"
+author:
+  - name: Kevin See
+    affiliation: biomark
+    email: kevin.see@merck.com
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  bookdown::html_document2:
+    theme: simplex
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    fig_height: 6
+    fig_width: 8
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+    - --lua-filter=templates/pagebreak.lua
+  bookdown::pdf_document2:
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks2.lua
+    - --lua-filter=templates/pagebreak.lua
+    fig_height: 6
+    fig_width: 8
+    includes:
+      in_header: "templates/header_ABS.tex"
+  bookdown::word_document2: 
+    fig_caption: yes
+    fig_height: 4
+    fig_width: 7
+    toc: yes
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+    - --lua-filter=templates/pagebreak.lua
+    reference_docx: "templates/ReportTemplate.docx"
+institute:
+- biomark: Biomark, Inc.
+csl: "templates/american-fisheries-society.csl"
+# bibliography: references.bib
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+# setwd('writeup')
+# load knitr for markdown
+library(knitr)
+knitr::opts_chunk$set(echo=FALSE, 
+                      warning=FALSE, 
+                      message=FALSE)
+#options(tinytex.verbose = TRUE)
+options(knitr.kable.NA = '-')
+options(knitr.table.format = "pandoc")
+
+library(kableExtra)
+```
+
+```{r}
+# load needed packages
+library(tidyverse)
+library(sf)
+library(QRFcapacity)
+library(janitor)
+library(ggpubr)
+
+theme_set(theme_bw())
+```
+
