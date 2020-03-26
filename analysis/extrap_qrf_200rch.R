@@ -624,9 +624,7 @@ data("rch_200")
 rch_200_cap = rch_200 %>%
   select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
          chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
-         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME, 
-         starts_with("chnk_per"),
-         starts_with("sthd_per")) %>%
+         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
   left_join(all_preds)
 
 rm(mod_data_weights, model_svy_df, extrap_covars)
