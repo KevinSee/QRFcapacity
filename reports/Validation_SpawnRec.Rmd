@@ -43,7 +43,7 @@ csl: "templates/american-fisheries-society.csl"
 ---
 
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
-# setwd('writeup')
+# setwd('reports')
 # load knitr for markdown
 library(knitr)
 knitr::opts_chunk$set(echo=FALSE, 
@@ -67,3 +67,291 @@ library(ggpubr)
 theme_set(theme_bw())
 ```
 
+# Introduction
+
+We can validate Chinook summer parr estimates of capacity with spawner-recruit data from a number of watersheds. Morgan Bond at the Northwest Fisheries Science Center helped compile this data set with help from a variety of agencies and organizations including WDFW, ODFW, IDFG, USFS, BioAnalysts, Biomark, Nez Perce, etc. Most of the parr (recruits) data comes from rotary screw traps (with the exception of the Chiwawa, where snorkel surveys of parr were used to estimate parr directly). Estimates of parr-to-presmolt and parr-to-smolt survival were used to transform estimates of fall and spring emigrants to estimates of equivalent summer parr. Spawner estimates came from either redd counts or direct estimates of spawners. 
+
+From this dataset, we fit several spawner-recruit curves to each location, including Beverton-Holt, Ricker and hockey stick. The data at some locations led to some curves not fitting (no model convergence). Each of these spawner-recruit curves also generated an estimate of summer parr carrying capacity, which we can then compare to QRF estimates. We want to emphasize that the data for the spawner-recruit curves and the QRF estimates are completely independent, and therefore provide a good way to validate the QRF estimates of carrying capacity.
+
+```{r}
+# read in trap polygons
+trap_poly = read_sf('../data/raw/spawn_rec/trap_regions.shp') %>%
+  st_transform(crs = 5070) %>%
+  select(-Id)
+
+# read in capacity estimates and create a shapefile
+mod_choice = c('juv_summer',
+               'juv_summer_dash',
+               'redds')[2]
+
+load(paste0('../output/modelFits/extrap_200rch_', mod_choice, '.rda'))
+rm(mod_data_weights, model_svy_df, extrap_covars)
+
+data("rch_200")
+
+rch_200_cap = rch_200 %>%
+  filter(chnk) %>%
+  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME) %>%
+  left_join(all_preds) %>%
+  mutate(chnk_tot = chnk_per_m * reach_leng,
+         chnk_tot_se = chnk_per_m_se * reach_leng) %>%
+  st_transform(st_crs(trap_poly)) %>%
+  select(everything(), geometry)
+
+rm(rch_200, all_preds)
+
+qrf_caps = trap_poly %>%
+  st_join(rch_200_cap) %>%
+  mutate_at(vars(chnk_ESU_DPS, chnk_MPG, chnk_NWR_NAME),
+            list(fct_explicit_na)) %>%
+  group_by(chnk_ESU_DPS, chnk_MPG, trap_name) %>%
+  summarise(n_rch = n_distinct(UniqueID),
+            tot_lgth = sum(reach_leng),
+            cap = sum(chnk_tot),
+            cap_se = sqrt(sum(chnk_tot_se^2))) %>%
+  ungroup() %>%
+  rename(Trap = trap_name) %>%
+  mutate(Trap = recode(Trap,
+                       'Minam R.' = 'Minam River',
+                       'Entiat R.' = 'Entiat River',
+                       'Crooked Fork Creek' = 'Crooked Fork',
+                       'Upper Grande Ronde R.' ='Upper Grande Ronde River',
+                       'Toucannon R.' = 'Tucannon River',
+                       'Pahsimeroi' = 'Pahsimeroi River',
+                       'Hood R.' = 'Hood River',
+                       'John Day Middle Fork' = 'Middle Fork John Day',
+                       'Upper Salmon River' = 'Upper Salmon River Chinook',
+                       'John Day Upper Mainstem' = 'Upper Mainstem John Day',
+                       'East Fork Salmon' = 'East Fork Salmon River',
+                       'Lostine R.' = 'Lostine River'))
+  
+
+```
+
+```{r}
+library(FSA)
+bh1 <- srFuns('BevertonHolt',
+              param = 3)
+
+data("spawn_recr_data")
+# fit Beverton-Holt curve with capacity fixed at QRF capacity prediction
+qrf_params = spawn_recr_data %>%
+  group_by(Population) %>%
+  nest() %>%
+  left_join(qrf_caps %>%
+              as_tibble() %>%
+              select(Trap, cap, cap_se),
+            by = c('Population' = 'Trap')) %>%
+  filter(!is.na(cap)) %>%
+  mutate(form = 'QRF',
+         inits = map2(.x = data,
+                      .y = cap,
+                     .f = function(x, y) {
+                       inits = srStarts(Parr ~ Spawners,
+                                        data = x,
+                                        type = 'BevertonHolt',
+                                        param = 3)
+
+                       inits$a = if_else(inits$a < 0, 
+                                         2e-3, 
+                                         inits$a)
+                       inits$b = 1 / y
+                       return(inits)
+                       }),
+         mod_fit = map2(.x = data,
+                        .y = inits,
+                        .f = function(x, y) {
+                          fit = try(nls(log(Parr) ~ log(bh1(Spawners, a, b)),
+                                        data = x,
+                                        start = y,
+                                        algorithm = 'port',
+                                        lower = c(0, y['b']),
+                                        upper = c(Inf, y['b'])))
+                        }),
+         coefs = map(mod_fit,
+                     .f = function(x) {
+                       if(class(x) == 'try-error') {
+                         return(as.numeric(NA))
+                       } else coef(x)
+                       }),
+         preds = map2(.x = data,
+                      .y = mod_fit,
+                      .f = function(x, y) {
+                        if(class(y) != 'try-error') {
+                          tibble(Spawners = 1:max(x$Spawners)) %>%
+                            mutate(Parr = predict(y,
+                                                  newdata = .),
+                                   Parr = exp(Parr))
+                        } else return(tibble(Spawners = NA,
+                                             Parr = NA))
+                      })) %>%
+  rename(est = cap,
+         se = cap_se) %>%
+  # select(-c(area:tot_length, tot_cap_cv)) %>%
+  mutate(cv = se / est)
+
+```
+
+```{r}
+data("spawn_rec_params")
+
+spawn_rec_params %<>%
+  bind_rows(qrf_params)
+
+# pull out estimates of capacity
+cap_tbl = spawn_rec_params %>%
+  select(Population, form, est, se, cv) %>%
+  arrange(Population, form)
+
+# make a few estimates NA (too big)
+cap_tbl %<>%
+  mutate_at(vars(est, se, cv),
+            list(~ if_else(Population %in% c('Entiat River',
+                                             'Marsh Creek',
+                                             'Minam River',
+                                             'Tucannon River') &
+                             form == 'BevertonHolt',
+                           as.numeric(NA), .)))
+
+
+# pull out fitted spawner recruit curves
+curve_fits = spawn_rec_params %>%
+  select(Population, form, preds) %>%
+  unnest(cols = "preds") %>%
+  arrange(Population, form)
+
+# define polygons for uncertainty shading
+plot_max = Inf
+plot_max = 5e5
+cap_poly = cap_tbl %>%
+  mutate(lwrCI = est + se * qnorm(0.025),
+         uprCI = est + se * qnorm(0.975)) %>%
+  mutate(lwrCI = if_else(lwrCI < 0, 0, lwrCI),
+         uprCI = if_else(uprCI > plot_max, plot_max, uprCI)) %>%
+  left_join(spawn_rec_params %>%
+              select(Population, data) %>%
+              unnest(cols = "data") %>%
+              group_by(Population) %>%
+              summarise_at(vars(Spawners, Parr),
+                           tibble::lst(min, max),
+                           na.rm = T)) %>%
+  group_by(Population, form) %>%
+  summarise(coords = list(tibble(x = c(0, 0, Spawners_max, Spawners_max),
+                                 y = c(lwrCI, uprCI, uprCI, lwrCI)))) %>%
+  ungroup() %>%
+  unnest(cols = c(coords))
+
+# which watersheds to plot?
+keep_wtsds = qrf_caps %>%
+  filter(!is.na(cap)) %>%
+  filter(!Trap %in% c('Methow R.')) %>%
+  pull(Trap)
+
+spawn_rec_comp_p = spawn_rec_params %>%
+  # filter out a couple populations with super poor fits
+  filter(Population %in% keep_wtsds) %>%
+  select(Population, data) %>%
+  unnest(cols = "data") %>%
+  distinct() %>%
+  ggplot(aes(x = Spawners,
+             y = Parr)) +
+  geom_polygon(data = cap_poly %>%
+                 # filter out a couple populations with super poor fits
+                 filter(Population %in% keep_wtsds),
+              aes(x = x,
+                  y = y,
+                  fill = form),
+              alpha = 0.2) +
+  geom_line(data = curve_fits %>%
+              # filter out a couple populations with super poor fits
+              filter(Population %in% keep_wtsds),
+            aes(color = form),
+            lwd = 1.5) +
+  geom_hline(data = cap_tbl %>%
+               # filter out a couple populations with super poor fits
+               filter(Population %in% keep_wtsds),
+             aes(yintercept = est,
+                 color = form),
+             linetype = 2) +
+  geom_point(aes(shape = Spawner_type),
+             size = 3) +
+  facet_wrap(~ Population,
+             scales = 'free') +
+  scale_color_brewer(palette = 'Set1',
+                     breaks = c('QRF',
+                                'BevertonHolt',
+                                'Ricker',
+                                'Hockey'),
+                     labels = c('QRF', 
+                                'Beverton Holt',
+                                'Ricker',
+                                'Hockey Stick'),
+                     name = 'Model') +
+  scale_fill_brewer(palette = 'Set1',
+                    breaks = c('QRF',
+                               'BevertonHolt',
+                               'Ricker',
+                               'Hockey'),
+                    labels = c('QRF', 
+                               'Beverton Holt',
+                               'Ricker',
+                               'Hockey Stick'),
+                    name = 'Model') +
+  labs(shape = 'Spawner\nType')
+
+dodge_width = 0.5
+sr_est_comp_p = cap_tbl %>%
+  filter(Population %in% keep_wtsds) %>%
+  mutate(lwrCI = est + qnorm(0.025) * se,
+         lwrCI = if_else(lwrCI <= 0, 1, lwrCI),
+         uprCI = est + qnorm(0.975) * se,
+         uprCI = if_else(uprCI > 1.3e6, 1.3e6, uprCI)) %>%
+  mutate(type = if_else(form == 'QRF',
+                        'QRF', 'S-R')) %>%
+  ggplot(aes(x = Population,
+             y = est,
+             color = form,
+             group = form)) +
+  geom_errorbar(aes(ymin = lwrCI,
+                    ymax = uprCI),
+                position = position_dodge(width = dodge_width),
+                width = 0) +
+  geom_point(aes(shape = type),
+             fill = 'white',
+             size = 2,
+             position = position_dodge(width = dodge_width)) +
+  scale_shape_manual(values = c('QRF' = 19,
+                                'S-R' = 21),
+                     name = 'Type') + 
+  scale_color_brewer(palette = 'Set1',
+                     breaks = c('QRF',
+                                'BevertonHolt',
+                                'Ricker',
+                                'Hockey'),
+                     labels = c('QRF',
+                                'Beverton Holt',
+                                'Ricker',
+                                'Hockey Stick'),
+                     name = 'Model') +
+  # scale_y_continuous(trans = 'log') +
+  # theme(axis.text.x = element_text(angle = 90),
+  #       axis.text.y = element_blank()) +
+  theme(axis.text = element_blank()) +
+  facet_wrap(~ Population,
+             scales = 'free') +
+  labs(y = 'Capacity Estimate',
+       x = NULL)
+
+
+```
+
+We then plotted the data, as well as the fitted curves, including the one which uses QRF estimates of capacity as one of the parameters, on the same plot, to compare the various estimates.
+
+```{r}
+spawn_rec_comp_p
+```
+
+```{r}
+sr_est_comp_p
+```
