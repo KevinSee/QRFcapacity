@@ -84,9 +84,9 @@ hab_data %<>%
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[2]
+               'redds')[1]
 
-load(paste0('output/modelFits/qrf', mod_choice, '.rda'))
+load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
 #-----------------------------------------------------------------
 # predict capacity at all CHaMP sites
@@ -350,7 +350,7 @@ covar_range_p = range_comp %>%
              color = 'darkgray') +
   theme_minimal()
 
-covar_range_p
+# covar_range_p
 
 
 # Center the covariates
