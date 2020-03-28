@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Extrapolate QRF model to all 200 m reaches
 # Created: 3/20/2020
-# Last Modified: 3/25/2020
+# Last Modified: 3/26/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -84,7 +84,7 @@ hab_data %<>%
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[1]
+               'redds')[2]
 
 load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
@@ -180,6 +180,10 @@ site_strata = pred_hab_df %>%
 champ_frame_df = read_csv('data/prepped/champ_frame_data.csv') %>%
   mutate(Target2014 = ifelse(is.na(AStrat2014), 'Non-Target', Target2014)) %>%
   mutate(AStrat2014 = ifelse(AStrat2014 == 'Entiat IMW', paste('EntiatIMW', GeoRchIMW, sep = '_'), AStrat2014)) %>%
+  mutate(UseTypCHSP = ifelse(CHaMPshed == 'Lemhi' & AStrat2014 == 'Little Springs', 
+                             "Spawning and rearing", UseTypCHSP),
+         UseTypSTSU = ifelse(CHaMPshed == 'Lemhi' & AStrat2014 %in% c('Big Springs', 'Little Springs'), 
+                             "Spawning and rearing", UseTypSTSU)) %>%
   filter(Target2014 == 'Target') %>%
   rename(Watershed = CHaMPshed)
 
@@ -253,38 +257,47 @@ strata_test = frame_strata %>%
   select(Species, everything()) %>%
   arrange(Species, Watershed, strata)
 
-# what frame strata don't have any sites in them?
-strata_test %>%
-  filter(n_sites == 0,
-         !is.na(tot_length_km)) %>%
-  arrange(Species, Watershed, strata) %>%
-  as.data.frame()
+# # what frame strata don't have any sites in them?
+# strata_test %>%
+#   filter(n_sites == 0,
+#          !is.na(tot_length_km)) %>%
+#   arrange(Species, Watershed, strata) %>%
+#   as.data.frame()
+# 
+# # what strata that we have sites for are not in the frame strata?
+# strata_test %>%
+#   filter(n_sites > 0,
+#          (is.na(tot_length_km) |
+#             tot_length_km == 0)) %>%
+#   as.data.frame()
 
-# what strata that we have sites for are not in the frame strata?
-strata_test %>%
-  filter(n_sites > 0,
-         (is.na(tot_length_km) |
-            tot_length_km == 0)) %>%
-  as.data.frame()
+# champ_frame_df %>%
+#   filter(Watershed == 'Lemhi') %>%
+#   select(Watershed, AStrat2014, Target2014, UseTypSTSU, FrameLeng) %>%
+#   filter(!grepl('Mainstem', AStrat2014)) %>%
+#   group_by(AStrat2014) %>%
+#   summarise(use_length = sum(FrameLeng[!is.na(UseTypSTSU)]),
+#             nonuse_length = sum(FrameLeng[is.na(UseTypSTSU)]))
 
-# how much of each watershed is not accounted for with current sites / strata?
-strata_test %>%
-  group_by(Watershed) %>%
-  summarise_at(vars(tot_length_km),
-               list(sum),
-               na.rm = T) %>%
-  left_join(strata_test %>%
-              filter(n_sites == 0) %>%
-              group_by(Watershed) %>%
-              summarise_at(vars(missing_length = tot_length_km),
-                           list(sum),
-                           na.rm = T)) %>%
-  mutate_at(vars(missing_length),
-            list(~ if_else(is.na(.), 0, .))) %>%
-  mutate(perc_missing = missing_length / tot_length_km) %>%
-  mutate_at(vars(perc_missing),
-            list(~ if_else(is.na(.), 0, .))) %>%
-  arrange(desc(perc_missing))
+# # how much of each watershed is not accounted for with current sites / strata?
+# strata_test %>%
+#   group_by(Species, Watershed) %>%
+#   summarise_at(vars(tot_length_km),
+#                list(sum),
+#                na.rm = T) %>%
+#   left_join(strata_test %>%
+#               filter(n_sites == 0) %>%
+#               group_by(Species, Watershed) %>%
+#               summarise_at(vars(missing_length = tot_length_km),
+#                            list(sum),
+#                            na.rm = T)) %>%
+#   mutate_at(vars(missing_length),
+#             list(~ if_else(is.na(.), 0, .))) %>%
+#   mutate(perc_missing = missing_length / tot_length_km) %>%
+#   mutate_at(vars(perc_missing),
+#             list(~ if_else(is.na(.), 0, .))) %>%
+#   arrange(desc(perc_missing))
+
 
 #----------------------------------------
 # prep 200 m reaches for extrapolation
@@ -309,6 +322,10 @@ extrap_num = names(extrap_class)[extrap_class %in% c('integer', 'numeric')]
 # which ones are categorical?
 extrap_catg = names(extrap_class)[extrap_class %in% c('factor', 'character', 'ordered')]
 
+# correlation between numeric covariates
+rch_200_df %>%
+  select(one_of(extrap_num)) %>%
+  cor(method = 'spearman')
 
 # compare range of covariates from model dataset and prediction dataset
 range_comp = bind_rows(rch_200_df %>%
@@ -435,12 +452,13 @@ rch_pred = rch_200_df %>%
 options(survey.lonely.psu = 'adjust')
 
 # extrapolation model formula
-full_form = as.formula(paste('log(qrf_cap) ~ -1 + (', paste(extrap_covars, collapse = ' + '), ')'))
+full_form = as.formula(paste('log_qrf_cap ~ -1 + (', paste(extrap_covars, collapse = ' + '), ')'))
 
 # fit various models
 model_svy_df = mod_data_weights %>%
   gather(response, qrf_cap, matches('per_m')) %>%
   select(-(n_sites:sum_weights)) %>%
+  mutate(log_qrf_cap = log(qrf_cap)) %>%
   group_by(Species, response) %>%
   nest() %>%
   mutate(design = map(data,
@@ -595,6 +613,7 @@ qrf_est = model_svy_df %>%
   group_by(UniqueID, key) %>%
   summarise_at(vars(value = qrf_cap),
                list(mean)) %>%
+  ungroup() %>%
   spread(key, value)
 
 all_preds %>%
