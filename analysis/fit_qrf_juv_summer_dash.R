@@ -378,48 +378,38 @@ hab_impute = hab_avg %>%
                       method = 'missForest') %>%
   select(Site, Watershed, LON_DD, LAT_DD, VisitYear, Lgth_Wet, Area_Wet, one_of(covars))
 
+# which sites are inside the Chinook domain?
+data("rch_200")
+data("champ_site_rch")
+
+chnk_sites = champ_site_rch %>%
+  inner_join(rch_200 %>%
+               select(UniqueID, chnk)) %>%
+  filter(chnk) %>%
+  pull(Site) %>%
+  as.character()
+
+# add Big Springs and Little Springs sites in the Lemhi
+chnk_sites = c(chnk_sites,
+               hab_data %>%
+                 filter(grepl('Big0Springs', Site) | grepl('Little0Springs', Site)) %>%
+                 pull(Site) %>%
+                 unique()) %>%
+  unique()
+
 pred_hab_sites = hab_impute %>%
-  mutate(chnk_per_m = predict(qrf_mods[['Chinook']],
-                              newdata = select(., one_of(unique(sel_hab_mets$Metric))),
-                              what = pred_quant),
-         chnk_per_m = exp(chnk_per_m) - dens_offset,
-         chnk_per_m2 = chnk_per_m * Lgth_Wet / Area_Wet) %>%
   mutate(sthd_per_m = predict(qrf_mods[['Steelhead']],
                               newdata = select(., one_of(unique(sel_hab_mets$Metric))),
                               what = pred_quant),
          sthd_per_m = exp(sthd_per_m) - dens_offset,
-         sthd_per_m2 = sthd_per_m * Lgth_Wet / Area_Wet)
-
-# filter out sites outside the Chinook domain
-data("chnk_domain")
-snap_dist = 1000
-
-pred_hab_sites_chnk = pred_hab_sites %>%
-  filter(!is.na(LON_DD)) %>%
-  st_as_sf(coords = c('LON_DD', 'LAT_DD'),
-           crs = 4326) %>%
-  st_transform(crs = st_crs(chnk_domain)) %>%
-  as_Spatial() %>%
-  maptools::snapPointsToLines(chnk_domain %>%
-                                mutate(id = 1:n()) %>%
-                                select(id, MPG) %>%
-                                as_Spatial(),
-                              maxDist = snap_dist,
-                              withAttrs = T,
-                              idField = 'id') %>%
-  as('sf') %>%
-  as_tibble() #%>%
-  # select(-nearest_line_id, -snap_dist, -geometry) %>%
-  # # add sites in the John Day
-  # bind_rows(st_read('data/raw/domain/Chnk_JohnDay_TrueObs.shp',
-  #                   quiet = T) %>%
-  #             as_tibble() %>%
-  #             select(Site) %>%
-  #             inner_join(pred_hab_sites))
-
-# note if sites are in Chinook domain or not
-pred_hab_sites %<>% 
-  mutate(chnk_domain = if_else(Site %in% pred_hab_sites_chnk$Site, T, F)) %>%
+         sthd_per_m2 = sthd_per_m * Lgth_Wet / Area_Wet) %>%
+  left_join(hab_impute %>%
+              filter(Site %in% chnk_sites) %>%
+              mutate(chnk_per_m = predict(qrf_mods[['Chinook']],
+                                          newdata = select(., one_of(unique(sel_hab_mets$Metric))),
+                                          what = pred_quant),
+                     chnk_per_m = exp(chnk_per_m) - dens_offset,
+                     chnk_per_m2 = chnk_per_m * Lgth_Wet / Area_Wet)) %>%
   mutate_at(vars(Watershed),
             list(fct_drop))
 
@@ -430,8 +420,7 @@ pred_hab_df = pred_hab_sites %>%
   mutate(Species = 'Steelhead') %>%
   bind_rows(pred_hab_sites %>%
               select(-starts_with('sthd')) %>%
-              filter(chnk_domain) %>%
-              select(-chnk_domain) %>%
+              filter(!is.na(chnk_per_m)) %>%
               rename(cap_per_m = chnk_per_m,
                      cap_per_m2 = chnk_per_m2) %>%
               mutate(Species = 'Chinook')) %>%
@@ -470,6 +459,10 @@ site_strata = pred_hab_df %>%
 champ_frame_df = read_csv('data/prepped/champ_frame_data.csv') %>%
   mutate(Target2014 = ifelse(is.na(AStrat2014), 'Non-Target', Target2014)) %>%
   mutate(AStrat2014 = ifelse(AStrat2014 == 'Entiat IMW', paste('EntiatIMW', GeoRchIMW, sep = '_'), AStrat2014)) %>%
+  mutate(UseTypCHSP = ifelse(CHaMPshed == 'Lemhi' & AStrat2014 == 'Little Springs', 
+                             "Spawning and rearing", UseTypCHSP),
+         UseTypSTSU = ifelse(CHaMPshed == 'Lemhi' & AStrat2014 %in% c('Big Springs', 'Little Springs'), 
+                             "Spawning and rearing", UseTypSTSU)) %>%
   filter(Target2014 == 'Target') %>%
   rename(Watershed = CHaMPshed)
 
@@ -543,13 +536,13 @@ strata_test = frame_strata %>%
   select(Species, everything()) %>%
   arrange(Species, Watershed, strata)
 
-# what frame strata don't have any sites in them?
+# # what frame strata don't have any sites in them?
 # strata_test %>%
 #   filter(n_sites == 0,
 #          !is.na(tot_length_km)) %>%
 #   arrange(Species, Watershed, strata) %>%
 #   as.data.frame()
-
+# 
 # # what strata that we have sites for are not in the frame strata?
 # strata_test %>%
 #   filter(n_sites > 0,
@@ -557,15 +550,23 @@ strata_test = frame_strata %>%
 #             tot_length_km == 0)) %>%
 #   as.data.frame()
 
+# champ_frame_df %>%
+#   filter(Watershed == 'Lemhi') %>%
+#   select(Watershed, AStrat2014, Target2014, UseTypSTSU, FrameLeng) %>%
+#   filter(!grepl('Mainstem', AStrat2014)) %>%
+#   group_by(AStrat2014) %>%
+#   summarise(use_length = sum(FrameLeng[!is.na(UseTypSTSU)]),
+#             nonuse_length = sum(FrameLeng[is.na(UseTypSTSU)]))
+
 # # how much of each watershed is not accounted for with current sites / strata?
 # strata_test %>%
-#   group_by(Watershed) %>%
+#   group_by(Species, Watershed) %>%
 #   summarise_at(vars(tot_length_km),
 #                list(sum),
 #                na.rm = T) %>%
 #   left_join(strata_test %>%
 #               filter(n_sites == 0) %>%
-#               group_by(Watershed) %>%
+#               group_by(Species, Watershed) %>%
 #               summarise_at(vars(missing_length = tot_length_km),
 #                            list(sum),
 #                            na.rm = T)) %>%
