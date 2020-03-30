@@ -11,7 +11,7 @@ output:
     toc: yes
     toc_depth: 3
     toc_float: yes
-    fig_height: 6
+    fig_height: 8
     fig_width: 8
     pandoc_args:
     - --lua-filter=templates/scholarly-metadata.lua
@@ -73,18 +73,23 @@ We can validate Chinook summer parr estimates of capacity with spawner-recruit d
 
 From this dataset, we fit several spawner-recruit curves to each location, including Beverton-Holt, Ricker and hockey stick. The data at some locations led to some curves not fitting (no model convergence). Each of these spawner-recruit curves also generated an estimate of summer parr carrying capacity, which we can then compare to QRF estimates. We want to emphasize that the data for the spawner-recruit curves and the QRF estimates are completely independent, and therefore provide a good way to validate the QRF estimates of carrying capacity.
 
-```{r}
+```{r trap-polygons}
 # read in trap polygons
 trap_poly = read_sf('../data/raw/spawn_rec/trap_regions.shp') %>%
   st_transform(crs = 5070) %>%
   select(-Id)
 
-# read in capacity estimates and create a shapefile
+# which QRF model to use?
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[2]
+               'redds')[1]
+```
 
+```{r rch-200m-cap, eval = T}
+# read in capacity estimates and create a shapefile
 load(paste0('../output/modelFits/extrap_200rch_', mod_choice, '.rda'))
+in_covar_range_df = model_svy_df$pred_all_rchs[[1]] %>%
+  select(UniqueID, in_covar_range)
 rm(mod_data_weights, model_svy_df, extrap_covars)
 
 data("rch_200")
@@ -96,6 +101,8 @@ rch_200_cap = rch_200 %>%
   left_join(all_preds) %>%
   mutate(chnk_tot = chnk_per_m * reach_leng,
          chnk_tot_se = chnk_per_m_se * reach_leng) %>%
+  left_join(in_covar_range_df) %>%
+  # filter(in_covar_range) %>%
   st_transform(st_crs(trap_poly)) %>%
   select(everything(), geometry)
 
@@ -109,8 +116,10 @@ qrf_caps = trap_poly %>%
   summarise(n_rch = n_distinct(UniqueID),
             tot_lgth = sum(reach_leng),
             cap = sum(chnk_tot),
-            cap_se = sqrt(sum(chnk_tot_se^2))) %>%
+            cap_se = mean(chnk_per_m_se) * tot_lgth) %>%
+            # cap_se = sqrt(sum(chnk_tot_se^2))) %>%
   ungroup() %>%
+  mutate(cap_cv = cap_se / cap) %>%
   rename(Trap = trap_name) %>%
   mutate(Trap = recode(Trap,
                        'Minam R.' = 'Minam River',
@@ -125,9 +134,66 @@ qrf_caps = trap_poly %>%
                        'John Day Upper Mainstem' = 'Upper Mainstem John Day',
                        'East Fork Salmon' = 'East Fork Salmon River',
                        'Lostine R.' = 'Lostine River'))
-  
+```
+
+```{r master-sample-pts-cap, eval = F}
+# read in capacity estimates and create a shapefile
+load(paste0('../output/modelFits/extrap_mastPts_', mod_choice, '.rda'))
+
+data("gaa")
+data("chnk_domain")
+
+capacity_pts = all_preds %>%
+  left_join(gaa %>%
+              select(Site, Lon, Lat)) %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(st_crs(trap_poly))
+
+qrf_caps = trap_poly %>%  
+  st_join(capacity_pts) %>%
+  group_by(trap_name) %>%
+  summarise(n_pts = n_distinct(Site),
+            avg_cap = mean(chnk_per_m, na.rm = T),
+            avg_cap_se = mean(chnk_per_m_se, na.rm = T)) %>%
+  ungroup() %>%
+  left_join(trap_poly %>%
+              st_join(chnk_domain %>%
+                        mutate(reach_leng = st_length(.))) %>%
+              mutate_at(vars(chnk_ESU_DPS = ESU_DPS, 
+                             chnk_MPG = MPG),
+                        list(fct_explicit_na)) %>%
+              group_by(chnk_ESU_DPS, chnk_MPG, trap_name) %>%
+              summarise(tot_lgth = sum(reach_leng)) %>%
+              ungroup() %>%
+              st_drop_geometry()) %>%
+  group_by(chnk_ESU_DPS, chnk_MPG, trap_name, n_pts, tot_lgth) %>%
+  summarise(cap = avg_cap * as.numeric(tot_lgth),
+            cap_se = avg_cap_se * as.numeric(tot_lgth),
+            cap_cv = cap_se / cap) %>%
+  ungroup() %>%
+  rename(Trap = trap_name) %>%
+  mutate(Trap = recode(Trap,
+                       'Minam R.' = 'Minam River',
+                       'Entiat R.' = 'Entiat River',
+                       'Crooked Fork Creek' = 'Crooked Fork',
+                       'Upper Grande Ronde R.' ='Upper Grande Ronde River',
+                       'Toucannon R.' = 'Tucannon River',
+                       'Pahsimeroi' = 'Pahsimeroi River',
+                       'Hood R.' = 'Hood River',
+                       'John Day Middle Fork' = 'Middle Fork John Day',
+                       'Upper Salmon River' = 'Upper Salmon River Chinook',
+                       'John Day Upper Mainstem' = 'Upper Mainstem John Day',
+                       'East Fork Salmon' = 'East Fork Salmon River',
+                       'Lostine R.' = 'Lostine River')) %>%
+  select(starts_with('chnk'),
+         Trap,
+         everything(),
+         geometry) %>%
+  filter(n_pts > 1)
 
 ```
+
 
 ```{r}
 library(FSA)
