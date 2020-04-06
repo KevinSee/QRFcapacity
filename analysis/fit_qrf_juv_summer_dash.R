@@ -220,15 +220,15 @@ sel_hab_mets = crossing(Species = c('Chinook',
                         Metric = c('CU_Freq',
                                    # 'FstTurb_Freq',
                                    # 'FstNT_Freq',
-                                   'WetWdth_CV',
+                                   # 'WetWdth_CV', # nope
                                    'WetBraid',
                                    'Sin_CL',
                                    # 'Sin',
                                    'UcutLgth_Pct',
                                    'FishCovSome',
                                    'WetSC_Pct',
-                                   'WetWdth_Int',
-                                   'Q',
+                                   'WetWdth_Int', #area of wetted polygon divided by centerline length, not available for >= 2019?
+                                   'Q', # try MeanU instead
                                    'SubEstGrvl',
                                    'avg_aug_temp',
                                    'LWFreq_Wet',
@@ -236,8 +236,7 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                    'LWVol_Wet',
                                    'SlowWater_Pct',
                                    # 'NatPrin1',
-                                   'DistPrin1'
-                                   ))
+                                   'DistPrin1'))
 
 #-----------------------------------------------------------------
 # Fit QRF model
