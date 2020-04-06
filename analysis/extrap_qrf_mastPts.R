@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Extrapolate QRF model to all 200 m reaches
 # Created: 3/27/2020
-# Last Modified: 3/27/2020
+# Last Modified: 4/6/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -18,14 +18,41 @@ library(survey)
 theme_set(theme_bw())
 
 #-----------------------------------------------------------------
+# load model fit
+#-----------------------------------------------------------------
+mod_choice = c('juv_summer',
+               'juv_summer_dash',
+               'redds')[3]
+
+load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
+
+#-----------------------------------------------------------------
 # prep some habitat data
 #-----------------------------------------------------------------
 # all the related habitat data
-data("champ_site_2011_17")
-hab_data = champ_site_2011_17
+if(mod_choice %in% c('juv_summer', 'redds')) {
+  data("champ_site_2011_17")
+  hab_data = champ_site_2011_17
+  
+  data("champ_site_2011_17_avg")
+  hab_avg = champ_site_2011_17_avg
+  
+  # add a metric showing "some" riparian canopy
+  hab_data %<>%
+    mutate(RipCovCanSome = 100 - RipCovCanNone)
+  
+  hab_avg %<>%
+    mutate(RipCovCanSome = 100 - RipCovCanNone)
+  
+}
 
-data("champ_site_2011_17_avg")
-hab_avg = champ_site_2011_17_avg
+if(mod_choice == 'juv_summer_dash') {
+  data("champ_dash")
+  hab_data = champ_dash
+  
+  data("champ_dash_avg")
+  hab_avg = champ_dash_avg
+}
 
 # alter a few metrics
 hab_data %<>%
@@ -33,8 +60,6 @@ hab_data %<>%
   mutate_at(vars(starts_with('LWVol'),
                  ends_with('_Vol')),
             list(~ . / Lgth_Wet * 100)) %>%
-  # add a metric showing "some" riparian canopy
-  mutate(RipCovCanSome = 100 - RipCovCanNone) %>%
   # add a metric showing "some" fish cover
   mutate(FishCovSome = 100 - FishCovNone)
 
@@ -43,8 +68,6 @@ hab_avg %<>%
   mutate_at(vars(starts_with('LWVol'),
                  ends_with('_Vol')),
             list(~ . / Lgth_Wet * 100)) %>%
-  # add a metric showing "some" riparian canopy
-  mutate(RipCovCanSome = 100 - RipCovCanNone) %>%
   # add a metric showing "some" fish cover
   mutate(FishCovSome = 100 - FishCovNone)
 
@@ -77,16 +100,6 @@ hab_data %<>%
                           filter(!is.na(Year)) %>%
                           select(Site:VisitID, Year, aug_temp))) %>%
   select(-Year)
-
-
-#-----------------------------------------------------------------
-# load model fit
-#-----------------------------------------------------------------
-mod_choice = c('juv_summer',
-               'juv_summer_dash',
-               'redds')[1]
-
-load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
 #-----------------------------------------------------------------
 # predict capacity at all CHaMP sites
@@ -380,10 +393,10 @@ extrap_num = names(extrap_class)[extrap_class %in% c('integer', 'numeric')]
 # which ones are categorical?
 extrap_catg = names(extrap_class)[extrap_class %in% c('factor', 'character', 'ordered')]
 
-# correlation between numeric covariates
-gaa_all %>%
-  select(one_of(extrap_num)) %>%
-  cor(method = 'spearman')
+# # correlation between numeric covariates
+# gaa_all %>%
+#   select(one_of(extrap_num)) %>%
+#   cor(method = 'spearman')
 
 # compare range of covariates from model dataset and prediction dataset
 range_comp = bind_rows(gaa_all %>%
@@ -412,18 +425,18 @@ range_max = range_comp %>%
   gather(type, value, -Metric, -Source)
 
 
-covar_range_p = range_comp %>%
-  ggplot(aes(x = Source,
-             y = value,
-             fill = Source)) +
-  geom_boxplot() +
-  facet_wrap(~ Metric,
-             scales = 'free') +
-  geom_hline(data = range_max,
-             aes(yintercept = value),
-             lty = 2,
-             color = 'darkgray') +
-  theme_minimal()
+# covar_range_p = range_comp %>%
+#   ggplot(aes(x = Source,
+#              y = value,
+#              fill = Source)) +
+#   geom_boxplot() +
+#   facet_wrap(~ Metric,
+#              scales = 'free') +
+#   geom_hline(data = range_max,
+#              aes(yintercept = value),
+#              lty = 2,
+#              color = 'darkgray') +
+#   theme_minimal()
 
 # covar_range_p
 
@@ -466,6 +479,7 @@ mod_data = inner_join(pred_hab_df,
   left_join(gaa_all %>%
               select(Site, one_of(extrap_catg)))
 
+# filter out rows with missing data in covariates
 mod_data %<>%
   bind_cols(mod_data %>%
               is.na() %>%
@@ -477,6 +491,7 @@ mod_data %<>%
             list(fct_drop))
 
 sum(is.na(mod_data))
+
 
 # calculate adjusted weights for all predicted QRF capacity sites
 mod_data_weights = mod_data %>%
@@ -506,9 +521,9 @@ gaa_pred = gaa_all %>%
 
 # getOption('survey.lonely.psu')
 # this will prevent strata with only 1 site from contributing to the variance
-# options(survey.lonely.psu = 'certainty')
+options(survey.lonely.psu = 'certainty')
 # this centers strata with only 1 site to the sample grand mean; this is conservative
-options(survey.lonely.psu = 'adjust')
+# options(survey.lonely.psu = 'adjust')
 
 # extrapolation model formula
 full_form = as.formula(paste('log_qrf_cap ~ -1 + (', paste(extrap_covars, collapse = ' + '), ')'))
@@ -547,15 +562,24 @@ model_svy_df %<>%
                                 select(Site, one_of(extrap_covars), -CHaMPsheds) %>%
                                 na.omit() %>%
                                 left_join(gaa_pred)),
-         # which reaches are in CHaMP watersheds? 
+         # which reaches have Channel types in the model dataset?
+         pred_all_rchs = map2(pred_all_rchs,
+                              mod_no_champ,
+                              .f = function(x,y) {
+                                x %>%
+                                  filter(Channel_Type %in% y$xlevels$Channel_Type) %>%
+                                  mutate_at(vars(Channel_Type),
+                                            list(fct_drop))
+                              }),
+         # which reaches are in CHaMP watersheds?
          pred_champ_rchs = map2(pred_all_rchs,
                                 mod_champ,
-                               .f = function(x,y) {
-                                 x %>%
-                                   filter(CHaMPsheds %in% y$xlevels$CHaMPsheds) %>%
-                                   mutate_at(vars(CHaMPsheds),
-                                             list(fct_drop))
-                               })) %>%
+                                .f = function(x,y) {
+                                  x %>%
+                                    filter(CHaMPsheds %in% y$xlevels$CHaMPsheds) %>%
+                                    mutate_at(vars(CHaMPsheds),
+                                              list(fct_drop))
+                                })) %>%
   mutate(pred_no_champ = map2(mod_no_champ,
                               pred_all_rchs,
                               .f = function(x, y) {
@@ -646,36 +670,30 @@ all_preds %<>%
   filter((Site %in% Site[duplicated(Site)] & model == 'CHaMP') |
            !Site %in% Site[duplicated(Site)])
 
+# add non-CHaMP model predictions in for Asotin
+all_preds %<>%
+  filter(Watershed != 'Asotin' | is.na(Watershed)) %>%
+  bind_rows(all_preds %>%
+              filter(Watershed == 'Asotin') %>%
+              select(-starts_with('chnk')) %>%
+              left_join(z %>%
+                          select(Site, starts_with('chnk'))))
+
 sum(duplicated(all_preds$Site))
 
-# for CHaMP sites, use direct QRF esimates, not extrapolation ones
-qrf_est = model_svy_df %>%
-  select(Species, response, data) %>%
-  unnest(cols = data) %>%
-  select(Species, response, Site, value = qrf_cap) %>%
-  mutate(key = if_else(Species == 'Chinook',
-                       str_replace(response, 'cap', 'chnk'),
-                       str_replace(response, 'cap', 'sthd'))) %>%
-  select(-Species, -response) %>%
-  # for reaches with multiple sites attached, take average QRF prediction
-  # group_by(Site, key) %>%
-  # summarise_at(vars(value),
-  #              list(mean)) %>%
-  # ungroup() %>%
-  spread(key, value)
-
+# for CHaMP sites, use direct QRF esimates, not extrapolation ones (adds a few extra sites)
 all_preds %>%
-  anti_join(qrf_est %>%
+  anti_join(pred_hab_sites %>%
               select(Site)) %>%
-  bind_rows(all_preds %>%
-              select(-matches('per_m')) %>%
-              inner_join(qrf_est,
-                         by = "Site") %>%
+  bind_rows(pred_hab_sites %>%
+              select(Site, Watershed, matches('per_m')) %>%
               mutate(chnk_per_m_se = 0,
                      chnk_per_m2_se = 0,
                      sthd_per_m_se = 0,
                      sthd_per_m2_se = 0) %>%
-              mutate(model = 'QRF')) -> all_preds
+              mutate(model = 'QRF')) %>%
+  select(Site, Watershed, model, everything()) %>%
+  arrange(Watershed, Site) -> all_preds
 
 save(extrap_covars,
      mod_data_weights,
@@ -686,26 +704,105 @@ save(extrap_covars,
 #---------------------------
 # create a shapefile
 load(paste0('output/modelFits/extrap_mastPts_', mod_choice, '.rda'))
-data("rch_200")
+data("gaa")
+data("chnk_domain")
 
-rch_200_cap = rch_200 %>%
-  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
-         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
-         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
-  left_join(all_preds)
+site_cap = all_preds %>%
+  left_join(gaa %>%
+              select(Site, 
+                     HUC_6, HUC6NmNRCS, HUC_8, HUC8NmNRCS, HUC_10, HUC10NmNRC, HUC_12, HUC12NmNRC,
+                     Lat, Lon)) %>%
+  select(Site, starts_with('HUC'), everything()) %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(crs = st_crs(chnk_domain))
+
+chnk_buff = chnk_domain %>%
+  select(chnk_ESU_DPS = ESU_DPS,
+         chnk_MPG = MPG,
+         chnk_NWR_POPID = NWR_POPID,
+         chnk_NWR_NAME = NWR_NAME,
+         chnk_use = UseType) %>%
+  st_buffer(dist = 200,
+            endCapStyle = 'FLAT')
+
+chnk_buff2 = chnk_buff %>%
+  mutate_at(vars(starts_with('chnk')),
+            list(fct_explicit_na)) %>%
+  mutate(area = st_area(.)) %>%
+  group_by(chnk_ESU_DPS,
+           chnk_MPG,
+           chnk_NWR_POPID,
+           chnk_NWR_NAME,
+           chnk_use) %>%
+  summarise(area = sum(area)) %>%
+  ungroup()
+
+site_cap2 = site_cap %>%
+  st_join(chnk_buff2)
+
+site_chnk_dist = site_cap %>%
+  st_nearest_feature(chnk_domain %>%
+                       select(chnk_ESU_DPS = ESU_DPS,
+                              chnk_MPG = MPG,
+                              chnk_NWR_POPID = NWR_POPID,
+                              chnk_NWR_NAME = NWR_NAME,
+                              chnk_use = UseType))
+# site_cap2 %>%
+#   bind_cols(chnk_domain %>%
+#               select(chnk_ESU_DPS = ESU_DPS,
+#                      chnk_MPG = MPG,
+#                      chnk_NWR_POPID = NWR_POPID,
+#                      chnk_NWR_NAME = NWR_NAME,
+#                      chnk_use = UseType) %>%
+#               slice(site_chnk_dist))
+
+
+site_cap2 = site_cap %>%
+  st_join(chnk_domain %>%
+            select(chnk_ESU_DPS = ESU_DPS,
+                   chnk_MPG = MPG,
+                   chnk_NWR_POPID = NWR_POPID,
+                   chnk_NWR_NAME = NWR_NAME,
+                   chnk_use = UseType),
+          join = st_is_within_distance,
+          dist = 200)
+
+%>%
+  group_by(Site) %>%
+  filter(!is.na(chnk_use)) %>%
+  slice(1) %>%
+  ungroup() %>%
+  mutate(chnk = if_else(!is.na(chnk_use),
+                        T, F))
+
+site_cap2 %>%
+  st_drop_geometry() %>%
+  distinct() %>%
+  arrange(Site) %>%
+  filter(Site %in% Site[duplicated(Site)]) %>%
+  slice(1:4) %>%
+  as.data.frame()
+
+nrow(site_cap)
+nrow(site_cap2)
+site_cap2 %>%
+  filter(Site %in% Site[duplicated(Site)])
+
+table(site_cap2$chnk)
 
 rm(mod_data_weights, model_svy_df, extrap_covars)
-rm(rch_200, all_preds)
+rm(gaa, all_preds)
 
 # save it
 # as GPKG
-st_write(rch_200_cap,
+st_write(site_cap,
          dsn = paste0('output/gpkg/MastPts_Cap_', mod_choice, '.gpkg'),
          driver = 'GPKG')
 
 
 # as shapefile
-st_write(rch_200_cap,
+st_write(site_cap,
          dsn = paste0('output/shapefiles/MastPts_Cap_', mod_choice, '.shp'),
          driver = 'ESRI Shapefile')
 
