@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Process species ranges
 # Created: 5/14/2019
-# Last Modified: 3/13/2020
+# Last Modified: 3/31/2020
 # Notes: 
 # From StreamNet: http://www.streamnet.org/data/interactive-maps-and-gis-data/
 # Bureau of Rec provided updated extents in the Upper Salmon watersheds
@@ -23,21 +23,122 @@ myCRS = 5070
 #-----------------------------------------------------------------
 # read in stream network
 #-----------------------------------------------------------------
-rch_200 = st_read('data/raw/stream_network/crb_streams_v2_master.shp') %>%
+# original 200 m reaches from Morgan Bond
+rch_200_org = st_read('data/raw/stream_network/crb_streams_v2_master.shp') %>%
   st_transform(crs = myCRS) %>%
   st_zm()
+
+# this includes NorWeST temperature data and a few GAA's joined from the master sample points, all put together by Richie Carmichael
+# load each file separately
+for(load_file in list.files('data/prepped/200m_reaches/full_join')) {
+  load(paste0('data/prepped/200m_reaches/full_join/', load_file))
+}
+rm(load_file)
+
+
+rch_200_fj = clearwater_full_join %>%
+  st_transform(crs = myCRS) %>%
+  select(one_of(names(rch_200_org)),
+         S2_02_11 = S2_02_11.x,
+         S30_2040D = S30_2040D.x,
+         S32_2080D = S32_2080D.x,
+         DistPrin1,
+         NatPrin1,
+         NatPrin2,
+         geometry) %>%
+  mutate(region = 'Clearwater') %>%
+  rbind(midcolumbia_full_join %>%
+          st_transform(crs = myCRS) %>%
+          select(one_of(names(rch_200_org)),
+                 S2_02_11 = S2_02.11,
+                 S30_2040D = S30_2040D.x,
+                 S32_2080D = S32_2080D.x,
+                 DistPrin1,
+                 NatPrin1,
+                 NatPrin2,
+                 geometry) %>%
+          mutate(region = 'MidColumbia')) %>%
+  rbind(middlesnake_full_join %>%
+          st_transform(crs = myCRS) %>%
+          select(one_of(names(rch_200_org)),
+                 S2_02_11 = S2_02_11.x,
+                 S30_2040D = S30_2040D.x,
+                 S32_2080D = S32_2080D.x,
+                 DistPrin1,
+                 NatPrin1,
+                 NatPrin2,
+                 geometry) %>%
+          mutate(region = 'MidSnake')) %>%
+  rbind(salmon_full_join %>%
+          st_transform(crs = myCRS) %>%
+          select(one_of(names(rch_200_org)),
+                 S2_02_11 = S2_02_11.x,
+                 S30_2040D = S30_2040D.x,
+                 S32_2080D = S32_2080D.x,
+                 DistPrin1,
+                 NatPrin1,
+                 NatPrin2,
+                 geometry) %>%
+          mutate(region = 'Salmon')) %>%
+  rbind(UpperColumbiaYakima_full_join %>%
+          st_transform(crs = myCRS) %>%
+          select(one_of(names(rch_200_org)),
+                 S2_02_11 = S2_02_11.x,
+                 S30_2040D = S30_2040D.x,
+                 S32_2080D = S32_2080D.x,
+                 DistPrin1,
+                 NatPrin1,
+                 NatPrin2,
+                 geometry) %>%
+          mutate(region = 'UC_Yakima'))
+
+# a few reaches showed up in multiple regions (right on the border). These are the calls from Richie as to which version to keep
+rch_200_fj %<>%
+  filter(!(UniqueID == 452782 & region == 'UC_Yakima'),
+         !(UniqueID %in% c(797627, 1429595, 1724718) & region == 'MidColumbia'),
+         !(UniqueID %in% c(347660, 379870) & region == 'Clearwater'))
+
+nrow(rch_200_fj)
+sum(duplicated(rch_200_fj$UniqueID))
+rch_200_fj %>%
+  st_drop_geometry() %>%
+  filter(UniqueID %in% UniqueID[duplicated(UniqueID)]) %>%
+  arrange(UniqueID, region) %>%
+  select(UniqueID, GNIS_Name, S2_02_11:region)
+
+# data('rch_200')
+# rch_200 %>%
+#   mutate(included = if_else(UniqueID %in% rch_200_fj$UniqueID, T, F)) %>%
+#   # xtabs(~ HUC6_name + included, .,
+#   #       drop.unused.levels = T)
+#   xtabs(~ HUC6_name + included + (chnk | sthd), .,
+#         drop.unused.levels = T)
+
+rch_200 = rch_200_org %>%
+  left_join(rch_200_fj %>%
+              st_drop_geometry() %>%
+              select(UniqueID, S2_02_11:region))
+
+sum(duplicated(rch_200$UniqueID))
+
+rm(clearwater_full_join,
+   midcolumbia_full_join,
+   middlesnake_full_join,
+   salmon_full_join,
+   UpperColumbiaYakima_full_join,
+   rch_200_fj)
 
 #-----------------------------------------------------------------
 # Add species' population information
 #-----------------------------------------------------------------
 ### THIS TOOK TOO LONG, ENDED UP RUNNING IN QGIS ###
 
-# read in population boundaries (polygons)
-chnk_pops = st_read('data/raw/domain/CHNK_SPSU_All.shp') %>%
-  st_transform(crs = myCRS)
-sthd_pops = st_read('data/raw/domain/STHD_SUWI_All.shp') %>%
-  st_transform(crs = myCRS) %>%
-  filter(grepl('summer', RUN_TIMING))
+# # read in population boundaries (polygons)
+# chnk_pops = st_read('data/raw/domain/CHNK_SPSU_All.shp') %>%
+#   st_transform(crs = myCRS)
+# sthd_pops = st_read('data/raw/domain/STHD_SUWI_All.shp') %>%
+#   st_transform(crs = myCRS) %>%
+#   filter(grepl('summer', RUN_TIMING))
 
 # chnk_mpg = chnk_pops %>%
 #   group_by(ESU_DPS, MPG) %>%
@@ -98,16 +199,12 @@ sthd_pops = st_read('data/raw/domain/STHD_SUWI_All.shp') %>%
 #-----------------------------------------------------------------
 # read in version with species' populations
 #-----------------------------------------------------------------
+# Chinook pops did not keep every UniqueID, but steelhead one did
 rch_pops_chnk = st_read('data/raw/stream_network/crb_streams_v2_chnk_pop.gpkg') %>%
   st_transform(crs = myCRS)
 
 rch_pops_sthd = st_read('data/raw/stream_network/crb_streams_v2_sthd_pop.gpkg') %>%
   st_transform(crs = myCRS)
-
-sum(duplicated(rch_pops_sthd$UniqueID))
-nrow(rch_pops_chnk)
-nrow(rch_pops_sthd)
-nrow(rch_200)
 
 rch_200$UniqueID[!rch_200$UniqueID %in% rch_pops_sthd$UniqueID]
 
@@ -210,7 +307,7 @@ rch_200 %<>%
 
 xtabs(~ is.na(chnk_NWR_NAME) + chnk, rch_200)
 
-# where are reaches in the Chinook domain, but don't have population information attached (because those posp aren't listed)?
+# where are reaches in the Chinook domain, but don't have population information attached (because those pops aren't listed)?
 rch_200 %>%
   filter(chnk,
          is.na(chnk_NWR_NAME)) %>%
