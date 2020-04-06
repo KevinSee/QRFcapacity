@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Extrapolate QRF model to all 200 m reaches
 # Created: 3/20/2020
-# Last Modified: 3/26/2020
+# Last Modified: 4/6/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -18,14 +18,41 @@ library(survey)
 theme_set(theme_bw())
 
 #-----------------------------------------------------------------
+# load model fit
+#-----------------------------------------------------------------
+mod_choice = c('juv_summer',
+               'juv_summer_dash',
+               'redds')[3]
+
+load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
+
+#-----------------------------------------------------------------
 # prep some habitat data
 #-----------------------------------------------------------------
 # all the related habitat data
-data("champ_site_2011_17")
-hab_data = champ_site_2011_17
+if(mod_choice %in% c('juv_summer', 'redds')) {
+  data("champ_site_2011_17")
+  hab_data = champ_site_2011_17
+  
+  data("champ_site_2011_17_avg")
+  hab_avg = champ_site_2011_17_avg
+  
+  # add a metric showing "some" riparian canopy
+  hab_data %<>%
+    mutate(RipCovCanSome = 100 - RipCovCanNone)
+  
+  hab_avg %<>%
+    mutate(RipCovCanSome = 100 - RipCovCanNone)
+  
+}
 
-data("champ_site_2011_17_avg")
-hab_avg = champ_site_2011_17_avg
+if(mod_choice == 'juv_summer_dash') {
+  data("champ_dash")
+  hab_data = champ_dash
+  
+  data("champ_dash_avg")
+  hab_avg = champ_dash_avg
+}
 
 # alter a few metrics
 hab_data %<>%
@@ -33,8 +60,6 @@ hab_data %<>%
   mutate_at(vars(starts_with('LWVol'),
                  ends_with('_Vol')),
             list(~ . / Lgth_Wet * 100)) %>%
-  # add a metric showing "some" riparian canopy
-  mutate(RipCovCanSome = 100 - RipCovCanNone) %>%
   # add a metric showing "some" fish cover
   mutate(FishCovSome = 100 - FishCovNone)
 
@@ -43,8 +68,6 @@ hab_avg %<>%
   mutate_at(vars(starts_with('LWVol'),
                  ends_with('_Vol')),
             list(~ . / Lgth_Wet * 100)) %>%
-  # add a metric showing "some" riparian canopy
-  mutate(RipCovCanSome = 100 - RipCovCanNone) %>%
   # add a metric showing "some" fish cover
   mutate(FishCovSome = 100 - FishCovNone)
 
@@ -78,15 +101,6 @@ hab_data %<>%
                           select(Site:VisitID, Year, aug_temp))) %>%
   select(-Year)
 
-
-#-----------------------------------------------------------------
-# load model fit
-#-----------------------------------------------------------------
-mod_choice = c('juv_summer',
-               'juv_summer_dash',
-               'redds')[2]
-
-load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
 #-----------------------------------------------------------------
 # predict capacity at all CHaMP sites
@@ -309,7 +323,8 @@ rch_200_df = rch_200 %>%
             list(~ as.factor(as.character(.))))
 
 extrap_covars = names(rch_200_df)[c(18:20,
-                                 23:29)]
+                                    23:29,
+                                    37, 40:42)]
 
 # what type of covariate is each GAA?
 extrap_class = rch_200_df %>%
@@ -321,11 +336,6 @@ extrap_class = rch_200_df %>%
 extrap_num = names(extrap_class)[extrap_class %in% c('integer', 'numeric')]
 # which ones are categorical?
 extrap_catg = names(extrap_class)[extrap_class %in% c('factor', 'character', 'ordered')]
-
-# correlation between numeric covariates
-rch_200_df %>%
-  select(one_of(extrap_num)) %>%
-  cor(method = 'spearman')
 
 # compare range of covariates from model dataset and prediction dataset
 range_comp = bind_rows(rch_200_df %>%
@@ -354,20 +364,26 @@ range_max = range_comp %>%
   gather(type, value, -Metric, -Source)
 
 
-covar_range_p = range_comp %>%
-  ggplot(aes(x = Source,
-             y = value,
-             fill = Source)) +
-  geom_boxplot() +
-  facet_wrap(~ Metric,
-             scales = 'free') +
-  geom_hline(data = range_max,
-             aes(yintercept = value),
-             lty = 2,
-             color = 'darkgray') +
-  theme_minimal()
+# covar_range_p = range_comp %>%
+#   ggplot(aes(x = Source,
+#              y = value,
+#              fill = Source)) +
+#   geom_boxplot() +
+#   facet_wrap(~ Metric,
+#              scales = 'free') +
+#   geom_hline(data = range_max,
+#              aes(yintercept = value),
+#              lty = 2,
+#              color = 'darkgray') +
+#   theme_minimal()
 
 # covar_range_p
+
+# # correlation between numeric covariates
+# rch_200_df %>%
+#   select(one_of(extrap_num)) %>%
+#   cor(method = 'spearman',
+#       use = "pairwise")
 
 
 # Center the covariates
@@ -447,9 +463,9 @@ rch_pred = rch_200_df %>%
 
 # getOption('survey.lonely.psu')
 # this will prevent strata with only 1 site from contributing to the variance
-# options(survey.lonely.psu = 'certainty')
+options(survey.lonely.psu = 'certainty')
 # this centers strata with only 1 site to the sample grand mean; this is conservative
-options(survey.lonely.psu = 'adjust')
+# options(survey.lonely.psu = 'adjust')
 
 # extrapolation model formula
 full_form = as.formula(paste('log_qrf_cap ~ -1 + (', paste(extrap_covars, collapse = ' + '), ')'))
@@ -592,42 +608,44 @@ comp_pred_p = all_preds %>%
   facet_wrap(~ Watershed + dens_type,
              scales = 'free')
 
-comp_pred_p
+# comp_pred_p
 
 # for reaches in CHaMP watersheds, use predicions from CHaMP extrapolation model
 all_preds %<>%
   filter((UniqueID %in% UniqueID[duplicated(UniqueID)] & model == 'CHaMP') |
            !UniqueID %in% UniqueID[duplicated(UniqueID)])
 
+# add non-CHaMP Chinook model predictions in for Asotin
+all_preds %<>%
+  filter(Watershed != 'Asotin' | is.na(Watershed)) %>%
+  bind_rows(all_preds %>%
+              filter(Watershed == 'Asotin') %>%
+              select(-starts_with('chnk')) %>%
+              left_join(z %>%
+                          select(UniqueID, starts_with('chnk'))))
+
 sum(duplicated(all_preds$UniqueID))
 
-# for CHaMP sites, use direct QRF esimates, not extrapolation ones
-qrf_est = model_svy_df %>%
-  select(Species, response, data) %>%
-  unnest(cols = data) %>%
-  select(Species, response, Site, UniqueID, qrf_cap) %>%
-  mutate(key = if_else(Species == 'Chinook',
-                       str_replace(response, 'cap', 'chnk'),
-                       str_replace(response, 'cap', 'sthd'))) %>%
-  # for reaches with multiple sites attached, take average QRF prediction
-  group_by(UniqueID, key) %>%
-  summarise_at(vars(value = qrf_cap),
-               list(mean)) %>%
-  ungroup() %>%
-  spread(key, value)
-
+# for CHaMP sites, use direct QRF esimates, not extrapolation ones (adds a few extra sites)
 all_preds %>%
-  anti_join(qrf_est %>%
+  anti_join(pred_hab_sites %>%
               select(UniqueID)) %>%
-  bind_rows(all_preds %>%
-              select(-matches('per_m')) %>%
-              inner_join(qrf_est,
-                         by = "UniqueID") %>%
+  bind_rows(pred_hab_sites %>%
+              select(UniqueID, Watershed, matches('per_m')) %>%
+              group_by(UniqueID) %>%
+              slice(which.max(chnk_per_m)) %>%
+              ungroup() %>%
               mutate(chnk_per_m_se = 0,
                      chnk_per_m2_se = 0,
                      sthd_per_m_se = 0,
                      sthd_per_m2_se = 0) %>%
-              mutate(model = 'QRF')) -> all_preds
+              mutate(model = 'QRF')) %>%
+  select(UniqueID, Watershed, model, everything()) %>%
+  arrange(Watershed, UniqueID) -> all_preds
+
+# all_preds %>%
+# # pred_hab_sites %>%
+#   filter(UniqueID %in% UniqueID[duplicated(UniqueID)])
 
 save(extrap_covars,
      mod_data_weights,
@@ -661,3 +679,173 @@ st_write(rch_200_cap,
          dsn = paste0('output/shapefiles/Rch_Cap_', mod_choice, '.shp'),
          driver = 'ESRI Shapefile')
 
+
+#-------------------------------------------------------------
+# build other extrapolation models
+# linear model without design weights
+# random forest
+#-------------------------------------------------------------
+# fit various models that don't account for survey design
+model_lm_df = mod_data %>%
+  gather(response, qrf_cap, matches('per_m')) %>%
+  mutate(log_qrf_cap = log(qrf_cap)) %>%
+  group_by(Species, response) %>%
+  nest() %>%
+  mutate(mod_no_champ = map(data,
+                            .f = function(x) {
+                              lm(full_form,
+                                 data = x)
+                            }),
+         mod_champ = map(data,
+                         .f = function(x) {
+                           lm(update(full_form, .~ . + Watershed),
+                              data = x)
+                         })) %>%
+  arrange(Species, response) %>%
+  ungroup() %>%
+  # make predictions at all possible reaches, using both models
+  mutate(pred_all_rchs = list(rch_pred %>%
+                                select(UniqueID, one_of(extrap_covars)) %>%
+                                na.omit() %>%
+                                left_join(rch_pred)),
+         # which reaches are in CHaMP watersheds? 
+         pred_champ_rchs = map2(pred_all_rchs,
+                                mod_champ,
+                                .f = function(x,y) {
+                                  x %>%
+                                    left_join(mod_data %>%
+                                                select(UniqueID, Watershed) %>%
+                                                left_join(rch_200_df %>%
+                                                            select(UniqueID, HUC8_code)) %>%
+                                                select(HUC8_code, Watershed) %>%
+                                                distinct()) %>%
+                                    filter(!is.na(Watershed)) %>%
+                                    filter(Watershed %in% y$xlevels$Watershed) %>%
+                                    mutate_at(vars(Watershed),
+                                              list(as.factor))
+                                })) %>%
+  mutate(pred_no_champ = map2(mod_no_champ,
+                              pred_all_rchs,
+                              .f = function(x, y) {
+                                y %>%
+                                  select(UniqueID) %>%
+                                  bind_cols(predict(x,
+                                                    newdata = y,
+                                                    se = T,
+                                                    type = 'response') %>%
+                                              as_tibble() %>%
+                                              select(response = fit,
+                                                     SE = se.fit))
+                              }),
+         pred_champ = map2(mod_champ,
+                           pred_champ_rchs,
+                           .f = function(x, y) {
+                             y %>%
+                               select(UniqueID) %>%
+                               bind_cols(predict(x,
+                                                 newdata = y,
+                                                 se = T,
+                                                 type = 'response') %>%
+                                           as_tibble() %>%
+                                           select(response = fit,
+                                                  SE = se.fit))
+                           }))
+
+# fit various random forest models
+# to account for design weights, might need to create new dataset by resampling original data, with probabilities weighted by design weights
+model_rf_df = inner_join(pred_hab_df,
+                         rch_200_df %>%
+                           select(UniqueID, one_of(extrap_covars))) %>%
+  gather(response, qrf_cap, matches('per_m')) %>%
+  mutate(log_qrf_cap = log(qrf_cap)) %>%
+  group_by(Species, response) %>%
+  nest() %>%
+  ungroup()%>%
+  mutate(mod_no_champ = map(data,
+                            .f = function(x) {
+                              randomForest(full_form,
+                                           data = x,
+                                           ntree = 1000)
+                            }),
+         mod_champ = map(data,
+                         .f = function(x) {
+                           randomForest(update(full_form, .~. + Watershed),
+                                        data = x,
+                                        ntree = 1000)
+                         })) %>%
+  # make predictions at all possible reaches, using both models
+  mutate(pred_all_rchs = list(rch_200_df %>%
+                                mutate(in_covar_range = ifelse(UniqueID %in% out_range_rchs, F, T)) %>%
+                                select(UniqueID, in_covar_range, everything())),
+         # which reaches are in CHaMP watersheds? 
+         pred_champ_rchs = map2(pred_all_rchs,
+                                mod_champ,
+                                .f = function(x,y) {
+                                  x %>%
+                                    left_join(pred_hab_df %>%
+                                                select(UniqueID, Watershed) %>%
+                                                left_join(rch_200_df %>%
+                                                            select(UniqueID, HUC8_code)) %>%
+                                                select(HUC8_code, Watershed) %>%
+                                                distinct()) %>%
+                                    filter(!is.na(Watershed)) %>%
+                                    filter(Watershed %in% unique(pred_hab_df$Watershed)) %>%
+                                    mutate_at(vars(Watershed),
+                                              list(as.factor))
+                                })) %>%
+  mutate(pred_no_champ = map2(mod_no_champ,
+                              pred_all_rchs,
+                              .f = function(x, y) {
+                                y %>%
+                                  select(UniqueID) %>%
+                                  bind_cols(tibble(response = predict(x,
+                                                                      newdata = y)))
+                              }),
+         pred_champ = map2(mod_champ,
+                           pred_champ_rchs,
+                           .f = function(x, y) {
+                             y %>%
+                               select(UniqueID) %>%
+                               bind_cols(tibble(response = predict(x,
+                                                                   newdata = y)))
+                           }))
+
+preds_comp = list('Survey' = model_svy_df,
+                  "lm" = model_lm_df,
+                  "RF" = model_rf_df) %>%
+  map_df(.id = 'model',
+         .f = function(x) {
+           x %>%
+             select(Species, type = response, mod_pred = pred_no_champ) %>%
+             unnest(cols = mod_pred) %>%
+             select(Species, type, UniqueID, response) %>%
+             gather(key, value, response) %>%
+             mutate(key = if_else(key == 'response',
+                                  if_else(Species == 'Chinook',
+                                          str_replace(type, 'cap', 'chnk'),
+                                          str_replace(type, 'cap', 'sthd')),
+                                  if_else(Species == 'Chinook',
+                                          paste0(str_replace(type, 'cap', 'chnk'), "_se"),
+                                          paste0(str_replace(type, 'cap', 'sthd'), "_se")))) %>%
+             select(UniqueID, key, value) %>%
+             spread(key, value) %>%
+             mutate_at(vars(matches('per_m')),
+                       list(exp))
+         })
+
+test = preds_comp %>%
+  gather(key, value, matches('per_m')) %>%
+  spread(model, value) %>%
+  filter(key == 'chnk_per_m')
+
+test %>%
+  GGally::ggpairs(columns = 3:5,
+                  lower = list("continuous" = 
+                                 function(data, mapping) {
+                                   ggplot(data, 
+                                          mapping) + 
+                                     geom_point() +
+                                     geom_abline(linetype = 2,
+                                                 color = 'red') +
+                                     geom_smooth()
+                                 }))
