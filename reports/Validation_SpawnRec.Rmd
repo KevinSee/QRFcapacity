@@ -47,7 +47,8 @@ csl: "templates/american-fisheries-society.csl"
 # load knitr for markdown
 library(knitr)
 knitr::opts_chunk$set(echo=FALSE, 
-                      warning=FALSE, 
+                      warning=FALSE,
+                      # error = FALSE,
                       message=FALSE)
 #options(tinytex.verbose = TRUE)
 options(knitr.kable.NA = '-')
@@ -82,8 +83,23 @@ trap_poly = read_sf('../data/raw/spawn_rec/trap_regions.shp') %>%
 # which QRF model to use?
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[1]
+               'redds')[2]
 ```
+
+```{r cap-max, eval = F}
+load(paste0('../output/modelFits/qrf_', mod_choice, '.rda'))
+# define max capacity based on observed densities
+cap_max = qrf_mod_df %>%
+  group_by(Species) %>%
+  summarise(quant95 = quantile(fish_dens, 0.95),
+            quant98 = quantile(fish_dens, 0.98),
+            quant99 = quantile(fish_dens, 0.99),
+            quant995 = quantile(fish_dens, 0.995),
+            quant100 = quantile(fish_dens, 1)) %>%
+  filter(Species == 'Chinook') %>%
+  pull(quant100)
+```
+
 
 ```{r rch-200m-cap, eval = T}
 # read in capacity estimates and create a shapefile
@@ -106,6 +122,17 @@ rch_200_cap = rch_200 %>%
   st_transform(st_crs(trap_poly)) %>%
   select(everything(), geometry)
 
+# rch_200_cap %>%
+#   st_drop_geometry() %>%
+#   xtabs(~ (chnk_per_m > cap_max) + in_covar_range, .)
+# 
+# rch_200_cap %<>%
+#   mutate(chnk_per_m_se = if_else(chnk_per_m > cap_max, 
+#                                  as.numeric(NA), chnk_per_m_se),
+#          chnk_per_m = if_else(chnk_per_m > cap_max, 
+#                               cap_max, chnk_per_m))
+
+
 rm(rch_200, all_preds)
 
 qrf_caps = trap_poly %>%
@@ -114,9 +141,9 @@ qrf_caps = trap_poly %>%
             list(fct_explicit_na)) %>%
   group_by(chnk_ESU_DPS, chnk_MPG, trap_name) %>%
   summarise(n_rch = n_distinct(UniqueID),
-            tot_lgth = sum(reach_leng),
-            cap = sum(chnk_tot),
-            cap_se = mean(chnk_per_m_se) * tot_lgth) %>%
+            tot_lgth = sum(reach_leng, na.rm = T),
+            cap = sum(chnk_tot, na.rm = T),
+            cap_se = mean(chnk_per_m_se, na.rm = T) * tot_lgth) %>%
             # cap_se = sqrt(sum(chnk_tot_se^2))) %>%
   ungroup() %>%
   mutate(cap_cv = cap_se / cap) %>%
@@ -136,7 +163,7 @@ qrf_caps = trap_poly %>%
                        'Lostine R.' = 'Lostine River'))
 ```
 
-```{r master-sample-pts-cap, eval = F}
+```{r master-sample-pts-cap, eval = T}
 # read in capacity estimates and create a shapefile
 load(paste0('../output/modelFits/extrap_mastPts_', mod_choice, '.rda'))
 
@@ -146,11 +173,12 @@ data("chnk_domain")
 capacity_pts = all_preds %>%
   left_join(gaa %>%
               select(Site, Lon, Lat)) %>%
+  filter(!is.na(Lon)) %>%
   st_as_sf(coords = c('Lon', 'Lat'),
            crs = 4326) %>%
   st_transform(st_crs(trap_poly))
 
-qrf_caps = trap_poly %>%  
+qrf_caps2 = trap_poly %>%  
   st_join(capacity_pts) %>%
   group_by(trap_name) %>%
   summarise(n_pts = n_distinct(Site),
@@ -194,6 +222,137 @@ qrf_caps = trap_poly %>%
 
 ```
 
+```{r pts-rch-comparison, eval = T}
+trp_rch = rch_200_cap %>%
+  st_join(trap_poly) %>%
+  filter(!is.na(trap_name))
+
+trp_pts = capacity_pts %>%
+  st_join(trap_poly) %>%
+  filter(!is.na(trap_name)) %>%
+  st_join(chnk_domain %>%
+            st_buffer(dist = 500)) %>%
+  filter(!is.na(Species)) %>%
+  filter(trap_name %in% unique(trp_rch$trap_name))
+ 
+comp_df = trp_pts %>%
+  group_by(Trap = trap_name) %>%
+  nest() %>%
+  rename(pt_data = data) %>%
+  left_join(trp_rch %>%
+              group_by(Trap = trap_name) %>%
+              nest() %>%
+              rename(rch_data = data)) %>%
+  left_join(chnk_domain %>%
+              st_join(trap_poly) %>%
+              filter(!is.na(trap_name)) %>%
+              mutate(reach_leng = st_length(.)) %>%
+              mutate_at(vars(reach_leng),
+                        list(as.numeric)) %>%
+              group_by(Trap = trap_name) %>%
+              nest() %>%
+              rename(old_domain = data)) %>%
+  mutate(fig = map2(pt_data,
+                    rch_data,
+                    function(x, y) {
+                      ggplot() +
+                        geom_sf(data = x,
+                                aes(color = chnk_per_m),
+                                alpha = 0.6,
+                                size = 3) +
+                        geom_sf(data = y,
+                                aes(color = chnk_per_m)) +
+                        scale_color_viridis_c(direction = -1,
+                                              name = 'Chnk / m') +
+                        theme(axis.text = element_blank(),
+                              axis.title = element_blank())
+                    }),
+         fig = map2(fig,
+                    Trap,
+                    function(x, y) {
+                      x +
+                        labs(title = y)
+                    })) %>%
+  arrange(Trap)
+
+all_p = ggpubr::ggarrange(plotlist = comp_df$fig,
+                          ncol = 2,
+                          nrow = 2)
+
+# ggsave('../output/figures/capacity_maps_all.pdf',
+#        all_p,
+#        width = 8,
+#        height = 11)
+
+# pdf('../output/figures/capacity_maps_all.pdf',
+#        width = 8,
+#        height = 11)
+# for(i in 1:length(all_p)) print(all_p)
+# dev.off()
+
+
+# comp_df %>%
+#   mutate(rch_cap = map_dbl(rch_data,
+#                        .f = function(x) {
+#                          x %>%
+#                          summarise_at(vars(chnk_tot),
+#                                       list(sum)) %>%
+#                          pull(chnk_tot)
+#                        })) %>%
+#   mutate(pts_cap = map2_dbl(pt_data,
+#                             old_domain,
+#                             .f = function(x, y) {
+#                               avg_cap = x %>%
+#                                 summarise_at(vars(chnk_per_m),
+#                                       list(mean),
+#                                       na.rm = T) %>%
+#                                 pull(chnk_per_m)
+#                               strm_lgth = y %>%
+#                                 summarise_at(vars(reach_leng),
+#                                              list(sum),
+#                                              na.rm = T) %>%
+#                                 pull(reach_leng)
+#                               avg_cap * strm_lgth
+#                             }))
+```
+
+```{r add-extra-cap-upper-lemhi, eval = T}
+# comp_df$rch_data[[which(comp_df$Trap == 'Upper Lemhi')]] %>% 
+#   st_drop_geometry() %>%
+#   group_by(GNIS_Name) %>%
+#   summarise(n_rch = n_distinct(UniqueID),
+#             avg_per_m = mean(chnk_per_m),
+#             sd_per_m = sd(chnk_per_m, na.rm = T),
+#             avg_cap = mean(chnk_tot),
+#             sd_cap = sd(chnk_tot))
+
+lem_strm_cap <- comp_df$pt_data[[which(comp_df$Trap == 'Upper Lemhi')]] %>% 
+  group_by(StreamName) %>% 
+  summarise_at(vars(chnk_per_m), 
+               list(mean), 
+               na.rm = T) %>% 
+  st_drop_geometry()
+
+lem_leng <- comp_df$old_domain[[which(comp_df$Trap == 'Upper Lemhi')]] %>% 
+  group_by(StreamName) %>% 
+  summarise_at(vars(reach_leng), 
+               list(sum)) %>% 
+  st_drop_geometry()
+
+add_uplem_cap = lem_strm_cap %>% 
+  full_join(lem_leng) %>% 
+  filter(!is.na(reach_leng)) %>% 
+  mutate(cap = chnk_per_m * reach_leng) %>% 
+  filter(StreamName != "Lemhi River") %>% 
+  summarise_at(vars(cap), 
+               list(sum)) %>% 
+  pull(cap)
+
+qrf_caps$cap[qrf_caps$Trap == 'Upper Lemhi'] = qrf_caps$cap[qrf_caps$Trap == 'Upper Lemhi'] + add_uplem_cap
+
+```
+
+
 
 ```{r}
 library(FSA)
@@ -228,12 +387,12 @@ qrf_params = spawn_recr_data %>%
          mod_fit = map2(.x = data,
                         .y = inits,
                         .f = function(x, y) {
-                          fit = try(nls(log(Parr) ~ log(bh1(Spawners, a, b)),
-                                        data = x,
-                                        start = y,
-                                        algorithm = 'port',
-                                        lower = c(0, y['b']),
-                                        upper = c(Inf, y['b'])))
+                          fit = suppressWarnings(try(nls(log(Parr) ~ log(bh1(Spawners, a, b)),
+                                                         data = x,
+                                                         start = y,
+                                                         algorithm = 'port',
+                                                         lower = c(0, y['b']),
+                                                         upper = c(Inf, y['b']))))
                         }),
          coefs = map(mod_fit,
                      .f = function(x) {
@@ -343,6 +502,7 @@ spawn_rec_comp_p = spawn_rec_params %>%
   geom_point(aes(shape = Spawner_type),
              size = 3) +
   facet_wrap(~ Population,
+             ncol = 3,
              scales = 'free') +
   scale_color_brewer(palette = 'Set1',
                      breaks = c('QRF',
@@ -364,7 +524,8 @@ spawn_rec_comp_p = spawn_rec_params %>%
                                'Ricker',
                                'Hockey Stick'),
                     name = 'Model') +
-  labs(shape = 'Spawner\nType')
+  labs(shape = 'Spawner\nType') +
+  theme(legend.position = "bottom")
 
 dodge_width = 0.5
 sr_est_comp_p = cap_tbl %>%
@@ -403,21 +564,68 @@ sr_est_comp_p = cap_tbl %>%
   # scale_y_continuous(trans = 'log') +
   # theme(axis.text.x = element_text(angle = 90),
   #       axis.text.y = element_blank()) +
-  theme(axis.text = element_blank()) +
+  theme(axis.text = element_blank(),
+        legend.position = "bottom") +
   facet_wrap(~ Population,
              scales = 'free') +
   labs(y = 'Capacity Estimate',
        x = NULL)
-
-
 ```
+
+```{r, eval = F}
+cap_tbl_ci = cap_tbl %>%
+  mutate(lwrCI = est + qnorm(0.025) * se,
+         lwrCI = if_else(lwrCI <= 0, 1, lwrCI),
+         uprCI = est + qnorm(0.975) * se,
+         uprCI = if_else(uprCI > 1.3e6, 1.3e6, uprCI))
+
+comp_df = cap_tbl_ci %>%
+  filter(form != 'QRF') %>%
+  filter(!is.na(est)) %>%
+  inner_join(cap_tbl_ci %>%
+               filter(form == 'QRF') %>%
+               select(Population, form, est) %>%
+               spread(form, est) %>%
+               rename(qrf_est = QRF) %>%
+               left_join(cap_tbl_ci %>%
+                           filter(form == 'QRF') %>%
+                           select(Population, form, lwrCI) %>%
+                           spread(form, lwrCI) %>%
+                           rename(qrf_lwrCI = QRF)) %>%
+               left_join(cap_tbl_ci %>%
+                           filter(form == 'QRF') %>%
+                           select(Population, form, uprCI) %>%
+                           spread(form, uprCI) %>%
+                           rename(qrf_uprCI = QRF))) %>%
+  mutate(in_qrf_ci = if_else(est <= qrf_uprCI & est >= qrf_lwrCI, T, F),
+         qrf_in_ci = if_else(qrf_est <= uprCI & qrf_est >= lwrCI, T, F),
+         overlap_ci = if_else(lwrCI <= qrf_uprCI & uprCI >= qrf_lwrCI, T, F))
+
+comp_df %>%
+  group_by(form) %>%
+  summarise(n_pops = n_distinct(Population)) %>%
+  full_join(comp_df %>%
+              group_by(form) %>%
+              summarise_at(vars(ends_with("_ci")),
+                           list(sum),
+                           na.rm = T)) %>%
+  mutate_at(vars(perc_in_qrf_ci = in_qrf_ci,
+                 perc_qrf_in_ci = qrf_in_ci,
+                 perc_overlap_ci = overlap_ci),
+            list(~ . / n_pops))
+
+
+comp_df %>%
+  filter(!overlap_ci)
+```
+
 
 We then plotted the data, as well as the fitted curves, including the one which uses QRF estimates of capacity as one of the parameters, on the same plot, to compare the various estimates.
 
-```{r}
+```{r sr-curves, fig.height = 10, fig.cap = "Estimates of spawners and their offspring summer parr, with various spawner-recruit curves ploted. Dashed lines are the esimates of capacity for each curve. QRF curve is a Beverton-Holt curve with the capacity parameter fixed to the QRF estimate of capacity above the screw trap."}
 spawn_rec_comp_p
 ```
 
-```{r}
+```{r sr-comp-fig}
 sr_est_comp_p
 ```
