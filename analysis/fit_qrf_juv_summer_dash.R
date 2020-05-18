@@ -1,8 +1,8 @@
 # Author: Kevin See
 # Purpose: Fit QRF model to summer parr data, using DASH habitat 2014-2017
 # Created: 1/12/2020
-# Last Modified: 3/20/2020
-# Notes: 
+# Last Modified: 4/15/2020
+# Notes: 4/15/20: decided to drop DistPrin1 as a covariate, because it was indicating that less disturbed areas had lower capacity
 
 #-----------------------------------------------------------------
 # load needed libraries
@@ -231,12 +231,12 @@ sel_hab_mets = crossing(Species = c('Chinook',
                                    'Q', # try MeanU instead
                                    'SubEstGrvl',
                                    'avg_aug_temp',
-                                   'LWFreq_Wet',
+                                   # 'LWFreq_Wet',
                                    # 'LWVol_WetFstTurb',
                                    'LWVol_Wet',
-                                   'SlowWater_Pct',
+                                   'SlowWater_Pct')) #,
                                    # 'NatPrin1',
-                                   'DistPrin1'))
+                                   # 'DistPrin1'))
 
 #-----------------------------------------------------------------
 # Fit QRF model
@@ -282,8 +282,8 @@ qrf_mods = qrf_mod_df %>%
                                select(one_of(covars)) %>%
                                as.matrix,
                              y = z %>%
-                               mutate_at(vars(fish_dens),
-                                         list(~ log(. + dens_offset))) %>%
+                               # mutate_at(vars(fish_dens),
+                               #           list(~ log(. + dens_offset))) %>%
                                select(fish_dens) %>%
                                as.matrix(),
                              keep.inbag = T,
@@ -342,8 +342,10 @@ chnk_pdp = plot_partial_dependence(qrf_mods[['Chinook']],
                                    qrf_mod_df %>%
                                      filter(Species == 'Chinook'),
                                    data_dict = hab_dict,
+                                   # log_transform = F,
                                    log_offset = dens_offset,
-                                   scales = 'free') +
+                                   scales = "free_x") +
+                                   # scales = 'free') +
   labs(title = 'Chinook')
 
 # for steelhead
@@ -351,8 +353,10 @@ sthd_pdp = plot_partial_dependence(qrf_mods[['Steelhead']],
                                    qrf_mod_df %>%
                                      filter(Species == 'Steelhead'),
                                    data_dict = hab_dict,
+                                   # log_transform = F,
                                    log_offset = dens_offset,
-                                   scales = 'free') +
+                                   scales = "free_x") +
+                                   # scales = 'free') +
   labs(title = 'Steelhead')
 
 
