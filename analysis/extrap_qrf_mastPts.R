@@ -22,7 +22,7 @@ theme_set(theme_bw())
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[3]
+               'redds')[2]
 
 load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
@@ -713,6 +713,7 @@ site_cap = all_preds %>%
                      HUC_6, HUC6NmNRCS, HUC_8, HUC8NmNRCS, HUC_10, HUC10NmNRC, HUC_12, HUC12NmNRC,
                      Lat, Lon)) %>%
   select(Site, starts_with('HUC'), everything()) %>%
+  filter(!is.na(Lon), !is.na(Lat)) %>%
   st_as_sf(coords = c('Lon', 'Lat'),
            crs = 4326) %>%
   st_transform(crs = st_crs(chnk_domain))
