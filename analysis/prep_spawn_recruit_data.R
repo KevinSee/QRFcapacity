@@ -567,7 +567,10 @@ hockey_params = spawn_recr_data %>%
 # compile all fitted parameters
 spawn_rec_params = bevHolt_params %>%
   bind_rows(ricker_params) %>%
-  bind_rows(hockey_params)
+  bind_rows(hockey_params) %>%
+  ungroup() %>%
+  # drop this because it's causing problems with package build
+  select(-mod_fit)
 
 # save to be used later
 use_data(spawn_rec_params,
