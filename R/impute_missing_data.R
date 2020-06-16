@@ -115,7 +115,8 @@ impute_missing_data = function(data = NULL,
       select(one_of(all_cols)) %>%
       as.data.frame() %>%
       randomForestSRC::impute(data = .,
-                              ntree = ntree) %>%
+                              ntree = ntree,
+                              ...) %>%
       as_tibble()
     
     # pull out non-imputed data, combine with imputed data
