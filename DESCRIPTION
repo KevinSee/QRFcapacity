@@ -15,10 +15,11 @@ Imports:
   Hmisc
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 Suggests: 
-  knitr, 
-  rmarkdown, 
-  minerva,
-  maptools
+    knitr,
+    rmarkdown,
+    minerva,
+    maptools,
+    randomForestSRC (>= 2.9.3)
 VignetteBuilder: knitr

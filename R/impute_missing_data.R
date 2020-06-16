@@ -9,12 +9,13 @@
 #' @param max_missing integer value of the maximum number of columns per row that may have missing values. Rows with more than this number of missing covariates will be deleted.
 #' @param impute_vars additional covariates included in \code{data} that may be used for imputation
 #' @param method which method to use, either by creating random forests using the \code{missForest} package, or by predictive mean matching using the \code{aregImpute} function in the \code{Hmisc} package
-#' @param ntree how many trees to build if \code{method = 'missForest'}
+#' @param ntree how many trees to build if \code{method = 'missForest'} or \code{method == 'randomForestSRC'}
 #' @param nk how many knots to use in smoothing splines if using \code{method = 'Hmisc'}
-#' @param ... other arguements to be passed to either \code{missForest} or \code{aregImpute} functions
+#' @param ... other arguements to be passed to either \code{missForest}, \code{aregImpute} or \code{impute} functions
 #'
 #' @import dplyr tidyr missForest
 #' @importFrom Hmisc aregImpute
+#' @importFrom randomForestSRC impute
 #' @return data.frame containing non-missing and imputed data
 #' @export
 
@@ -22,7 +23,7 @@ impute_missing_data = function(data = NULL,
                                covars = NULL,
                                max_missing = 3,
                                impute_vars = NULL,
-                               method = c('Hmisc', 'missForest'),
+                               method = c('Hmisc', 'missForest', 'randomForestSRC'),
                                ntree = 100,
                                nk = 4,
                                ...) {
@@ -103,6 +104,25 @@ impute_missing_data = function(data = NULL,
       filter(row_num %in% keep_rows) %>%
       select(-one_of(names(imputed_data$ximp))) %>%
       bind_cols(imputed_data$ximp) %>%
+      select(one_of(names(data)))
+  }
+  
+  # imputed missing data with randomForestSRC package
+  if(method == 'randomForestSRC') {
+    set.seed(5)
+    imputed_data = data %>%
+      filter(row_num %in% keep_rows) %>%
+      select(one_of(all_cols)) %>%
+      as.data.frame() %>%
+      randomForestSRC::impute(data = .,
+                              ntree = ntree) %>%
+      as_tibble()
+    
+    # pull out non-imputed data, combine with imputed data
+    data_return = data %>%
+      filter(row_num %in% keep_rows) %>%
+      select(-one_of(names(imputed_data))) %>%
+      bind_cols(imputed_data) %>%
       select(one_of(names(data)))
   }
   

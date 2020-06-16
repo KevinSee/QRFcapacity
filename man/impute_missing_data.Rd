@@ -9,7 +9,7 @@ impute_missing_data(
   covars = NULL,
   max_missing = 3,
   impute_vars = NULL,
-  method = c("Hmisc", "missForest"),
+  method = c("Hmisc", "missForest", "randomForestSRC"),
   ntree = 100,
   nk = 4,
   ...
@@ -26,11 +26,11 @@ impute_missing_data(
 
 \item{method}{which method to use, either by creating random forests using the \code{missForest} package, or by predictive mean matching using the \code{aregImpute} function in the \code{Hmisc} package}
 
-\item{ntree}{how many trees to build if \code{method = 'missForest'}}
+\item{ntree}{how many trees to build if \code{method = 'missForest'} or \code{method == 'randomForestSRC'}}
 
 \item{nk}{how many knots to use in smoothing splines if using \code{method = 'Hmisc'}}
 
-\item{...}{other arguements to be passed to either \code{missForest} or \code{aregImpute} functions}
+\item{...}{other arguements to be passed to either \code{missForest}, \code{aregImpute} or \code{impute} functions}
 }
 \value{
 data.frame containing non-missing and imputed data
