@@ -13,6 +13,7 @@ library(magrittr)
 library(FSA)
 library(PITcleanr)
 library(DABOM)
+library(usethis)
 
 theme_set(theme_bw())
 
@@ -361,7 +362,7 @@ sr_p = spawn_recr_data %>%
               aes(color = 'Shepard')) +
   stat_smooth(method = 'nls',
               se = F,
-              formula =y ~ b * (1 - exp(-a / b * x)),
+              formula = y ~ b * (1 - exp(-a / b * x)),
               method.args = list(start = list(a = 1.5e3, b = 1e5),
                                  lower = c(0, 0),
                                  algorithm = 'port'),
@@ -529,7 +530,8 @@ hockey_params = spawn_recr_data %>%
                         .f = function(x, y) {
                           fit = try(nls(log(Parr) ~ log(hoc1(Spawners, a, b)),
                                         data = x,
-                                        start = y))
+                                        start = y,
+                                        algorithm = 'port'))
                         }),
          coefs = map(mod_fit,
                      .f = function(x) {
