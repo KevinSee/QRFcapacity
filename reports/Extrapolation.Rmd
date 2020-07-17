@@ -1,0 +1,253 @@
+---
+title: "Extrapolating to a Linear Stream Network"
+author:
+  - name: Kevin See
+    affiliation: biomark
+    email: kevin.see@merck.com
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  bookdown::html_document2:
+    theme: simplex
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    fig_height: 8
+    fig_width: 8
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+    - --lua-filter=templates/pagebreak.lua
+  bookdown::pdf_document2:
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks2.lua
+    - --lua-filter=templates/pagebreak.lua
+    fig_height: 6
+    fig_width: 8
+    includes:
+      in_header: "templates/header_ABS.tex"
+  bookdown::word_document2: 
+    fig_caption: yes
+    fig_height: 4
+    fig_width: 7
+    toc: yes
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+    - --lua-filter=templates/pagebreak.lua
+    reference_docx: "templates/ReportTemplate.docx"
+institute:
+- biomark: Biomark, Inc.
+csl: "templates/american-fisheries-society.csl"
+# bibliography: references.bib
+bibliography: 
+  - ~OneDrive - Merck Sharp & Dohme, Corp/Bibliography/Research.bib
+  - packages.bib
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+# setwd('reports')
+# load knitr for markdown
+library(knitr)
+knitr::opts_chunk$set(echo=FALSE, 
+                      warning=FALSE,
+                      # error = FALSE,
+                      message=FALSE)
+#options(tinytex.verbose = TRUE)
+options(knitr.kable.NA = '-')
+options(knitr.table.format = "pandoc")
+
+library(kableExtra)
+```
+
+```{r}
+# load needed packages
+library(tidyverse)
+library(sf)
+library(QRFcapacity)
+library(janitor)
+library(ggpubr)
+library(ggrepel)
+library(scales)
+
+theme_set(theme_bw())
+```
+
+```{r package-bibtex, eval = F}
+knitr::write_bib(c("base",
+                   "survey", 
+                   "sf", 
+                   "knitr", 
+                   "rmarkdown"),
+                 file = 'packages.bib')
+```
+
+```{r lifestage}
+# which QRF model to use?
+mod_choice = c('juv_summer',
+               'juv_summer_dash',
+               'redds')[2]
+```
+
+```{r master-point-capacity}
+# read in capacity estimates and create a shapefile
+load(paste0('../output/modelFits/extrap_mastPts_', mod_choice, '.rda'))
+in_covar_range_pts = model_svy_df$pred_all_rchs[[1]] %>%
+  select(Site, in_covar_range)
+pts_covars = extrap_covars
+
+data("chnk_domain")
+data("gaa")
+
+master_pts_cap = gaa %>%
+  select(Site, GNIS_Name = GNIS_NA, 
+         HUC6_code = HUC_6,
+         HUC6_name = HUC6NmNRCS,
+         HUC8_code = HUC_8,
+         Lat, Lon) %>%
+  filter(!is.na(Lon), !is.na(Lat)) %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(crs = st_crs(chnk_domain)) %>%
+  inner_join(all_preds)
+
+nhdplus_100 <- st_read("~/Desktop/Flowline_PN17_NSI/Flowline_PN17_NSI.shp") %>%
+  st_transform(st_crs(chnk_domain))
+
+# # this takes longer than 14 hours to run
+# test = master_pts_cap %>%
+#   st_join(nhdplus_100 %>%
+#             select(COMID,
+#                    GNIS_ID, 
+#                    GNIS_NAME,
+#                    reach_leng = LENGTHKM,
+#                    reach_code = REACHCODE),
+#           join = st_is_within_distance,
+#           dist = 200) %>%
+#   mutate_at(vars(reach_leng),
+#             list(~ . *1000))
+
+chnk_buff = chnk_domain %>%
+  st_buffer(dist = 200,
+            endCapStyle = 'FLAT')
+
+# filter out points outside Chinook domain
+keep_rows = master_pts_cap %>%
+  st_covered_by(chnk_buff) %>%
+  as_tibble() %>%
+  pull(row.id) %>%
+  unique() %>%
+  sort()
+
+chnk_pts_cap = master_pts_cap %>%
+  slice(keep_rows) %>%
+  st_join(chnk_domain,
+          join = st_nearest_feature)
+
+
+chnk_strm_lng = chnk_domain %>%
+  mutate(length_m = st_length(.)) %>%
+  mutate_at(vars(NWR_POPID, NWR_NAME, MPG, StreamName),
+            list(fct_explicit_na)) %>%
+  group_by(Source, ESU_DPS, MPG, NWR_POPID, NWR_NAME, StreamName) %>%
+  summarise_at(vars(length_m),
+               list(sum))
+
+chnk_strm_cap = chnk_strm_lng %>%
+  full_join(chnk_pts_cap %>%
+              mutate_at(vars(NWR_POPID, NWR_NAME, MPG, StreamName),
+                        list(fct_explicit_na)) %>%
+              group_by(ESU_DPS, MPG, NWR_POPID, NWR_NAME, StreamName) %>%
+              summarise_at(vars(chnk_per_m,
+                                chnk_per_m_se),
+                           list(mean),
+                           na.rm = T) %>%
+              st_drop_geometry() %>%
+              as_tibble()) %>%
+  mutate(chnk_tot = chnk_per_m * length_m,
+         chnk_tot_se = chnk_per_m_se * length_m)
+
+
+chnk_strm_cap %>%
+  filter(grepl('Lemhi', NWR_NAME)) %>%
+  group_by(ESU_DPS, MPG, NWR_POPID, NWR_NAME) %>%
+  summarise(chnk_lng = sum(length_m),
+            chnk_tot = sum(chnk_tot, na.rm = T),
+            chnk_tot_se = sqrt(sum(chnk_tot_se^2, na.rm = T)))
+
+chnk_strm_cap %>%
+  filter(grepl('Lemhi', NWR_NAME)) %>%
+  ggplot(aes(color = chnk_per_m)) +
+  geom_sf() +
+  scale_color_viridis_c(direction = -1)
+
+rm(mod_data_weights, model_svy_df, extrap_covars, gaa, all_preds)
+```
+
+```{r reach-capacity}
+# read in capacity estimates and create a shapefile
+load(paste0('../output/modelFits/extrap_200rch_', mod_choice, '.rda'))
+in_covar_range_rch = model_svy_df$pred_all_rchs[[1]] %>%
+  select(UniqueID, in_covar_range)
+rch_covars = extrap_covars
+
+data("chnk_domain")
+data("rch_200")
+
+rch_200_cap = rch_200 %>%
+  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
+         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
+  left_join(all_preds) %>%
+  mutate(chnk_tot = chnk_per_m * reach_leng,
+         chnk_tot_se = chnk_per_m_se * reach_leng) %>%
+  mutate(sthd_tot = sthd_per_m * reach_leng,
+         sthd_tot_se = sthd_per_m_se * reach_leng) %>%
+  mutate_at(vars(starts_with("chnk_tot")),
+            list(~ if_else(!chnk, NA_real_, .))) %>%
+  mutate_at(vars(starts_with("sthd_tot")),
+            list(~ if_else(!sthd, NA_real_, .))) %>%
+  # focus on andromous ranges
+  filter(chnk | sthd) %>%
+  left_join(in_covar_range_df) %>%
+  st_transform(st_crs(chnk_domain)) %>%
+  select(everything(), geometry)
+
+rch_200_cap %>%
+  filter(grepl('Lemhi', chnk_NWR_NAME),
+         chnk) %>%
+  group_by(chnk_ESU_DPS, chnk_MPG, chnk_NWR_POPID, chnk_NWR_NAME) %>%
+  summarise(chnk_lng = sum(reach_leng),
+            chnk_tot = sum(chnk_tot, na.rm = T),
+            chnk_tot_se = sqrt(sum(chnk_tot_se^2, na.rm = T)))
+    
+rch_200_cap %>%
+  filter(grepl('Lemhi', chnk_NWR_NAME)) %>%
+  ggplot(aes(color = chnk_per_m)) +
+  geom_sf() +
+  scale_color_viridis_c(direction = -1)
+
+rm(mod_data_weights, model_svy_df, extrap_covars, rch_200, all_preds)
+```
+
+
+```
+
+
+# Introduction
+
+For several years, our development of a QRF capacity model has relied on extrapolation to master sample points to interpolate between CHaMP ([Columbia Habitat Monitoring Program](https://www.champmonitoring.org/)) sites and generate capacity estimates on larger spatial scales. Recently there has been interest in moving from a point-based prediction layer to a line-based prediction layer to aide with the interpretation and visualization of the capacity predictions. In this document, we present our method for doing so, and include some comparisons with the point-based estimates. 
+
+# Methods
+
+The master sample points were generated in the design phase of CHaMP. These 551,046 sites were selected from the NHD Plus 1:100,000 stream layer covering WA, OR and ID at an average density of one site per kilometer [@Larsen2016]. Each CHaMP site where direct QRF capacity estimates were made corresponds to one of these master sample points. CHaMP generated a number o of attributes for each master sample point, referred to here as globally available attributes (GAAs) because they are associated with every master sample point across all watersheds. 
+
+The original extrapolation model used the log of capacity estimates at each CHaMP site (fish / m) as the response, and various GAAs as covariates. The model was fit using the *svyglm* function in the *survey* [@survey2004] package with R software [@R-base], accounting for the various survey design weights within each CHaMP watershed. We then used that model to predict capacity at every master sample point that was not a CHaMP site. To roll up capacity estimates to larger spatial scales, the average predicted capacity of master sample points along a stream was multiplied by the length of that stream, and then combinations of streams could be added together to generate overall capacity estimates for a watershed. 
+
+***Table of GAA covariates***
+
+We adapted this method to using a [stream layer](https://www.nwfsc.noaa.gov/research/datatech/data/col_basin_hist_project/index.cfm) created by Morgan Bond and Tyler Nodine at the Northwest Fisheries Science Center. This layer consisted of a line file divided into 200m reaches with various attributes attached to each reach. The line file is based on the [National Hydrography Dataset High Resolution](https://www.usgs.gov/core-science-systems/ngp/national-hydrography/nhdplus-high-resolution) (NHDPlus HR) dataset, which has a higher resolution, 1:24,000, compared to the older layer that the master sample points were chosen from. 
+
+We determined which reach was closest to each CHaMP site, and then followed a similar process as described above to model the log of predicted capacity using the attributes attached to each 200m reach as covariates. 
+
+***Table of 200m reach attributes***
