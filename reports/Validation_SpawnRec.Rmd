@@ -64,6 +64,8 @@ library(sf)
 library(QRFcapacity)
 library(janitor)
 library(ggpubr)
+library(ggrepel)
+library(scales)
 
 theme_set(theme_bw())
 ```
@@ -315,6 +317,191 @@ all_p = ggpubr::ggarrange(plotlist = comp_df$fig,
 #                               avg_cap * strm_lgth
 #                             }))
 ```
+
+```{r pt-rch-trp-comp}
+# create a comparison dataframe
+trp_comp = qrf_caps %>%
+  as_tibble() %>%
+  select(chnk_ESU_DPS:cap_se) %>%
+  mutate(method = "reach") %>%
+  bind_rows(qrf_caps2 %>%
+              as_tibble() %>%
+              select(chnk_ESU_DPS:cap_se) %>%
+              mutate(method = "point")) %>%
+  pivot_wider(id_cols = c(chnk_ESU_DPS:Trap),
+              names_from = "method",
+              values_from = c("tot_lgth",
+                              "n_rch", "n_pts",
+                              "cap", 
+                              "cap_se")) %>%
+  rename(n_pts = n_pts_point,
+         n_rch = n_rch_reach) %>%
+  select(-n_rch_point, -n_pts_reach) %>%
+  filter(!is.na(cap_reach),
+         !is.na(cap_point))
+
+# recalculate point capacity, using reach lengths
+trp_comp %<>%
+  mutate(cap_point = cap_point / tot_lgth_point * tot_lgth_reach)
+  
+# drop one outlier prediction
+trp_comp %<>%
+  filter(cap_reach < 1e10)
+
+# mark some SE as NA if too big
+trp_comp %<>%
+  mutate_at(vars(starts_with("cap_se")),
+            list(~ if_else(. > 1e10, 
+                           NA_real_,
+                           .)))
+
+lng_p = trp_comp %>%
+  ggplot(aes(x = tot_lgth_point/1000,
+             y = tot_lgth_reach/1000,
+             color = chnk_MPG)) +
+  geom_abline(linetype = 2) +
+  geom_point(size = 5) +
+  geom_text_repel(aes(label = Trap)) +
+  theme(legend.position = "bottom") +
+  labs(x = "Master Sample Points",
+       y = "200 m Reaches",
+       color = 'MPG',
+       title = "Length of Chinook Domain (km)")
+
+lng_rel_p = trp_comp %>%
+  mutate(lng_diff = tot_lgth_reach - tot_lgth_point,
+         lng_rel_diff = lng_diff / tot_lgth_point) %>%
+  ggplot(aes(x = Trap,
+             y = lng_rel_diff,
+             color = chnk_MPG)) +
+  geom_hline(yintercept = 0,
+             linetype = 2,
+             color = 'red') +
+  geom_point(size = 5) +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1),
+        legend.position = "bottom") +
+  labs(y = "Relative Difference",
+       color = 'MPG',
+       title = "Length of Chinook Domain (km)")
+
+
+
+cap_p = trp_comp %>%
+  mutate_at(vars(starts_with("cap")),
+            list(~ . / 1000)) %>%
+  ggplot(aes(x = cap_point,
+             y = cap_reach,
+             color = chnk_MPG)) +
+  geom_abline(linetype = 2) +
+  geom_errorbar(aes(ymin = cap_reach + cap_se_reach * qnorm(0.025),
+                    ymax = cap_reach + cap_se_reach * qnorm(0.975)),
+                width = 0) +
+  geom_errorbarh(aes(xmin = cap_point + cap_se_point * qnorm(0.025),
+                     xmax = cap_point + cap_se_point * qnorm(0.975)),
+                 height = 0) +
+  geom_point(size = 5) +
+  geom_text_repel(aes(label = Trap)) +
+  scale_x_continuous(trans = "log",
+                     breaks = breaks_pretty(n = 8)) +
+  scale_y_continuous(trans = "log",
+                     breaks = breaks_pretty(n = 8)) +
+  theme(legend.position = "bottom") +
+  labs(x = "Master Sample Points",
+       y = "200 m Reaches",
+       color = 'MPG',
+       title = "Capacity - Chinook Parr (x 1,000)")
+
+trp_comp %>%
+  mutate(cap_diff = cap_reach - cap_point,
+         cap_rel_diff = cap_diff / cap_point,
+         cap_diff_se = sqrt(cap_se_reach^2 + cap_se_point^2),
+         incl_zero = if_else(cap_diff + qnorm(0.025) * cap_diff_se < 0 &
+                               cap_diff + qnorm(0.975) * cap_diff_se > 0,
+                             T, F)) %>%
+  ggplot(aes(x = Trap,
+             y = cap_diff,
+             color = chnk_MPG)) +
+  geom_hline(yintercept = 0,
+             linetype = 2,
+             color = 'red') +
+  geom_errorbar(aes(ymin = cap_diff + cap_diff_se * qnorm(0.025),
+                    ymax = cap_diff + cap_diff_se * qnorm(0.975)),
+                width = 0,
+                position = position_dodge(width = 0.3)) +
+  geom_point(position = position_dodge(width = 0.3)) +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1),
+        legend.position = "bottom") +
+  labs(x = 'Trap',
+       y = 'Reach - Point',
+       color = "MPG")
+
+trp_comp %>%
+  mutate(cap_diff = cap_reach - cap_point,
+         cap_rel_diff = cap_diff / cap_point,
+         cap_diff_se = sqrt(cap_se_reach^2 + cap_se_point^2),
+         incl_zero = if_else(cap_diff + qnorm(0.025) * cap_diff_se < 0 &
+                               cap_diff + qnorm(0.975) * cap_diff_se > 0,
+                             T, F)) %>%
+  ggplot(aes(x = Trap,
+             y = cap_rel_diff,
+             color = chnk_MPG)) +
+  geom_hline(yintercept = 0,
+             linetype = 2,
+             color = 'red') +
+  # geom_errorbar(aes(ymin = cap_diff + cap_diff_se * qnorm(0.025),
+  #                   ymax = cap_diff + cap_diff_se * qnorm(0.975)),
+  #               width = 0,
+  #               position = position_dodge(width = 0.3)) +
+  geom_point(position = position_dodge(width = 0.3)) +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1),
+        legend.position = "bottom") +
+  labs(x = 'Trap',
+       y = '(Reach - Point) / Point',
+       color = "MPG")
+
+
+cap_dens_p = trp_comp %>%
+  mutate(cap_dens_point = cap_point/tot_lgth_point,
+         cap_dens_reach = cap_reach/tot_lgth_reach) %>%
+  # mutate(cap_dens_point = cap_point / tot_lgth_reach) %>%
+  ggplot(aes(x = cap_dens_point,
+             y = cap_dens_reach,
+             color = chnk_MPG)) +
+  geom_abline(linetype = 2) +
+  geom_point() +
+  geom_text_repel(aes(label = Trap)) +
+  theme(legend.position = "bottom") +
+  labs(x = "Master Sample Points",
+       y = "200 m Reaches",
+       color = 'MPG',
+       title = "Average Capacity Density (fish / m)")
+
+trp_comp %>%
+  mutate(cap_dens_point = cap_point/tot_lgth_point,
+         cap_dens_reach = cap_reach/tot_lgth_reach) %>%
+  mutate(dens_diff = cap_dens_reach - cap_dens_point,
+         dens_rel_diff = dens_diff / cap_dens_point) %>%
+  ggplot(aes(x = Trap,
+             y = dens_rel_diff,
+             color = chnk_MPG)) +
+  geom_hline(yintercept = 0,
+             linetype = 2,
+             color = 'red') +
+  geom_point(size = 5) +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1),
+        legend.position = "bottom") +
+  labs(y = "Relative Difference",
+       color = 'MPG',
+       title = "Average Capacity Density (fish / m)")
+
+
+
+```
+
 
 ```{r add-extra-cap-upper-lemhi, eval = T}
 # comp_df$rch_data[[which(comp_df$Trap == 'Upper Lemhi')]] %>% 
