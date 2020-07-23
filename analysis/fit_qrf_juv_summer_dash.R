@@ -251,11 +251,12 @@ all_covars = sel_hab_mets %>%
 all_covars[!all_covars %in% names(fish_hab)]
 
 qrf_mod_df = impute_missing_data(data = fish_hab %>%
-                                   select(-(FishSite:fish_dens)) %>%
+                                   select(-c(FishSite, Lat:fish_dens)) %>%
                                    distinct(),
                                  covars = all_covars,
                                  impute_vars = c('Watershed', 'Elev_M', 'Sin', 'Year', 'CUMDRAINAG'),
-                                 method = 'missForest') %>%
+                                 method = 'randomForestSRT') %>%
+                                 # method = 'missForest') %>%
   left_join(fish_hab %>%
               select(Year:fish_dens, VisitID)) %>%
   select(Species, Site, Watershed, Year, LON_DD, LAT_DD, fish_dens, VisitID, one_of(all_covars))
@@ -282,8 +283,8 @@ qrf_mods = qrf_mod_df %>%
                                select(one_of(covars)) %>%
                                as.matrix,
                              y = z %>%
-                               # mutate_at(vars(fish_dens),
-                               #           list(~ log(. + dens_offset))) %>%
+                               mutate_at(vars(fish_dens),
+                                         list(~ log(. + dens_offset))) %>%
                                select(fish_dens) %>%
                                as.matrix(),
                              keep.inbag = T,
