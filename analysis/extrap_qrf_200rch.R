@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Extrapolate QRF model to all 200 m reaches
 # Created: 3/20/2020
-# Last Modified: 4/6/2020
+# Last Modified: 7/17/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -22,7 +22,7 @@ theme_set(theme_bw())
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[3]
+               'redds')[2]
 
 load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
@@ -662,17 +662,37 @@ rch_200_cap = rch_200 %>%
   select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
          chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
          sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
-  left_join(all_preds)
+  left_join(all_preds %>%
+              select(-HUC8_code)) %>%
+  filter(reach_leng < 500)
 
 rm(mod_data_weights, model_svy_df, extrap_covars)
 rm(rch_200, all_preds)
 
 # save it
 # as GPKG
-st_write(rch_200_cap,
-         dsn = paste0('output/gpkg/Rch_Cap_', mod_choice, '.gpkg'),
-         driver = 'GPKG')
+# st_write(rch_200_cap,
+#          dsn = paste0('output/gpkg/Rch_Cap_', mod_choice, '.gpkg'),
+#          driver = 'GPKG')
 
+
+# try splitting it up and appending each one subsequently, to help speed it up.
+rch_200_cap %>%
+  mutate_at(vars(HUC6_name),
+            list(fct_explicit_na)) %>%
+  tabyl(HUC6_name) %>%
+  adorn_totals()
+
+rch_200_cap_split = rch_200_cap %>%
+  group_split(HUC6_name)
+for(i in 1:length(rch_200_cap_split)) {
+  cat(paste("Working on group", i, "with", nrow(rch_200_cap_split[[i]]), " rows\n"))
+  
+  st_write(rch_200_cap_split[[i]],
+           dsn = paste0('output/gpkg/Rch_Cap_', mod_choice, '.gpkg'),
+           driver = 'GPKG',
+           append = if_else(i == 1, F, T))
+}
 
 # as shapefile
 st_write(rch_200_cap,
