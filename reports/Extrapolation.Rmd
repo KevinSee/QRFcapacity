@@ -11,8 +11,8 @@ output:
     - --lua-filter=templates/scholarly-metadata.lua
     - --lua-filter=templates/author-info-blocks2.lua
     - --lua-filter=templates/pagebreak.lua
-    fig_height: 6
-    fig_width: 8
+    fig_height: 8
+    fig_width: 6
     number_sections: no
     includes:
       in_header: "templates/header_ABS.tex"
@@ -30,8 +30,8 @@ output:
     - --lua-filter=templates/pagebreak.lua
   bookdown::word_document2: 
     fig_caption: yes
-    fig_height: 4
-    fig_width: 7
+    fig_height: 7
+    fig_width: 6
     toc: yes
     number_sections: no
     pandoc_args:
@@ -44,7 +44,7 @@ institute:
 csl: "templates/american-fisheries-society.csl"
 # bibliography: references.bib
 bibliography: 
-  - /Users/seek/OneDrive - Merck Sharp & Dohme, Corp/Bibliography/Research.bib
+  - references.bib
   - packages.bib
 ---
 
@@ -549,12 +549,15 @@ pts_rch_cor %>%
 
 
 ```{r comp-xy, fig.cap = "Capacity estimates for each population, calculated with the master sample points method on the x-axis and the line network on the y-axis."}
-cap_xy_p
+cap_xy_p +
+  guides(color = guide_legend(ncol = 3))
 
 ```
 
-```{r comp-rel, fig.cap = "Relative difference between the capacity estimates for each population, using the master sample points method as the reference."}
-rel_diff_p
+```{r comp-rel, fig.height = 7, fig.cap = "Relative difference between the capacity estimates for each population, using the master sample points method as the reference."}
+rel_diff_p +
+  guides(color = guide_legend(ncol = 3)) +
+  theme(axis.text.x = element_text(size = 5))
 ```
 
 # Maps
