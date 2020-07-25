@@ -85,14 +85,14 @@ knitr::write_bib(c("base",
                  file = 'packages.bib')
 ```
 
-```{r lifestage}
+```{r lifestage, eval = F}
 # which QRF model to use?
 mod_choice = c('juv_summer',
                'juv_summer_dash',
                'redds')[2]
 ```
 
-```{r reach-capacity}
+```{r reach-capacity, eval = F}
 # read in capacity estimates and create a shapefile
 load(paste0('../output/modelFits/extrap_200rch_', mod_choice, '.rda'))
 in_covar_range_rch = model_svy_df$pred_all_rchs[[1]] %>%
@@ -137,11 +137,68 @@ rch_200_cap = rch_200 %>%
   st_transform(st_crs(chnk_domain)) %>%
   select(everything(), geometry)
 
+rch_200_cap %<>%
+  mutate(model_choice = mod_choice) %>%
+  select(model_choice, everything())
+
 rm(mod_data_weights, model_svy_df, extrap_covars, rch_200, all_preds)
 ```
 
+```{r reach-cap-all-models}
+all_rch_preds = c('juv_summer',
+                  'juv_summer_dash',
+                  'redds') %>%
+  as.list() %>%
+  map_df(.f = function(x) {
+    load(paste0('../output/modelFits/extrap_200rch_', x, '.rda'))
+    all_preds %>%
+      mutate(model_choice = x) %>%
+      select(model_choice, everything())
+  })
 
-```{r master-point-capacity}
+in_covar_range_rch = c('juv_summer',
+                       'juv_summer_dash',
+                       'redds') %>%
+  as.list() %>%
+  map_df(.f = function(x) {
+    load(paste0('../output/modelFits/extrap_200rch_', x, '.rda'))
+    model_svy_df$pred_all_rchs[[1]] %>%
+      select(UniqueID, in_covar_range) %>%
+      mutate(model_choice = x) %>%
+      select(model_choice, everything())
+  })
+
+data("chnk_domain")
+data("rch_200")
+
+rch_200_cap = rch_200 %>%
+  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
+         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
+  left_join(all_rch_preds %>%
+              select(-HUC8_code)) %>%
+  mutate_at(vars(chnk_ESU_DPS:chnk_NWR_NAME, sthd_ESU_DPS:sthd_NWR_NAME),
+            list(fct_explicit_na)) %>%
+  mutate(chnk_tot = chnk_per_m * reach_leng,
+         chnk_tot_se = chnk_per_m_se * reach_leng) %>%
+  mutate(sthd_tot = sthd_per_m * reach_leng,
+         sthd_tot_se = sthd_per_m_se * reach_leng) %>%
+  mutate_at(vars(starts_with("chnk_tot")),
+            list(~ if_else(!chnk, NA_real_, .))) %>%
+  mutate_at(vars(starts_with("sthd_tot")),
+            list(~ if_else(!sthd, NA_real_, .))) %>%
+  # focus on andromous ranges
+  filter(chnk | sthd) %>%
+  left_join(in_covar_range_rch) %>%
+  st_transform(st_crs(chnk_domain)) %>%
+  select(everything(), geometry)
+
+# rm(mod_data_weights, model_svy_df, extrap_covars, rch_200, all_preds)
+
+```
+
+
+```{r master-point-capacity, eval = F}
 # read in capacity estimates and create a shapefile
 load(paste0('../output/modelFits/extrap_mastPts_', mod_choice, '.rda'))
 in_covar_range_pts = model_svy_df$pred_all_rchs[[1]] %>%
@@ -242,7 +299,9 @@ chnk_strm_cap = chnk_strm_lng %>%
   mutate(chnk_tot = chnk_per_m * length_m,
          chnk_tot_se = chnk_per_m_se * length_m)
 
-
+chnk_strm_cap %<>%
+  mutate(model_choice = mod_choice) %>%
+  select(model_choice, everything())
 
 sthd_domain = rch_200 %>%
   filter(sthd) %>%
@@ -290,18 +349,159 @@ sthd_strm_cap = sthd_strm_lng %>%
   mutate(sthd_tot = sthd_per_m * length_m,
          sthd_tot_se = sthd_per_m_se * length_m)
 
+sthd_strm_cap %<>%
+  mutate(model_choice = mod_choice) %>%
+  select(model_choice, everything())
 
 rm(mod_data_weights, model_svy_df, extrap_covars, gaa, all_preds)
 ```
 
+```{r master-point-cap-all-models}
+all_pts_preds = c('juv_summer',
+              'juv_summer_dash',
+              'redds') %>%
+  as.list() %>%
+  map_df(.f = function(x) {
+    load(paste0('../output/modelFits/extrap_mastPts_', x, '.rda'))
+    all_preds %>%
+      mutate(model_choice = x) %>%
+      select(model_choice, everything())
+  })
+
+data("chnk_domain")
+data("gaa")
+
+master_pts = gaa %>%
+  select(Site, GNIS_Name = GNIS_NA, 
+         HUC6_code = HUC_6,
+         HUC6_name = HUC6NmNRCS,
+         HUC8_code = HUC_8,
+         Lat, Lon) %>%
+  filter(!is.na(Lon), !is.na(Lat)) %>%
+  st_as_sf(coords = c('Lon', 'Lat'),
+           crs = 4326) %>%
+  st_transform(crs = st_crs(chnk_domain))
+
+# re-define speceies domains to match 200m reaches
+
+# Chinook
+chnk_domain = rch_200 %>%
+  filter(chnk) %>%
+  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+         starts_with("chnk"))
+
+chnk_buff = chnk_domain %>%
+  st_buffer(dist = 200,
+            endCapStyle = 'FLAT')
+
+# filter out points outside Chinook domain
+keep_rows = master_pts %>%
+  st_covered_by(chnk_buff) %>%
+  as_tibble() %>%
+  pull(row.id) %>%
+  unique() %>%
+  sort()
+
+chnk_pts_cap = master_pts %>%
+  slice(keep_rows) %>%
+  st_join(chnk_domain %>%
+            select(-one_of(names(master_pts))),
+          join = st_nearest_feature) %>%
+  left_join(all_pts_preds)
+
+rm(keep_rows)
+
+chnk_strm_lng = chnk_domain %>%
+  mutate(length_m = st_length(.)) %>%
+  mutate_at(vars(chnk_ESU_DPS, chnk_NWR_POPID, chnk_NWR_NAME, chnk_MPG, GNIS_Name),
+            list(fct_explicit_na)) %>%
+  group_by(chnk_ESU_DPS, chnk_MPG, chnk_NWR_POPID, chnk_NWR_NAME, GNIS_Name) %>%
+  summarise_at(vars(length_m, reach_leng),
+               list(sum))
+
+chnk_strm_cap = chnk_strm_lng %>%
+  full_join(chnk_pts_cap %>%
+              mutate_at(vars(chnk_ESU_DPS, chnk_NWR_POPID, chnk_NWR_NAME, chnk_MPG, GNIS_Name),
+                        list(fct_explicit_na)) %>%
+              group_by(model_choice, chnk_ESU_DPS, chnk_MPG, chnk_NWR_POPID, chnk_NWR_NAME, GNIS_Name) %>%
+              summarise(n_pts = n_distinct(Site),
+                        chnk_per_m = mean(chnk_per_m, na.rm = T),
+                        chnk_per_m_se = mean(chnk_per_m_se, na.rm = T)) %>%
+              # summarise_at(vars(chnk_per_m,
+              #                   chnk_per_m_se),
+              #              list(mean),
+              #              na.rm = T) %>%
+              st_drop_geometry() %>%
+              as_tibble()) %>%
+  mutate(chnk_tot = chnk_per_m * length_m,
+         chnk_tot_se = chnk_per_m_se * length_m)
+
+# steelhead
+sthd_domain = rch_200 %>%
+  filter(sthd) %>%
+  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+         starts_with("sthd"))
+
+sthd_buff = sthd_domain %>%
+  st_buffer(dist = 200,
+            endCapStyle = 'FLAT')
+
+# filter out points outside Chinook domain
+keep_rows = master_pts %>%
+  st_covered_by(sthd_buff) %>%
+  as_tibble() %>%
+  pull(row.id) %>%
+  unique() %>%
+  sort()
+
+sthd_pts_cap = master_pts %>%
+  slice(keep_rows) %>%
+  st_join(sthd_domain %>%
+            select(-one_of(names(master_pts))),
+          join = st_nearest_feature) %>%
+  left_join(all_pts_preds)
+rm(keep_rows)
+
+sthd_strm_lng = sthd_domain %>%
+  mutate(length_m = st_length(.)) %>%
+  mutate_at(vars(sthd_ESU_DPS, sthd_NWR_POPID, sthd_NWR_NAME, sthd_MPG, GNIS_Name),
+            list(fct_explicit_na)) %>%
+  group_by(sthd_ESU_DPS, sthd_MPG, sthd_NWR_POPID, sthd_NWR_NAME, GNIS_Name) %>%
+  summarise_at(vars(length_m, reach_leng),
+               list(sum))
+
+sthd_strm_cap = sthd_strm_lng %>%
+  full_join(sthd_pts_cap %>%
+              mutate_at(vars(sthd_ESU_DPS, sthd_NWR_POPID, sthd_NWR_NAME, sthd_MPG, GNIS_Name),
+                        list(fct_explicit_na)) %>%
+              group_by(model_choice, sthd_ESU_DPS, sthd_MPG, sthd_NWR_POPID, sthd_NWR_NAME, GNIS_Name) %>%
+              summarise(n_pts = n_distinct(Site),
+                        sthd_per_m = mean(sthd_per_m, na.rm = T),
+                        sthd_per_m_se = mean(sthd_per_m_se, na.rm = T)) %>%
+              # summarise_at(vars(sthd_per_m,
+              #                   sthd_per_m_se),
+              #              list(mean),
+              #              na.rm = T) %>%
+              st_drop_geometry() %>%
+              as_tibble()) %>%
+  mutate(sthd_tot = sthd_per_m * length_m,
+         sthd_tot_se = sthd_per_m_se * length_m)
+
+rm(mod_data_weights, model_svy_df, extrap_covars, gaa, all_preds)
+
+```
+
+
 ```{r create-figures}
 
 comp_pop = chnk_strm_cap %>%
-  group_by(ESU_DPS = chnk_ESU_DPS, 
+  group_by(model_choice,
+           ESU_DPS = chnk_ESU_DPS, 
            MPG = chnk_MPG, 
            NWR_POPID = chnk_NWR_POPID, 
            NWR_NAME = chnk_NWR_NAME) %>%
   summarise(reach_leng = sum(reach_leng, na.rm = T),
+            n_ids = sum(n_pts, na.rm = T),
             cap_tot = sum(chnk_tot, na.rm = T),
             cap_tot_se = sqrt(sum(chnk_tot_se^2, na.rm = T))) %>%
   st_drop_geometry() %>%
@@ -309,11 +509,13 @@ comp_pop = chnk_strm_cap %>%
   mutate(Method = 'Points') %>%
   bind_rows(rch_200_cap %>%
               filter(chnk) %>%
-              group_by(ESU_DPS = chnk_ESU_DPS, 
+              group_by(model_choice,
+                       ESU_DPS = chnk_ESU_DPS, 
                        MPG = chnk_MPG, 
                        NWR_POPID = chnk_NWR_POPID, 
                        NWR_NAME = chnk_NWR_NAME) %>%
               summarise(reach_leng = sum(reach_leng),
+                        n_ids = n_distinct(UniqueID),
                         cap_tot = sum(chnk_tot, na.rm = T),
                         cap_tot_se = sqrt(sum(chnk_tot_se^2, na.rm = T))) %>%
               st_drop_geometry() %>%
@@ -322,11 +524,13 @@ comp_pop = chnk_strm_cap %>%
   mutate(Species = "Chinook") %>%
   select(Species, everything()) %>%
   bind_rows(sthd_strm_cap %>%
-              group_by(ESU_DPS = sthd_ESU_DPS, 
+              group_by(model_choice,
+                       ESU_DPS = sthd_ESU_DPS, 
                        MPG = sthd_MPG, 
                        NWR_POPID = sthd_NWR_POPID, 
                        NWR_NAME = sthd_NWR_NAME) %>%
               summarise(reach_leng = sum(reach_leng, na.rm = T),
+                        n_ids = sum(n_pts, na.rm = T),
                         cap_tot = sum(sthd_tot, na.rm = T),
                         cap_tot_se = sqrt(sum(sthd_tot_se^2, na.rm = T))) %>%
               st_drop_geometry() %>%
@@ -334,11 +538,13 @@ comp_pop = chnk_strm_cap %>%
               mutate(Method = 'Points') %>%
               bind_rows(rch_200_cap %>%
                           filter(sthd) %>%
-                          group_by(ESU_DPS = sthd_ESU_DPS, 
+                          group_by(model_choice,
+                                   ESU_DPS = sthd_ESU_DPS, 
                                    MPG = sthd_MPG, 
                                    NWR_POPID = sthd_NWR_POPID, 
                                    NWR_NAME = sthd_NWR_NAME) %>%
                           summarise(reach_leng = sum(reach_leng),
+                                    n_ids = n_distinct(UniqueID),
                                     cap_tot = sum(sthd_tot, na.rm = T),
                                     cap_tot_se = sqrt(sum(sthd_tot_se^2, na.rm = T))) %>%
                           st_drop_geometry() %>%
@@ -350,16 +556,22 @@ comp_pop = chnk_strm_cap %>%
 # remove a few points that aren't useful
 comp_pop %<>%
   filter(NWR_NAME != "na") %>%
+  filter(NWR_NAME != "(Missing)") %>%
   filter(!grepl("Outside legal", ESU_DPS)) %>%
-  filter(cap_tot < 1e10)
+  mutate(cap_dens = cap_tot / reach_leng) %>%
+  filter(cap_dens < 21) %>%
+  mutate(pop_label = str_split(NWR_NAME, " - ", simplify = T)[,2],
+         pop_label = str_remove(pop_label, " River"))
 
 pts_rch_cor = comp_pop %>%
-  pivot_wider(id_cols = c(Species, ESU_DPS:reach_leng),
+  pivot_wider(id_cols = c(Species, 
+                          model_choice,
+                          ESU_DPS:NWR_NAME),
               names_from = "Method",
-              values_from = c("cap_tot", "cap_tot_se")) %>%
+              values_from = c("reach_leng", "n_ids", "cap_tot", "cap_tot_se")) %>%
   filter(cap_tot_Points > 0,
          cap_tot_Reaches > 0) %>%
-  group_by(Species) %>%
+  group_by(Species, model_choice) %>%
   nest() %>%
   mutate(corr = map(data,
                     .f = function(x) {
@@ -374,14 +586,17 @@ pts_rch_cor = comp_pop %>%
                              }))
 
 cap_xy_p = comp_pop %>%
-  filter(NWR_NAME != "na") %>%
-  filter(!grepl("Outside legal", ESU_DPS)) %>%
-  filter(cap_tot < 1e10) %>%
-  mutate(pop_label = str_split(NWR_NAME, " - ", simplify = T)[,2],
-         pop_label = str_remove(pop_label, " River")) %>%
-  pivot_wider(id_cols = c(Species, ESU_DPS:reach_leng, pop_label),
+  mutate(model_choice = recode(model_choice,
+                               'juv_summer' = 'CHaMP',
+                               'juv_summer_dash' = 'DASH',
+                               'redds' = 'Redds')) %>%
+  pivot_wider(id_cols = c(Species, 
+                          model_choice,
+                          ESU_DPS:NWR_NAME,
+                          pop_label),
               names_from = "Method",
-              values_from = c("cap_tot", "cap_tot_se")) %>%
+              values_from = c("reach_leng", "cap_tot", "cap_tot_se")) %>%
+  # filter(reach_leng > 0)
   filter(cap_tot_Points > 0,
          cap_tot_Reaches > 0) %>%
   ggplot(aes(x = cap_tot_Points/10000,
@@ -398,28 +613,29 @@ cap_xy_p = comp_pop %>%
   #                  show.legend = F) +
   theme_classic() +
   theme(legend.position = "bottom") +
-  facet_wrap(~ Species, 
+  facet_wrap(~ model_choice + Species,
+             ncol = 2,
              scales = 'free') +
   labs(x = "Master Sample Points (x10,000)",
        y = "200 m Reaches (x10,000)",
        title = "Capacity")
 
 rel_diff_p = comp_pop %>%
-  filter(NWR_NAME != "na") %>%
-  filter(!grepl("Outside legal", ESU_DPS)) %>%
-  filter(cap_tot < 1e10) %>%
-  mutate(pop_label = str_split(NWR_NAME, " - ", simplify = T)[,2],
-         pop_label = str_remove(pop_label, " River")) %>%
+  mutate(model_choice = recode(model_choice,
+                               'juv_summer' = 'CHaMP',
+                               'juv_summer_dash' = 'DASH',
+                               'redds' = 'Redds')) %>%
   mutate_at(vars(ESU_DPS:NWR_NAME, pop_label),
             list(as.factor)) %>%
   mutate(pop_label = fct_reorder(pop_label,
                                  MPG,
                                  .fun = function(x) median(as.integer(x)))) %>%
   pivot_wider(id_cols = c(Species, 
-                          ESU_DPS:reach_leng, 
+                          model_choice,
+                          ESU_DPS:NWR_NAME,
                           pop_label),
               names_from = "Method",
-              values_from = c("cap_tot", "cap_tot_se")) %>%
+              values_from = c("reach_leng", "cap_tot", "cap_tot_se")) %>%
   filter(cap_tot_Points > 0,
          cap_tot_Reaches > 0) %>%
   mutate(diff = cap_tot_Reaches - cap_tot_Points,
@@ -427,16 +643,15 @@ rel_diff_p = comp_pop %>%
   ggplot(aes(x = pop_label,
              y = rel_diff,
              color = MPG)) +
-  # scale_color_brewer(palette = "Set1",
-  #                    name = 'MPG',
-  #                    guide = guide_legend(nrow = 3)) +
   geom_hline(yintercept = 0,
              linetype = 2) +
   geom_point(size = 4) +
   theme(legend.position = "bottom",
         axis.text.x = element_text(angle = 45,
                                    hjust = 1)) +
-  facet_wrap(~ Species, 
+  # facet_wrap(~ Species, 
+  #            scales = 'free_x') +
+  facet_grid(model_choice ~ Species,
              scales = 'free_x') +
   labs(x = "Population",
        y = "Relative Difference",
@@ -534,12 +749,16 @@ coef_rch %>%
 
 # Capacity Comparisons
 
-## Summer Juveniles
+We computed the total capacity of each species in each population using both methods, for summer juveniles (using both CHaMP and DASH habitat metrics) and redds, and compared them. A handful of populations with extrememly inflated estimates were left out. The correlations between the two estimates are shown in Table \@ref(tab:corr-tab). 
 
-We computed the total capacity of each population using both methods, and compared them. The correlation between the two estimates is shown in Table \@ref(tab:corr-tab). 
+<!-- We could go back and fix any extrapolation estimate that is too high to be the max observed density, or the max predicted density at a CHaMP site. This might help shrink some of the extreme values -->
 
 ```{r corr-tab}
 pts_rch_cor %>%
+  mutate(model_choice = recode(model_choice,
+                               'juv_summer' = 'CHaMP',
+                               'juv_summer_dash' = 'DASH',
+                               'redds' = 'Redds')) %>%
   rename(r = corr) %>%
   kable(booktabs = T,
         digits = 3,
@@ -547,6 +766,7 @@ pts_rch_cor %>%
   kable_styling()
 ```
 
+We plotted one estimate against the other in Figure \@ref(fig:comp-xy), and showed the relative difference in Figure \@ref(fig:comp-rel).
 
 ```{r comp-xy, fig.cap = "Capacity estimates for each population, calculated with the master sample points method on the x-axis and the line network on the y-axis."}
 cap_xy_p +
@@ -566,6 +786,7 @@ This shows the difference in how the results can be visualized.
 
 ```{r lem-map, fig.cap='Plots of Chinook parr capacity in the Lemhi, using the master sample points method (A) and the 200 m reach method (B).'}
 lem_rch = rch_200_cap %>%
+  filter(model_choice == 'juv_summer_dash') %>%
   filter(grepl('Lemhi', chnk_NWR_NAME)) %>%
   filter(chnk) %>%
   ggplot(aes(color = chnk_per_m2)) +
@@ -574,6 +795,7 @@ lem_rch = rch_200_cap %>%
                         name = expression("Parr /" ~ m^2))
 
 lem_pts = chnk_pts_cap %>%
+  filter(model_choice == 'juv_summer_dash') %>%
   filter(grepl('Lemhi', chnk_NWR_NAME)) %>%
   ggplot(aes(color = chnk_per_m2)) +
   geom_sf() +
@@ -589,6 +811,8 @@ ggarrange(plotlist = list(lem_pts, lem_rch),
 
 ```
 
+# Discussion
 
+For both species, across all three QRF models, the two extrapolation models resulted in very similar estimates of total capacity at the population scale. Although the master sample point method has been used for several years, there is no reason to believe estimates from that method are inherently superior to using a line network, so even in the cases when the two models result in different estimates of capacity, it is difficult to say which is "better". On the other hand, there are several reasons to support using the line network method, apart from the actual results.
 
 # References
