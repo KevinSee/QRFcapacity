@@ -7,16 +7,19 @@
 RepoDesign.txt
 inst/doc
 
-
 data/raw
+
+data/prepped/*.gpkg
 data/prepped/outgoing
 data/prepped/NorWeST_temps.dbf
 data/prepped/NorWeST_temps.prj
 data/prepped/NorWeST_temps.shp
 data/prepped/NorWeST_temps.shx
 data/prepped/champ_frame_data.csv
-output/shapefiles
-output/gpkg
-data/prepped/*.gpkg
-
 data/prepped/200m_reaches/
+
+output/shapefiles/
+output/gpkg/
+
+
+
