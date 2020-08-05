@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Prep summer juvenile fish data
 # Created: 5/14/2019
-# Last Modified: 9/17/19
+# Last Modified: 8/5/20
 # Notes: need info for site name, fish crew, sample data, site length, watershed AND
 # number marks, captures, recaptures OR
 # 1st, 2nd, 3rd pass depletion OR
@@ -154,8 +154,10 @@ ugr = read_excel('data/raw/fish/summer/ODFW_Export_Output4Kevin.xlsx') %>%
 #-----------------------------------------------------------------
 # use the fish database provided by Nick Weber for fish data from ELR
 elr_conn = DBI::dbConnect(RSQLite::SQLite(),
-                        '/Users/kevin/Dropbox/ISEMP/Data/Fish/John Day/JohnDayRovingFish_MASTER.db')
+                          'data/raw/fish/summer/JohnDayRovingFish_MASTER.db')
+
 src_dbi(elr_conn)
+db_list_tables(elr_conn)
 
 dce = tbl(elr_conn,
           'fld_DataCollectionEvent') %>%
