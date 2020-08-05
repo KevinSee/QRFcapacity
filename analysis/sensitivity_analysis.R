@@ -41,10 +41,6 @@ rel_imp_list = qrf_mods %>%
       select(Metric, Name, everything())
   })
 
-tibble(Species = names(qrf_mods),
-       Org_QRF = qrf_mods,
-       rel_imp = rel_imp_list)
-
 #-----------------------------------------------------------------
 # prep some habitat data
 #-----------------------------------------------------------------
@@ -145,6 +141,21 @@ hab_impute = hab_avg %>%
 #-----------------------------------------------------------------
 # step through dropping metrics one by one
 #-----------------------------------------------------------------
+tibble(Species = names(qrf_mods),
+       Full_QRF = qrf_mods,
+       rel_imp = rel_imp_list)
+
+drop_df = tibble(covars = rep(NA, length(rel_imp_list$Chinook$Metric))) %>%
+  mutate(covars = map(covars,
+                      .f = identity))
+for(i in 1:nrow(drop_df)) {
+  drop_df$covars[i] = list(as.character(rel_imp_list$Chinook$Metric)[1:i])
+}
+drop_df %<>%
+  mutate(qrf_mod = )
+
+
+
 qrf_mod_df %>%
   group_by(Species) %>%
   nest() %>%
@@ -154,6 +165,6 @@ qrf_mod_df %>%
               nest() %>%
               rename(metrics = data))
 
-tibble(Species == 'Chinook',
+tibble(Species = 'Chinook',
        n_covars = sum(sel_hab_mets$Species == 'Chinook'),
-       model = qrf_mods$Chinook)
+       model = list(qrf_mods$Chinook))
