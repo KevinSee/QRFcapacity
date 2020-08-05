@@ -452,11 +452,14 @@ mod_data_weights = mod_data %>%
 
 rch_pred = rch_200_df %>%
   mutate(in_covar_range = ifelse(UniqueID %in% out_range_rchs, F, T)) %>%
-  gather(metric_nm, value, one_of(extrap_num)) %>%
+  pivot_longer(cols = one_of(extrap_num),
+               names_to = "metric_nm",
+               values_to = "value") %>%
   left_join(extrap_summ) %>%
   mutate(norm_value = (value - metric_mean) / metric_sd) %>%
   select(-(value:metric_sd)) %>%
-  spread(metric_nm, norm_value)
+  pivot_wider(names_from = "metric_nm",
+              values_from = "norm_value")
 
 #-------------------------------------------------------------
 # Set up the survey design.
@@ -772,7 +775,7 @@ model_lm_df = mod_data %>%
                            }))
 
 # fit various random forest models
-# to account for design weights, might need to create new dataset by resampling original data, with probabilities weighted by design weights
+# to account for design weights, might need to create new dataset by resampling original data, with probabilities weighted by design weights - update: this may not be a good idea, I think it biases the out-of-bag error rates
 model_rf_df = inner_join(pred_hab_df,
                          rch_200_df %>%
                            select(UniqueID, one_of(extrap_covars))) %>%
@@ -830,8 +833,72 @@ model_rf_df = inner_join(pred_hab_df,
                                                                    newdata = y)))
                            }))
 
+# using the randomForestSRC package
+library(randomForestSRC)
+model_rfsrc_df = inner_join(pred_hab_df,
+                            rch_200_df %>%
+                              select(UniqueID, one_of(extrap_covars))) %>%
+  gather(response, qrf_cap, matches('per_m')) %>%
+  mutate(log_qrf_cap = log(qrf_cap)) %>%
+  group_by(Species, response) %>%
+  nest() %>%
+  ungroup()%>%
+  mutate(mod_no_champ = map(data,
+                            .f = function(x) {
+                              rfsrc(full_form,
+                                    data = as.data.frame(x),
+                                    ntree = 1000)
+                            }),
+         mod_champ = map(data,
+                         .f = function(x) {
+                           rfsrc(update(full_form, .~. + Watershed),
+                                 data = as.data.frame(x),
+                                 ntree = 1000)
+                         })) %>%
+  # make predictions at all possible reaches, using both models
+  mutate(pred_all_rchs = list(rch_200_df %>%
+                                mutate(in_covar_range = ifelse(UniqueID %in% out_range_rchs, F, T)) %>%
+                                select(UniqueID, in_covar_range, everything())),
+         # which reaches are in CHaMP watersheds? 
+         pred_champ_rchs = map2(pred_all_rchs,
+                                mod_champ,
+                                .f = function(x,y) {
+                                  x %>%
+                                    left_join(pred_hab_df %>%
+                                                select(UniqueID, Watershed) %>%
+                                                left_join(rch_200_df %>%
+                                                            select(UniqueID, HUC8_code)) %>%
+                                                select(HUC8_code, Watershed) %>%
+                                                distinct()) %>%
+                                    filter(!is.na(Watershed)) %>%
+                                    filter(Watershed %in% unique(pred_hab_df$Watershed)) %>%
+                                    mutate_at(vars(Watershed),
+                                              list(as.factor))
+                                })) %>%
+  mutate(pred_no_champ = map2(mod_no_champ,
+                              pred_all_rchs,
+                              .f = function(x, y) {
+                                preds = predict(x,
+                                                newdata = y,
+                                                na.action = "na.impute")
+                                y %>%
+                                  select(UniqueID) %>%
+                                  mutate(response = preds$predicted)
+                              }),
+         pred_champ = map2(mod_champ,
+                           pred_champ_rchs,
+                           .f = function(x, y) {
+                             y %>%
+                               select(UniqueID) %>%
+                               bind_cols(tibble(response = predict(x,
+                                                                   newdata = y,
+                                                                   na.action = "na.impute")$predicted))
+                           }))
+
+# compare all the predictions
 preds_comp = list('Survey' = model_svy_df,
                   "lm" = model_lm_df,
+                  "SRC" = model_rfsrc_df,
                   "RF" = model_rf_df) %>%
   map_df(.id = 'model',
          .f = function(x) {
