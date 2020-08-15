@@ -160,6 +160,141 @@ pred_hab_df = pred_hab_sites %>%
   filter((Species == 'Steelhead' & sthd) |
            (Species == 'Chinook' & chnk))
 
+#----------------------------------------
+# prep 200 m reaches for extrapolation
+#----------------------------------------
+rch_200_df = rch_200 %>%
+  st_drop_geometry() %>%
+  as_tibble() %>%
+  mutate_at(vars(regime),
+            list(~ as.factor(as.character(.))))
+
+extrap_covars = names(rch_200_df)[c(18:20,
+                                    23:29,
+                                    37, 40:42)]
+
+# what type of covariate is each GAA?
+extrap_class = rch_200_df %>%
+  select(one_of(extrap_covars)) %>%
+  as.list() %>%
+  map_chr(.f = function(x) class(x)[1])
+
+# which ones are numeric?
+extrap_num = names(extrap_class)[extrap_class %in% c('integer', 'numeric')]
+# which ones are categorical?
+extrap_catg = names(extrap_class)[extrap_class %in% c('factor', 'character', 'ordered')]
+
+# compare range of covariates from model dataset and prediction dataset
+range_comp = bind_rows(rch_200_df %>%
+                         filter(!UniqueID %in% unique(pred_hab_sites$UniqueID)) %>%
+                         select(UniqueID,
+                                one_of(extrap_num)) %>%
+                         gather(Metric, value, -UniqueID) %>%
+                         mutate(Source = 'non-CHaMP Reaches'),
+                       rch_200_df %>%
+                         filter(UniqueID %in% unique(pred_hab_sites$UniqueID)) %>%
+                         select(UniqueID,
+                                one_of(extrap_num)) %>%
+                         distinct() %>%
+                         gather(Metric, value, -UniqueID) %>%
+                         mutate(Source = 'CHaMP Reaches')) %>%
+  mutate_at(vars(Source, Metric),
+            list(as.factor))
+
+range_max = range_comp %>%
+  group_by(Metric, Source) %>%
+  summarise_at(vars(value),
+               tibble::lst(min, max),
+               na.rm = T) %>%
+  filter(Source == 'CHaMP Reaches') %>%
+  ungroup() %>%
+  gather(type, value, -Metric, -Source)
+
+
+# covar_range_p = range_comp %>%
+#   ggplot(aes(x = Source,
+#              y = value,
+#              fill = Source)) +
+#   geom_boxplot() +
+#   facet_wrap(~ Metric,
+#              scales = 'free') +
+#   geom_hline(data = range_max,
+#              aes(yintercept = value),
+#              lty = 2,
+#              color = 'darkgray') +
+#   theme_minimal()
+
+# covar_range_p
+
+# # correlation between numeric covariates
+# rch_200_df %>%
+#   select(one_of(extrap_num)) %>%
+#   cor(method = 'spearman',
+#       use = "pairwise")
+
+
+# Center the covariates
+# filter out reaches with covariates outside range of covariates used to fit extrapolation model
+out_range_rchs = rch_200_df %>%
+  select(one_of(extrap_num), UniqueID) %>%
+  gather(Metric, value, -UniqueID) %>%
+  left_join(select(range_max, -Source) %>%
+              spread(type, value)) %>%
+  group_by(Metric) %>%
+  filter(value > max |
+           value < min) %>%
+  ungroup() %>%
+  pull(UniqueID) %>%
+  unique()
+
+# center covariates
+extrap_summ = inner_join(pred_hab_df %>%
+                        select(UniqueID) %>%
+                        distinct(),
+                      rch_200_df %>%
+                        select(UniqueID, one_of(extrap_num))) %>%
+  gather(metric_nm, value, -UniqueID) %>%
+  group_by(metric_nm) %>%
+  summarise(metric_mean = mean(value, na.rm=T),
+            metric_sd = sd(value, na.rm=T)) %>%
+  ungroup()
+
+# extrapolation model data set, with normalized covariates
+mod_data = inner_join(pred_hab_df,
+                      rch_200_df %>%
+                        select(UniqueID, one_of(extrap_num))) %>%
+  gather(metric_nm, value, one_of(extrap_num)) %>%
+  left_join(extrap_summ) %>%
+  mutate(norm_value = (value - metric_mean) / metric_sd) %>%
+  select(-(value:metric_sd)) %>%
+  spread(metric_nm, norm_value) %>%
+  left_join(rch_200_df %>%
+              select(UniqueID, one_of(extrap_catg)))
+
+sum(is.na(mod_data))
+
+# mod_data %<>%
+#   bind_cols(mod_data %>%
+#               is.na() %>%
+#               as_tibble() %>%
+#               select(one_of(extrap_covars)) %>%
+#               transmute(n_NA = rowSums(.))) %>%
+#   filter(n_NA == 0) %>%
+#   mutate_at(vars(Watershed, one_of(extrap_catg)),
+#             list(fct_drop)) 
+
+# where to make extrapolation predictions
+rch_pred = rch_200_df %>%
+  mutate(in_covar_range = ifelse(UniqueID %in% out_range_rchs, F, T)) %>%
+  pivot_longer(cols = one_of(extrap_num),
+               names_to = "metric_nm",
+               values_to = "value") %>%
+  left_join(extrap_summ) %>%
+  mutate(norm_value = (value - metric_mean) / metric_sd) %>%
+  select(-(value:metric_sd)) %>%
+  pivot_wider(names_from = "metric_nm",
+              values_from = "norm_value")
+
 
 #----------------------------------------
 # pull in survey design related data
@@ -313,129 +448,6 @@ strata_test = frame_strata %>%
 #   arrange(desc(perc_missing))
 
 
-#----------------------------------------
-# prep 200 m reaches for extrapolation
-#----------------------------------------
-rch_200_df = rch_200 %>%
-  st_drop_geometry() %>%
-  as_tibble() %>%
-  mutate_at(vars(regime),
-            list(~ as.factor(as.character(.))))
-
-extrap_covars = names(rch_200_df)[c(18:20,
-                                    23:29,
-                                    37, 40:42)]
-
-# what type of covariate is each GAA?
-extrap_class = rch_200_df %>%
-  select(one_of(extrap_covars)) %>%
-  as.list() %>%
-  map_chr(.f = function(x) class(x)[1])
-
-# which ones are numeric?
-extrap_num = names(extrap_class)[extrap_class %in% c('integer', 'numeric')]
-# which ones are categorical?
-extrap_catg = names(extrap_class)[extrap_class %in% c('factor', 'character', 'ordered')]
-
-# compare range of covariates from model dataset and prediction dataset
-range_comp = bind_rows(rch_200_df %>%
-                         filter(!UniqueID %in% unique(pred_hab_sites$UniqueID)) %>%
-                         select(UniqueID,
-                                one_of(extrap_num)) %>%
-                         gather(Metric, value, -UniqueID) %>%
-                         mutate(Source = 'non-CHaMP Reaches'),
-                       rch_200_df %>%
-                         filter(UniqueID %in% unique(pred_hab_sites$UniqueID)) %>%
-                         select(UniqueID,
-                                one_of(extrap_num)) %>%
-                         distinct() %>%
-                         gather(Metric, value, -UniqueID) %>%
-                         mutate(Source = 'CHaMP Reaches')) %>%
-  mutate_at(vars(Source, Metric),
-            list(as.factor))
-
-range_max = range_comp %>%
-  group_by(Metric, Source) %>%
-  summarise_at(vars(value),
-               tibble::lst(min, max),
-               na.rm = T) %>%
-  filter(Source == 'CHaMP Reaches') %>%
-  ungroup() %>%
-  gather(type, value, -Metric, -Source)
-
-
-# covar_range_p = range_comp %>%
-#   ggplot(aes(x = Source,
-#              y = value,
-#              fill = Source)) +
-#   geom_boxplot() +
-#   facet_wrap(~ Metric,
-#              scales = 'free') +
-#   geom_hline(data = range_max,
-#              aes(yintercept = value),
-#              lty = 2,
-#              color = 'darkgray') +
-#   theme_minimal()
-
-# covar_range_p
-
-# # correlation between numeric covariates
-# rch_200_df %>%
-#   select(one_of(extrap_num)) %>%
-#   cor(method = 'spearman',
-#       use = "pairwise")
-
-
-# Center the covariates
-# filter out reaches with covariates outside range of covariates used to fit extrapolation model
-out_range_rchs = rch_200_df %>%
-  select(one_of(extrap_num), UniqueID) %>%
-  gather(Metric, value, -UniqueID) %>%
-  left_join(select(range_max, -Source) %>%
-              spread(type, value)) %>%
-  group_by(Metric) %>%
-  filter(value > max |
-           value < min) %>%
-  ungroup() %>%
-  pull(UniqueID) %>%
-  unique()
-
-# center covariates
-extrap_summ = inner_join(pred_hab_df %>%
-                        select(UniqueID) %>%
-                        distinct(),
-                      rch_200_df %>%
-                        select(UniqueID, one_of(extrap_num))) %>%
-  gather(metric_nm, value, -UniqueID) %>%
-  group_by(metric_nm) %>%
-  summarise(metric_mean = mean(value, na.rm=T),
-            metric_sd = sd(value, na.rm=T)) %>%
-  ungroup()
-
-# extrapolation model data set, with normalized covariates
-mod_data = inner_join(pred_hab_df,
-                      rch_200_df %>%
-                        select(UniqueID, one_of(extrap_num))) %>%
-  gather(metric_nm, value, one_of(extrap_num)) %>%
-  left_join(extrap_summ) %>%
-  mutate(norm_value = (value - metric_mean) / metric_sd) %>%
-  select(-(value:metric_sd)) %>%
-  spread(metric_nm, norm_value) %>%
-  left_join(rch_200_df %>%
-              select(UniqueID, one_of(extrap_catg)))
-
-sum(is.na(mod_data))
-
-# mod_data %<>%
-#   bind_cols(mod_data %>%
-#               is.na() %>%
-#               as_tibble() %>%
-#               select(one_of(extrap_covars)) %>%
-#               transmute(n_NA = rowSums(.))) %>%
-#   filter(n_NA == 0) %>%
-#   mutate_at(vars(Watershed, one_of(extrap_catg)),
-#             list(fct_drop)) 
-
 # calculate adjusted weights for all predicted QRF capacity sites
 mod_data_weights = mod_data %>%
   left_join(site_strata) %>%
@@ -449,21 +461,9 @@ mod_data_weights = mod_data %>%
   ungroup() %>%
   mutate(adj_weight = site_weight / sum_weights)
 
-
-rch_pred = rch_200_df %>%
-  mutate(in_covar_range = ifelse(UniqueID %in% out_range_rchs, F, T)) %>%
-  pivot_longer(cols = one_of(extrap_num),
-               names_to = "metric_nm",
-               values_to = "value") %>%
-  left_join(extrap_summ) %>%
-  mutate(norm_value = (value - metric_mean) / metric_sd) %>%
-  select(-(value:metric_sd)) %>%
-  pivot_wider(names_from = "metric_nm",
-              values_from = "norm_value")
-
 #-------------------------------------------------------------
 # Set up the survey design.
-
+#-------------------------------------------------------------
 # getOption('survey.lonely.psu')
 # this will prevent strata with only 1 site from contributing to the variance
 options(survey.lonely.psu = 'certainty')
@@ -546,46 +546,22 @@ model_svy_df %<>%
                                            as_tibble())
                            }))
 
-# pull out predictions at all reaches, using the model without Watershed as a covariate
-z = model_svy_df %>%
-  select(Species, type = response, pred_no_champ) %>%
+# quick comparison of capacity predicitons with both models
+comp_pred_p = model_svy_df %>%
+  select(Species, type = response, 
+         pred_no_champ) %>%
   unnest(cols = pred_no_champ) %>%
-  gather(key, value, response, SE) %>%
-  mutate(key = if_else(key == 'response',
-                       if_else(Species == 'Chinook',
-                               str_replace(type, 'cap', 'chnk'),
-                               str_replace(type, 'cap', 'sthd')),
-                       if_else(Species == 'Chinook',
-                               paste0(str_replace(type, 'cap', 'chnk'), "_se"),
-                               paste0(str_replace(type, 'cap', 'sthd'), "_se")))) %>%
-  select(UniqueID, key, value) %>%
-  spread(key, value) %>%
-  mutate_at(vars(matches('per_m')),
-            list(exp))
-
-# pull out predictions at all CHaMP reaches, using the model with Watershed as a covariate
-y = model_svy_df %>%
-  select(Species, type = response, pred_champ) %>%
-  unnest(cols = pred_champ) %>%
-  gather(key, value, response, SE) %>%
-  mutate(key = if_else(key == 'response',
-                       if_else(Species == 'Chinook',
-                               str_replace(type, 'cap', 'chnk'),
-                               str_replace(type, 'cap', 'sthd')),
-                       if_else(Species == 'Chinook',
-                               paste0(str_replace(type, 'cap', 'chnk'), "_se"),
-                               paste0(str_replace(type, 'cap', 'sthd'), "_se")))) %>%
-  select(UniqueID, key, value) %>%
-  spread(key, value) %>%
-  mutate_at(vars(matches('per_m')),
-            list(exp))
-
-
-# put all predictions together
-all_preds = y %>%
-  mutate(model = 'CHaMP') %>%
-  bind_rows(z %>%
-              mutate(model = 'non-CHaMP')) %>%
+  rename(resp_no_champ = response,
+         se_no_champ = SE) %>%
+  left_join(model_svy_df %>%
+              select(Species, type = response, 
+                     pred_champ) %>%
+              unnest(cols = pred_champ) %>%
+              rename(resp_champ = response,
+                     se_champ = SE)) %>%
+  mutate_at(vars(starts_with("resp"), 
+                 starts_with("se")),
+            list(exp)) %>%
   left_join(rch_200_df %>%
               select(UniqueID, HUC8_code) %>%
               left_join(mod_data_weights %>%
@@ -593,64 +569,100 @@ all_preds = y %>%
                           left_join(rch_200_df %>%
                                       select(UniqueID, HUC8_code)) %>%
                           select(HUC8_code, Watershed) %>%
-                          distinct()))
-
-
-# quick comparison of capacity predicitons with both models
-comp_pred_p = all_preds %>%
-  filter(UniqueID %in% UniqueID[duplicated(UniqueID)]) %>%
-  select(UniqueID, Watershed, model, chnk_per_m, chnk_per_m2, sthd_per_m, sthd_per_m2) %>%
-  arrange(Watershed, UniqueID, model) %>%
-  gather(dens_type, cap, matches('_per_m')) %>%
-  spread(model, cap) %>%
-  ggplot(aes(x = CHaMP,
-             y = `non-CHaMP`)) +
+                          distinct())) %>%
+  filter(!is.na(resp_champ)) %>%
+  ggplot(aes(x = resp_champ,
+             y = resp_no_champ)) +
   geom_point() +
   geom_abline(linetype = 2,
               color = 'red') +
-  facet_wrap(~ Watershed + dens_type,
-             scales = 'free')
+  facet_wrap(~ Watershed + Species + type,
+             scales = 'free') +
+  labs(x = 'CHaMP',
+       y = 'Non-CHaMP')
 
 # comp_pred_p
 
-# for reaches in CHaMP watersheds, use predicions from CHaMP extrapolation model
-all_preds %<>%
-  filter((UniqueID %in% UniqueID[duplicated(UniqueID)] & model == 'CHaMP') |
-           !UniqueID %in% UniqueID[duplicated(UniqueID)])
+# pull out all predictions, create data.frame with one row per reach
+all_preds = model_svy_df %>%
+  select(Species, type = response, 
+         pred_no_champ) %>%
+  unnest(cols = pred_no_champ) %>%
+  rename(resp_no_champ = response,
+         se_no_champ = SE) %>%
+  left_join(model_svy_df %>%
+              select(Species, type = response, 
+                     pred_champ) %>%
+              unnest(cols = pred_champ) %>%
+              rename(resp_champ = response,
+                     se_champ = SE)) %>%
+  mutate_at(vars(starts_with("resp"), 
+                 starts_with("se")),
+            list(exp)) %>%
+  # add in direct QRF estimates
+  left_join(pred_hab_sites %>%
+              select(UniqueID, Watershed,
+                     matches("per_m")) %>%
+              pivot_longer(cols = matches('per_m'),
+                           names_to = "type",
+                           values_to = "resp_qrf") %>%
+              mutate(Species = if_else(grepl('chnk', type),
+                                       'Chinook',
+                                       'Steelhead')) %>%
+              mutate(type = str_replace(type, 'chnk', 'cap'),
+                     type = str_replace(type, 'sthd', 'cap')) %>%
+              group_by(UniqueID, Watershed, Species, type) %>%
+              # slice(which.max(resp_qrf)) %>%
+              summarise_at(vars(resp_qrf),
+                           list(mean),
+                           na.rm = T) %>%
+              ungroup()) %>%
+  # choose which response to use: if QRF is available, use that, then if CHaMP model is available use that, then go with non-CHaMP model
+  mutate(model = if_else(!is.na(resp_qrf),
+                         "QRF",
+                         if_else(!is.na(resp_champ),
+                                 "CHaMP",
+                                 "non-CHaMP")),
+         response = if_else(model == 'QRF',
+                            resp_qrf,
+                            if_else(model == 'CHaMP',
+                                    resp_champ,
+                                    resp_no_champ)),
+         SE = if_else(model == 'QRF',
+                      0,
+                      if_else(model == 'CHaMP',
+                              se_champ,
+                              se_no_champ))) %>%
+  select(Species, type, UniqueID, model, response, SE) %>%
+  # add watershed name (and HUC8 code)
+  left_join(rch_200_df %>%
+              select(UniqueID, HUC8_code, chnk, sthd) %>%
+              left_join(mod_data_weights %>%
+                          select(UniqueID, Watershed) %>%
+                          left_join(rch_200_df %>%
+                                      select(UniqueID, HUC8_code)) %>%
+                          select(HUC8_code, Watershed) %>%
+                          distinct())) %>%
+  mutate(model = if_else(!is.na(Watershed) & Watershed == 'Asotin' & model != 'QRF',
+                         'CHaMP',
+                         model)) %>%
+  pivot_longer(cols = c(response, SE),
+               names_to = "key", 
+               values_to = "value") %>%
+  mutate(key = if_else(key == 'response',
+                       if_else(Species == 'Chinook',
+                               str_replace(type, 'cap', 'chnk'),
+                               str_replace(type, 'cap', 'sthd')),
+                       if_else(Species == 'Chinook',
+                               paste0(str_replace(type, 'cap', 'chnk'), "_se"),
+                               paste0(str_replace(type, 'cap', 'sthd'), "_se")))) %>%
+  select(UniqueID, Watershed, HUC8_code, model, chnk, sthd, key, value) %>%
+  pivot_wider(names_from = "key", 
+              values_from = "value")
 
-# add non-CHaMP Chinook model predictions in for Asotin
-all_preds %<>%
-  filter(Watershed != 'Asotin' | is.na(Watershed)) %>%
-  bind_rows(all_preds %>%
-              filter(Watershed == 'Asotin') %>%
-              select(-starts_with('chnk')) %>%
-              left_join(z %>%
-                          select(UniqueID, starts_with('chnk'))))
-
-sum(duplicated(all_preds$UniqueID))
-
-# for CHaMP sites, use direct QRF esimates, not extrapolation ones (adds a few extra sites)
-all_preds %>%
-  anti_join(pred_hab_sites %>%
-              select(UniqueID)) %>%
-  bind_rows(pred_hab_sites %>%
-              select(UniqueID, Watershed, matches('per_m')) %>%
-              group_by(UniqueID) %>%
-              slice(which.max(chnk_per_m)) %>%
-              ungroup() %>%
-              mutate(chnk_per_m_se = 0,
-                     chnk_per_m2_se = 0,
-                     sthd_per_m_se = 0,
-                     sthd_per_m2_se = 0) %>%
-              mutate(model = 'QRF')) %>%
-  select(UniqueID, Watershed, model, everything()) %>%
-  arrange(Watershed, UniqueID) -> all_preds
-
-# all_preds %>%
-# # pred_hab_sites %>%
-#   filter(UniqueID %in% UniqueID[duplicated(UniqueID)])
-
+# save the results
 save(extrap_covars,
+     full_form,
      mod_data_weights,
      model_svy_df,
      all_preds,
@@ -774,6 +786,83 @@ model_lm_df = mod_data %>%
                                                   SE = se.fit))
                            }))
 
+# pull out all predictions, create data.frame with one row per reach
+all_preds = model_lm_df %>%
+  select(Species, type = response, 
+         pred_no_champ) %>%
+  unnest(cols = pred_no_champ) %>%
+  rename(resp_no_champ = response,
+         se_no_champ = SE) %>%
+  left_join(model_lm_df %>%
+              select(Species, type = response, 
+                     pred_champ) %>%
+              unnest(cols = pred_champ) %>%
+              rename(resp_champ = response,
+                     se_champ = SE)) %>%
+  mutate_at(vars(starts_with("resp"), 
+                 starts_with("se")),
+            list(exp)) %>%
+  # add in direct QRF estimates
+  left_join(pred_hab_sites %>%
+              select(UniqueID, Watershed,
+                     matches("per_m")) %>%
+              pivot_longer(cols = matches('per_m'),
+                           names_to = "type",
+                           values_to = "resp_qrf") %>%
+              mutate(Species = if_else(grepl('chnk', type),
+                                       'Chinook',
+                                       'Steelhead')) %>%
+              mutate(type = str_replace(type, 'chnk', 'cap'),
+                     type = str_replace(type, 'sthd', 'cap')) %>%
+              group_by(UniqueID, Watershed, Species, type) %>%
+              # slice(which.max(resp_qrf)) %>%
+              summarise_at(vars(resp_qrf),
+                           list(mean),
+                           na.rm = T) %>%
+              ungroup()) %>%
+  # choose which response to use: if QRF is available, use that, then if CHaMP model is available use that, then go with non-CHaMP model
+  mutate(model = if_else(!is.na(resp_qrf),
+                         "QRF",
+                         if_else(!is.na(resp_champ),
+                                 "CHaMP",
+                                 "non-CHaMP")),
+         response = if_else(model == 'QRF',
+                            resp_qrf,
+                            if_else(model == 'CHaMP',
+                                    resp_champ,
+                                    resp_no_champ)),
+         SE = if_else(model == 'QRF',
+                      0,
+                      if_else(model == 'CHaMP',
+                              se_champ,
+                              se_no_champ))) %>%
+  select(Species, type, UniqueID, model, response, SE) %>%
+  # add watershed name (and HUC8 code)
+  left_join(rch_200_df %>%
+              select(UniqueID, HUC8_code, chnk, sthd) %>%
+              left_join(mod_data_weights %>%
+                          select(UniqueID, Watershed) %>%
+                          left_join(rch_200_df %>%
+                                      select(UniqueID, HUC8_code)) %>%
+                          select(HUC8_code, Watershed) %>%
+                          distinct())) %>%
+  mutate(model = if_else(!is.na(Watershed) & Watershed == 'Asotin' & model != 'QRF',
+                         'CHaMP',
+                         model)) %>%
+  pivot_longer(cols = c(response, SE),
+               names_to = "key", 
+               values_to = "value") %>%
+  mutate(key = if_else(key == 'response',
+                       if_else(Species == 'Chinook',
+                               str_replace(type, 'cap', 'chnk'),
+                               str_replace(type, 'cap', 'sthd')),
+                       if_else(Species == 'Chinook',
+                               paste0(str_replace(type, 'cap', 'chnk'), "_se"),
+                               paste0(str_replace(type, 'cap', 'sthd'), "_se")))) %>%
+  select(UniqueID, Watershed, HUC8_code, model, chnk, sthd, key, value) %>%
+  pivot_wider(names_from = "key", 
+              values_from = "value")
+
 # fit various random forest models
 # to account for design weights, might need to create new dataset by resampling original data, with probabilities weighted by design weights - update: this may not be a good idea, I think it biases the out-of-bag error rates
 model_rf_df = inner_join(pred_hab_df,
@@ -799,7 +888,15 @@ model_rf_df = inner_join(pred_hab_df,
   # make predictions at all possible reaches, using both models
   mutate(pred_all_rchs = list(rch_200_df %>%
                                 mutate(in_covar_range = ifelse(UniqueID %in% out_range_rchs, F, T)) %>%
-                                select(UniqueID, in_covar_range, everything())),
+                                select(UniqueID, in_covar_range, everything()))) %>%
+  # drop reaches with missing covariates
+  mutate(pred_all_rchs = map(pred_all_rchs,
+                             .f = function(x) {
+                               x %>%
+                                 select(UniqueID, one_of(extrap_covars)) %>%
+                                 na.omit() %>%
+                                 left_join(x)
+                               }),
          # which reaches are in CHaMP watersheds? 
          pred_champ_rchs = map2(pred_all_rchs,
                                 mod_champ,
@@ -816,9 +913,26 @@ model_rf_df = inner_join(pred_hab_df,
                                     mutate_at(vars(Watershed),
                                               list(as.factor))
                                 })) %>%
+  # mutate(pred_nonchamp_rchs = map2(pred_all_rchs,
+  #                                  pred_champ_rchs,
+  #                                  .f = function(x, y) {
+  #                                    x %>%
+  #                                      anti_join(y %>%
+  #                                                  select(UniqueID))
+  #                                  })) %>%
   mutate(pred_no_champ = map2(mod_no_champ,
                               pred_all_rchs,
                               .f = function(x, y) {
+                                # # this doesn't work because I run out of memory. So I can't get a SE on non-CHaMP predictions
+                                # preds = predict(x,
+                                #                 newdata = y,
+                                #                 predict.all = T)
+                                # 
+                                # y %>%
+                                #   select(UniqueID) %>%
+                                #   bind_cols(tibble(response = preds$aggregate,
+                                #                    SE = preds$individual %>%
+                                #                      apply(1, sd)))
                                 y %>%
                                   select(UniqueID) %>%
                                   bind_cols(tibble(response = predict(x,
@@ -827,11 +941,115 @@ model_rf_df = inner_join(pred_hab_df,
          pred_champ = map2(mod_champ,
                            pred_champ_rchs,
                            .f = function(x, y) {
+                             preds = predict(x,
+                                             newdata = y,
+                                             predict.all = T)
+                             
                              y %>%
                                select(UniqueID) %>%
-                               bind_cols(tibble(response = predict(x,
-                                                                   newdata = y)))
-                           }))
+                               bind_cols(tibble(response = preds$aggregate,
+                                                SE = preds$individual %>%
+                                                  apply(1, sd)))
+                             
+                             # y %>%
+                             #   select(UniqueID) %>%
+                             #   bind_cols(tibble(response = predict(x,
+                             #                                       newdata = y)))
+                           })) %>%
+  arrange(Species, response)
+
+# Sys.unsetenv("R_MAX_VSIZE")
+
+# pull out all predictions, create data.frame with one row per reach
+all_preds = model_rf_df %>%
+  select(Species, type = response, 
+         pred_no_champ) %>%
+  unnest(cols = pred_no_champ) %>%
+  rename(resp_no_champ = response) %>%
+  # rename(resp_no_champ = response,
+  #        se_no_champ = SE) %>%
+  left_join(model_rf_df %>%
+              select(Species, type = response, 
+                     pred_champ) %>%
+              unnest(cols = pred_champ) %>%
+              # rename(resp_champ = response)) %>%
+              rename(resp_champ = response,
+                     se_champ = SE)) %>%
+  mutate_at(vars(starts_with("resp"), 
+                 starts_with("se")),
+            list(exp)) %>%
+  # add in direct QRF estimates
+  left_join(pred_hab_sites %>%
+              select(UniqueID, Watershed,
+                     matches("per_m")) %>%
+              pivot_longer(cols = matches('per_m'),
+                           names_to = "type",
+                           values_to = "resp_qrf") %>%
+              mutate(Species = if_else(grepl('chnk', type),
+                                       'Chinook',
+                                       'Steelhead')) %>%
+              mutate(type = str_replace(type, 'chnk', 'cap'),
+                     type = str_replace(type, 'sthd', 'cap')) %>%
+              group_by(UniqueID, Watershed, Species, type) %>%
+              # slice(which.max(resp_qrf)) %>%
+              summarise_at(vars(resp_qrf),
+                           list(mean),
+                           na.rm = T) %>%
+              ungroup()) %>%
+  # choose which response to use: if QRF is available, use that, then if CHaMP model is available use that, then go with non-CHaMP model
+  mutate(model = if_else(!is.na(resp_qrf),
+                         "QRF",
+                         if_else(!is.na(resp_champ),
+                                 "CHaMP",
+                                 "non-CHaMP")),
+         response = if_else(model == 'QRF',
+                            resp_qrf,
+                            if_else(model == 'CHaMP',
+                                    resp_champ,
+                                    resp_no_champ))) %>%
+  mutate(SE = if_else(model == 'QRF',
+                      0,
+                      if_else(model == 'CHaMP',
+                              se_champ,
+                              NA_real_))) %>%
+                              # se_no_champ))) %>%
+  select(Species, type, UniqueID, model, response, SE) %>%
+  # add watershed name (and HUC8 code)
+  left_join(rch_200_df %>%
+              select(UniqueID, HUC8_code, chnk, sthd) %>%
+              left_join(mod_data_weights %>%
+                          select(UniqueID, Watershed) %>%
+                          left_join(rch_200_df %>%
+                                      select(UniqueID, HUC8_code)) %>%
+                          select(HUC8_code, Watershed) %>%
+                          distinct())) %>%
+  mutate(model = if_else(!is.na(Watershed) & Watershed == 'Asotin' & model != 'QRF',
+                         'CHaMP',
+                         model)) %>% 
+  filter(!is.na(response)) %>%
+  pivot_longer(cols = c(response, SE),
+               names_to = "key", 
+               values_to = "value") %>%
+  mutate(key = if_else(key == 'response',
+                       if_else(Species == 'Chinook',
+                               str_replace(type, 'cap', 'chnk'),
+                               str_replace(type, 'cap', 'sthd')),
+                       if_else(Species == 'Chinook',
+                               paste0(str_replace(type, 'cap', 'chnk'), "_se"),
+                               paste0(str_replace(type, 'cap', 'sthd'), "_se")))) %>%
+  select(UniqueID, Watershed, HUC8_code, model, chnk, sthd, key, value) %>%
+  pivot_wider(names_from = "key", 
+              values_from = "value",
+              values_fill = NA_real_)
+
+# save the results
+save(extrap_covars,
+     full_form,
+     mod_data_weights,
+     model_rf_df,
+     all_preds,
+     file = paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
+
 
 # using the randomForestSRC package
 library(randomForestSRC)
@@ -858,7 +1076,15 @@ model_rfsrc_df = inner_join(pred_hab_df,
   # make predictions at all possible reaches, using both models
   mutate(pred_all_rchs = list(rch_200_df %>%
                                 mutate(in_covar_range = ifelse(UniqueID %in% out_range_rchs, F, T)) %>%
-                                select(UniqueID, in_covar_range, everything())),
+                                select(UniqueID, in_covar_range, everything()))) %>%
+  # drop reaches with missing covariates
+  mutate(pred_all_rchs = map(pred_all_rchs,
+                             .f = function(x) {
+                               x %>%
+                                 select(UniqueID, one_of(extrap_covars)) %>%
+                                 na.omit() %>%
+                                 left_join(x)
+                             }),
          # which reaches are in CHaMP watersheds? 
          pred_champ_rchs = map2(pred_all_rchs,
                                 mod_champ,
@@ -879,7 +1105,9 @@ model_rfsrc_df = inner_join(pred_hab_df,
                               pred_all_rchs,
                               .f = function(x, y) {
                                 preds = predict(x,
-                                                newdata = y,
+                                                newdata = y %>%
+                                                  select(UniqueID, 
+                                                         one_of(x$forest$xvar.names)),
                                                 na.action = "na.impute")
                                 y %>%
                                   select(UniqueID) %>%
@@ -888,14 +1116,118 @@ model_rfsrc_df = inner_join(pred_hab_df,
          pred_champ = map2(mod_champ,
                            pred_champ_rchs,
                            .f = function(x, y) {
+                             preds = predict(x,
+                                             newdata = y %>%
+                                               select(UniqueID, 
+                                                      one_of(x$forest$xvar.names)),
+                                             na.action = "na.impute")
+                             
                              y %>%
                                select(UniqueID) %>%
-                               bind_cols(tibble(response = predict(x,
-                                                                   newdata = y,
-                                                                   na.action = "na.impute")$predicted))
+                               mutate(response = preds$predicted)
+                               # bind_cols(tibble(response = predict(x,
+                               #                                     newdata = y %>%
+                               #                                       select(one_of(x$forest$xvar.names)) %>%
+                               #                                       mutate_at(vars(ends_with('accu'),
+                               #                                                      ends_with('accum')),
+                               #                                                 list(as.numeric)),
+                               #                                     na.action = "na.impute")$predicted))
                            }))
 
+# pull out all predictions, create data.frame with one row per reach
+all_preds = model_rfsrc_df %>%
+  select(Species, type = response, 
+         pred_no_champ) %>%
+  unnest(cols = pred_no_champ) %>%
+  rename(resp_no_champ = response) %>%
+  # rename(resp_no_champ = response,
+  #        se_no_champ = SE) %>%
+  left_join(model_rfsrc_df %>%
+              select(Species, type = response, 
+                     pred_champ) %>%
+              unnest(cols = pred_champ) %>%
+              rename(resp_champ = response)) %>%
+  # rename(resp_champ = response,
+  #        se_champ = SE)) %>%
+  mutate_at(vars(starts_with("resp"), 
+                 starts_with("se")),
+            list(exp)) %>%
+  # add in direct QRF estimates
+  left_join(pred_hab_sites %>%
+              select(UniqueID, Watershed,
+                     matches("per_m")) %>%
+              pivot_longer(cols = matches('per_m'),
+                           names_to = "type",
+                           values_to = "resp_qrf") %>%
+              mutate(Species = if_else(grepl('chnk', type),
+                                       'Chinook',
+                                       'Steelhead')) %>%
+              mutate(type = str_replace(type, 'chnk', 'cap'),
+                     type = str_replace(type, 'sthd', 'cap')) %>%
+              group_by(UniqueID, Watershed, Species, type) %>%
+              # slice(which.max(resp_qrf)) %>%
+              summarise_at(vars(resp_qrf),
+                           list(mean),
+                           na.rm = T) %>%
+              ungroup()) %>%
+  # choose which response to use: if QRF is available, use that, then if CHaMP model is available use that, then go with non-CHaMP model
+  mutate(model = if_else(!is.na(resp_qrf),
+                         "QRF",
+                         if_else(!is.na(resp_champ),
+                                 "CHaMP",
+                                 "non-CHaMP")),
+         response = if_else(model == 'QRF',
+                            resp_qrf,
+                            if_else(model == 'CHaMP',
+                                    resp_champ,
+                                    resp_no_champ))) %>% #,
+  # SE = if_else(model == 'QRF',
+  #              0,
+  #              if_else(model == 'CHaMP',
+  #                      se_champ,
+  #                      se_no_champ))) %>%
+  select(Species, type, UniqueID, model, response) %>% #, SE) %>%
+  # add watershed name (and HUC8 code)
+  left_join(rch_200_df %>%
+              select(UniqueID, HUC8_code, chnk, sthd) %>%
+              left_join(mod_data_weights %>%
+                          select(UniqueID, Watershed) %>%
+                          left_join(rch_200_df %>%
+                                      select(UniqueID, HUC8_code)) %>%
+                          select(HUC8_code, Watershed) %>%
+                          distinct())) %>%
+  mutate(model = if_else(!is.na(Watershed) & Watershed == 'Asotin' & model != 'QRF',
+                         'CHaMP',
+                         model)) %>% 
+  filter(!is.na(response)) %>%
+  pivot_longer(cols = c(response),
+               names_to = "key", 
+               values_to = "value") %>%
+  mutate(key = if_else(key == 'response',
+                       if_else(Species == 'Chinook',
+                               str_replace(type, 'cap', 'chnk'),
+                               str_replace(type, 'cap', 'sthd')),
+                       if_else(Species == 'Chinook',
+                               paste0(str_replace(type, 'cap', 'chnk'), "_se"),
+                               paste0(str_replace(type, 'cap', 'sthd'), "_se")))) %>%
+  select(UniqueID, Watershed, HUC8_code, model, chnk, sthd, key, value) %>%
+  pivot_wider(names_from = "key", 
+              values_from = "value")
+
+# save the results
+save(extrap_covars,
+     full_form,
+     mod_data_weights,
+     model_rfsrc_df,
+     all_preds,
+     file = paste0('output/modelFits/extrap_200rch_RFSRC_', mod_choice, '.rda'))
+
+
+
+
+#-----------------------------------------------
 # compare all the predictions
+#-----------------------------------------------
 preds_comp = list('Survey' = model_svy_df,
                   "lm" = model_lm_df,
                   "SRC" = model_rfsrc_df,
@@ -925,8 +1257,28 @@ test = preds_comp %>%
   spread(model, value) %>%
   filter(key == 'chnk_per_m')
 
+summary(test)
+
+cor_pear = test %>%
+  select(lm:Survey) %>%
+  corrr::correlate(method = 'pearson')
+cor_spear = test %>%
+  select(lm:Survey) %>%
+  corrr::correlate(method = 'spearman')
+cor_ken = test %>%
+  select(lm:Survey) %>%
+  corrr::correlate(method = 'kendall')
+
+cor_pear
+cor_spear
+cor_ken
+
+
+
 test %>%
-  GGally::ggpairs(columns = 3:5,
+  filter(lm < 10,
+         Survey < 10) %>%
+  GGally::ggpairs(columns = 3:6,
                   lower = list("continuous" = 
                                  function(data, mapping) {
                                    ggplot(data, 

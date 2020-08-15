@@ -5,3 +5,5 @@ output/modelFits/extrap_mastPts_juv_summer.rda filter=lfs diff=lfs merge=lfs -te
 output/modelFits/extrap_mastPts_juv_summer_dash.rda filter=lfs diff=lfs merge=lfs -text
 output/modelFits/extrap_mastPts_redds.rda filter=lfs diff=lfs merge=lfs -text
 output/modelFits/extrap_200rch_redds.rda filter=lfs diff=lfs merge=lfs -text
+output/modelFits/extrap_200rch_RF_juv_summer_dash.rda filter=lfs diff=lfs merge=lfs -text
+output/modelFits/extrap_200rch_RFSRC_juv_summer_dash.rda filter=lfs diff=lfs merge=lfs -text
