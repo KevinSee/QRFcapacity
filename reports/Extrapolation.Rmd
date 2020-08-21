@@ -813,6 +813,8 @@ ggarrange(plotlist = list(lem_pts, lem_rch),
 
 # Discussion
 
-For both species, across all three QRF models, the two extrapolation models resulted in very similar estimates of total capacity at the population scale. Although the master sample point method has been used for several years, there is no reason to believe estimates from that method are inherently superior to using a line network, so even in the cases when the two models result in different estimates of capacity, it is difficult to say which is "better". On the other hand, there are several reasons to support using the line network method, apart from the actual results.
+For both species, across all three QRF models, the two extrapolation models resulted in very similar estimates of total capacity at the population scale, except for a handful of noteable exceptions. These were primarily in the Chinook summer parr model, using CHaMP metrics in the QRF model. 
+
+Although the master sample point method has been used for several years, there is no reason to believe estimates from that method are inherently superior to using a line network, so even in the cases when the two models result in different estimates of capacity, it is difficult to say which is "better". On the other hand, there are several reasons to support using the line network method, apart from the actual results, primarily based on the ease of interpretation. Extrapolation to a line network involves capacity predictions at actual 200 m reaches along a stream network, while the master sample point method provides estimates at instaneous "points" on the landscape. The summation of capacity to larger spatial scales is more straightforward when using a line network, and the maps that can be created are easier to interpret (Figure \@ref(fig:lem-map)).  
 
 # References
