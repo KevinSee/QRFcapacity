@@ -10,7 +10,7 @@ calc_watershed_cap(
   capacity_pts,
   capacity_name = "chnk_per_m",
   capacity_se_name = "chnk_per_m_se",
-  snap_dist = 500,
+  max_snap_dist = 500,
   by_stream = F
 )
 }
@@ -24,7 +24,7 @@ calc_watershed_cap(
 \item{capacity_name}{character vector of the name of the capacity column in \code{capacity_pts}
 #' @param capacity_name character vector of the name of the column in \code{capacity_pts} which characterizes the standard error of the capacity prediction}
 
-\item{snap_dist}{numeric value describing maximum distance (in meters) to snap points to the species range extent. Default value is \code{500}.}
+\item{max_snap_dist}{numeric value describing maximum distance (in meters) to snap points to the species range extent. Default value is \code{500}.}
 
 \item{by_stream}{Should capacities be returned by stream, \code{TRUE}, or just the total across the entire watershed, \code{FALSE}. Default is \code{FALSE}}
 }

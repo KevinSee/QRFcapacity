@@ -9,7 +9,7 @@
 #' @param capacity_pts sf points with estimates of capacity
 #' @param capacity_name character vector of the name of the capacity column in \code{capacity_pts}
 #' #' @param capacity_name character vector of the name of the column in \code{capacity_pts} which characterizes the standard error of the capacity prediction
-#' @param snap_dist numeric value describing maximum distance (in meters) to snap points to the species range extent. Default value is \code{500}.
+#' @param max_snap_dist numeric value describing maximum distance (in meters) to snap points to the species range extent. Default value is \code{500}.
 #' @param by_stream Should capacities be returned by stream, \code{TRUE}, or just the total across the entire watershed, \code{FALSE}. Default is \code{FALSE}
 #'
 #' @import dplyr sf maptools forcats
@@ -21,7 +21,7 @@ calc_watershed_cap = function(wtsd_polygon,
                               capacity_pts,
                               capacity_name = "chnk_per_m",
                               capacity_se_name = "chnk_per_m_se",
-                              snap_dist = 500,
+                              max_snap_dist = 500,
                               by_stream = F) {
   
   # print(paste('Working on', wtsd_polygon$trap_name))
@@ -72,18 +72,33 @@ calc_watershed_cap = function(wtsd_polygon,
   }
   
   # snap capacity points to stream layer
-  cap_pts = wtsd_pts %>%
-    as_Spatial() %>%
-    maptools::snapPointsToLines(lines = wtsd_strm %>%
-                                  as_Spatial,
-                                maxDist = snap_dist,
-                                idField = 'id') %>%
-    st_as_sf() %>%
-    rename(id = nearest_line_id) %>%
-    left_join(wtsd_strm %>%
-                as_tibble() %>%
-                select(-geometry))
+  # cap_pts = wtsd_pts %>%
+  #   as_Spatial() %>%
+  #   maptools::snapPointsToLines(lines = wtsd_strm %>%
+  #                                 as_Spatial,
+  #                               maxDist = snap_dist,
+  #                               idField = 'id') %>%
+  #   st_as_sf() %>%
+  #   rename(id = nearest_line_id) %>%
+  #   left_join(wtsd_strm %>%
+  #               as_tibble() %>%
+  #               select(-geometry))
     
+  cap_pts = wtsd_pts %>%
+    bind_cols(wtsd_pts %>%
+                as_Spatial() %>%
+                maptools::snapPointsToLines(points = .,
+                                            lines = wtsd_strm %>%
+                                              as_Spatial,
+                                            idField = 'id') %>%
+                as('sf') %>%
+                st_drop_geometry() %>%
+                as_tibble() %>%
+                select(snap_dist)) %>%
+    filter(snap_dist <= max_snap_dist)
+  
+  
+  
   # get stream length
   strm_length = wtsd_strm %>%
     mutate(lngth = st_length(.)) %>%
