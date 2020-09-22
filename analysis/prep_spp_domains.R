@@ -321,7 +321,7 @@ rch_200_and = rch_200 %>%
 
 # make available like a package, by calling "data()"
 use_data(rch_200,
-         version = 2,
+         version = 3,
          overwrite = T)
 
 
