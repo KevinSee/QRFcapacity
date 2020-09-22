@@ -94,8 +94,13 @@ calc_watershed_cap = function(wtsd_polygon,
                 as('sf') %>%
                 st_drop_geometry() %>%
                 as_tibble() %>%
-                select(snap_dist)) %>%
-    filter(snap_dist <= max_snap_dist)
+                select(id = nearest_line_id,
+                       snap_dist)) %>%
+    filter(snap_dist <= max_snap_dist) %>%
+    left_join(wtsd_strm %>%
+                as_tibble() %>%
+                select(id, StreamName)) %>%
+    select(-id)
   
   
   
