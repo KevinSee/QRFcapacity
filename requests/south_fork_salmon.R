@@ -31,3 +31,10 @@ sf_salm %>%
 st_write(sf_salm,
          dsn = paste0('output/shapefiles/Rch_Cap_', mod_choice, '_South_Fork_Salmon.shp'),
          driver = 'ESRI Shapefile')
+
+# save as geopackage
+st_write(sf_salm,
+         dsn = paste0('output/shapefiles/Rch_Cap_', mod_choice, '_South_Fork_Salmon.gpkg'),
+         driver = 'GPKG')
+
+names(sf_salm)
