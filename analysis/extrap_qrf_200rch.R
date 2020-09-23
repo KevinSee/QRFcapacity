@@ -22,7 +22,7 @@ theme_set(theme_bw())
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[2]
+               'redds')[3]
 
 load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
@@ -546,7 +546,7 @@ model_svy_df %<>%
                                            as_tibble())
                            }))
 
-# quick comparison of capacity predicitons with both models
+# quick comparison of capacity predictons with both models
 comp_pred_p = model_svy_df %>%
   select(Species, type = response, 
          pred_no_champ) %>%
@@ -571,6 +571,9 @@ comp_pred_p = model_svy_df %>%
                           select(HUC8_code, Watershed) %>%
                           distinct())) %>%
   filter(!is.na(resp_champ)) %>%
+  # if mod_choice == "redds", filter out crazy values
+  # filter(resp_champ < 0.2,
+  #        resp_no_champ < 0.2) %>%
   ggplot(aes(x = resp_champ,
              y = resp_no_champ)) +
   geom_point() +
