@@ -5,7 +5,7 @@ Authors@R: person("Kevin", "See", email = "kevin.see@merck.com", role = c("aut",
 Maintainer: Kevin See <kevin.see@merck.com>
 Description: Estimates carrying capacity using paired fish/habitat data and quantile random forest models.
 Depends: 
-  R (>= 3.5.2),
+  R (>= 4.0.0),
 License: GPL-2
 Imports: 
   tidyverse, 
