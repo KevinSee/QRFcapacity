@@ -12,7 +12,7 @@ get_flowlines(stream_order = 3, wtsd_polygon = NULL)
 \item{wtsd_polygon}{sf polygon describing the boundry of where stream lines should be found}
 }
 \description{
-Download flowlines with NHD flowline data for mapping purposes. I modified this from here: https://ryanpeek.github.io/2017-11-05-mapping-with-sf-Part-2/.
+Download flowlines with NHD flowline data for mapping purposes.
 }
 \author{
 Kevin See
