@@ -22,7 +22,7 @@ theme_set(theme_bw())
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[3]
+               'redds')[2]
 
 load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
@@ -528,22 +528,30 @@ model_svy_df %<>%
                               .f = function(x, y) {
                                 y %>%
                                   select(UniqueID) %>%
-                                  bind_cols(predict(x,
+                                  bind_cols(predict(x, 
                                                     newdata = y,
                                                     se = T,
                                                     type = 'response') %>%
-                                              as_tibble())
+                                              as_tibble()) %>%
+                                  rename(log_fit = response,
+                                         log_se = SE) %>%
+                                  mutate(pred_cap = exp(log_fit) * (1 + log_se^2 / 2),
+                                         pred_se = pred_cap * log_se)
                               }),
          pred_champ = map2(mod_champ,
                            pred_champ_rchs,
                            .f = function(x, y) {
                              y %>%
                                select(UniqueID) %>%
-                               bind_cols(predict(x,
+                               bind_cols(predict(x, 
                                                  newdata = y,
                                                  se = T,
                                                  type = 'response') %>%
-                                           as_tibble())
+                                           as_tibble()) %>%
+                               rename(log_fit = response,
+                                      log_se = SE) %>%
+                               mutate(pred_cap = exp(log_fit) * (1 + log_se^2 / 2),
+                                      pred_se = pred_cap * log_se)
                            }))
 
 # quick comparison of capacity predictons with both models
@@ -551,17 +559,16 @@ comp_pred_p = model_svy_df %>%
   select(Species, type = response, 
          pred_no_champ) %>%
   unnest(cols = pred_no_champ) %>%
-  rename(resp_no_champ = response,
-         se_no_champ = SE) %>%
+  rename(resp_no_champ = pred_cap,
+         se_no_champ = pred_se) %>%
+  select(-log_fit, -log_se) %>%
   left_join(model_svy_df %>%
               select(Species, type = response, 
                      pred_champ) %>%
               unnest(cols = pred_champ) %>%
-              rename(resp_champ = response,
-                     se_champ = SE)) %>%
-  mutate_at(vars(starts_with("resp"), 
-                 starts_with("se")),
-            list(exp)) %>%
+              rename(resp_champ = pred_cap,
+                     se_champ = pred_se) %>%
+              select(-log_fit, -log_se)) %>%
   left_join(rch_200_df %>%
               select(UniqueID, HUC8_code) %>%
               left_join(mod_data_weights %>%
@@ -591,17 +598,16 @@ all_preds = model_svy_df %>%
   select(Species, type = response, 
          pred_no_champ) %>%
   unnest(cols = pred_no_champ) %>%
-  rename(resp_no_champ = response,
-         se_no_champ = SE) %>%
+  rename(resp_no_champ = pred_cap,
+         se_no_champ = pred_se) %>%
+  select(-log_fit, -log_se) %>%
   left_join(model_svy_df %>%
               select(Species, type = response, 
                      pred_champ) %>%
               unnest(cols = pred_champ) %>%
-              rename(resp_champ = response,
-                     se_champ = SE)) %>%
-  mutate_at(vars(starts_with("resp"), 
-                 starts_with("se")),
-            list(exp)) %>%
+              rename(resp_champ = pred_cap,
+                     se_champ = pred_se) %>%
+              select(-log_fit, -log_se)) %>%
   # add in direct QRF estimates
   left_join(pred_hab_sites %>%
               select(UniqueID, Watershed,
@@ -878,15 +884,15 @@ model_rf_df = inner_join(pred_hab_df,
   ungroup()%>%
   mutate(mod_no_champ = map(data,
                             .f = function(x) {
-                              randomForest(full_form,
+                              randomForest(update(full_form, qrf_cap ~ .),
                                            data = x,
-                                           ntree = 1000)
+                                           ntree = 5000)
                             }),
          mod_champ = map(data,
                          .f = function(x) {
-                           randomForest(update(full_form, .~. + Watershed),
+                           randomForest(update(full_form, qrf_cap ~. + Watershed),
                                         data = x,
-                                        ntree = 1000)
+                                        ntree = 5000)
                          })) %>%
   # make predictions at all possible reaches, using both models
   mutate(pred_all_rchs = list(rch_200_df %>%
@@ -916,13 +922,6 @@ model_rf_df = inner_join(pred_hab_df,
                                     mutate_at(vars(Watershed),
                                               list(as.factor))
                                 })) %>%
-  # mutate(pred_nonchamp_rchs = map2(pred_all_rchs,
-  #                                  pred_champ_rchs,
-  #                                  .f = function(x, y) {
-  #                                    x %>%
-  #                                      anti_join(y %>%
-  #                                                  select(UniqueID))
-  #                                  })) %>%
   mutate(pred_no_champ = map2(mod_no_champ,
                               pred_all_rchs,
                               .f = function(x, y) {
@@ -933,13 +932,15 @@ model_rf_df = inner_join(pred_hab_df,
                                 # 
                                 # y %>%
                                 #   select(UniqueID) %>%
-                                #   bind_cols(tibble(response = preds$aggregate,
-                                #                    SE = preds$individual %>%
+                                #   bind_cols(tibble(pred_cap = preds$aggregate,
+                                #                    pred_se = preds$individual %>%
                                 #                      apply(1, sd)))
+
                                 y %>%
                                   select(UniqueID) %>%
-                                  bind_cols(tibble(response = predict(x,
+                                  bind_cols(tibble(pred_cap = predict(x,
                                                                       newdata = y)))
+                                  
                               }),
          pred_champ = map2(mod_champ,
                            pred_champ_rchs,
@@ -952,12 +953,20 @@ model_rf_df = inner_join(pred_hab_df,
                                select(UniqueID) %>%
                                bind_cols(tibble(response = preds$aggregate,
                                                 SE = preds$individual %>%
-                                                  apply(1, sd)))
+                                                  apply(1, sd))) %>%
+                               rename(log_fit = response,
+                                      log_se = SE) %>%
+                               mutate(pred_cap = exp(log_fit) * (1 + log_se^2 / 2),
+                                      pred_se = pred_cap * log_se)
+                             
                              
                              # y %>%
                              #   select(UniqueID) %>%
-                             #   bind_cols(tibble(response = predict(x,
-                             #                                       newdata = y)))
+                             #   bind_cols(tibble(log_fit = predict(x,
+                             #                                       newdata = y))) %>%
+                             #   # this doesn't have the bias correction for log-transformation
+                             #   mutate(pred_cap = exp(log_fit))
+                             
                            })) %>%
   arrange(Species, response)
 
@@ -968,16 +977,18 @@ all_preds = model_rf_df %>%
   select(Species, type = response, 
          pred_no_champ) %>%
   unnest(cols = pred_no_champ) %>%
-  rename(resp_no_champ = response) %>%
-  # rename(resp_no_champ = response,
-  #        se_no_champ = SE) %>%
+  rename(resp_no_champ = pred_cap) %>%
+  # rename(resp_no_champ = pred_cap,
+  #        se_no_champ = pred_se) %>%
+  select(-log_fit, -log_se) %>%
   left_join(model_rf_df %>%
               select(Species, type = response, 
                      pred_champ) %>%
               unnest(cols = pred_champ) %>%
-              # rename(resp_champ = response)) %>%
-              rename(resp_champ = response,
-                     se_champ = SE)) %>%
+              # rename(resp_champ = pred_cap)) %>%
+              rename(resp_champ = pred_cap,
+                     se_champ = pred_se) %>%
+              select(-log_fit, -log_se)) %>%
   mutate_at(vars(starts_with("resp"), 
                  starts_with("se")),
             list(exp)) %>%
@@ -1066,15 +1077,15 @@ model_rfsrc_df = inner_join(pred_hab_df,
   ungroup()%>%
   mutate(mod_no_champ = map(data,
                             .f = function(x) {
-                              rfsrc(full_form,
+                              rfsrc(update(full_form, qrf_cap ~ .),
                                     data = as.data.frame(x),
-                                    ntree = 1000)
+                                    ntree = 5000)
                             }),
          mod_champ = map(data,
                          .f = function(x) {
-                           rfsrc(update(full_form, .~. + Watershed),
+                           rfsrc(update(full_form, qrf_cap ~ . + Watershed),
                                  data = as.data.frame(x),
-                                 ntree = 1000)
+                                 ntree = 5000)
                          })) %>%
   # make predictions at all possible reaches, using both models
   mutate(pred_all_rchs = list(rch_200_df %>%
@@ -1114,7 +1125,7 @@ model_rfsrc_df = inner_join(pred_hab_df,
                                                 na.action = "na.impute")
                                 y %>%
                                   select(UniqueID) %>%
-                                  mutate(response = preds$predicted)
+                                  mutate(pred_cap = preds$predicted)
                               }),
          pred_champ = map2(mod_champ,
                            pred_champ_rchs,
@@ -1127,8 +1138,8 @@ model_rfsrc_df = inner_join(pred_hab_df,
                              
                              y %>%
                                select(UniqueID) %>%
-                               mutate(response = preds$predicted)
-                               # bind_cols(tibble(response = predict(x,
+                               mutate(pred_cap = preds$predicted)
+                               # bind_cols(tibble(pred_cap = predict(x,
                                #                                     newdata = y %>%
                                #                                       select(one_of(x$forest$xvar.names)) %>%
                                #                                       mutate_at(vars(ends_with('accu'),
@@ -1142,19 +1153,19 @@ all_preds = model_rfsrc_df %>%
   select(Species, type = response, 
          pred_no_champ) %>%
   unnest(cols = pred_no_champ) %>%
-  rename(resp_no_champ = response) %>%
-  # rename(resp_no_champ = response,
-  #        se_no_champ = SE) %>%
+  rename(resp_no_champ = pred_cap) %>%
+  # rename(resp_no_champ = pred_cap,
+  #        se_no_champ = pred_se) %>%
   left_join(model_rfsrc_df %>%
               select(Species, type = response, 
                      pred_champ) %>%
               unnest(cols = pred_champ) %>%
-              rename(resp_champ = response)) %>%
-  # rename(resp_champ = response,
-  #        se_champ = SE)) %>%
-  mutate_at(vars(starts_with("resp"), 
-                 starts_with("se")),
-            list(exp)) %>%
+              rename(resp_champ = pred_cap)) %>%
+  # rename(resp_champ = pred_cap,
+  #        se_champ = pred_se)) %>%
+  # mutate_at(vars(starts_with("resp"), 
+  #                starts_with("se")),
+  #           list(exp)) %>%
   # add in direct QRF estimates
   left_join(pred_hab_sites %>%
               select(UniqueID, Watershed,
