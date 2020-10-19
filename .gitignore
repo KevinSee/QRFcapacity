@@ -4,6 +4,7 @@
 .Ruserdata
 .Rbuildignore
 .DS_Store
+~$*
 RepoDesign.txt
 inst/doc
 
