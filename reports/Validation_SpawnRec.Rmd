@@ -66,6 +66,7 @@ library(janitor)
 library(ggpubr)
 library(ggrepel)
 library(scales)
+library(magrittr)
 
 theme_set(theme_bw())
 ```
@@ -103,7 +104,7 @@ cap_max = qrf_mod_df %>%
 ```
 
 
-```{r rch-200m-cap, eval = T}
+```{r rch-200m-cap, eval = F}
 # read in capacity estimates and create a shapefile
 load(paste0('../output/modelFits/extrap_200rch_', mod_choice, '.rda'))
 in_covar_range_df = model_svy_df$pred_all_rchs[[1]] %>%
@@ -164,6 +165,69 @@ qrf_caps = trap_poly %>%
                        'East Fork Salmon' = 'East Fork Salmon River',
                        'Lostine R.' = 'Lostine River'))
 ```
+
+```{r rch-200m-cap-rf, eval = T}
+# read in capacity estimates and create a shapefile
+load(paste0('../output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
+in_covar_range_df = model_rf_df$pred_all_rchs[[1]] %>%
+  select(UniqueID, in_covar_range)
+rm(mod_data_weights, model_rf_df, extrap_covars)
+
+data("rch_200")
+
+rch_200_cap = rch_200 %>%
+  filter(chnk) %>%
+  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME) %>%
+  left_join(all_preds) %>%
+  mutate(chnk_tot = chnk_per_m * reach_leng,
+         chnk_tot_se = chnk_per_m_se * reach_leng) %>%
+  left_join(in_covar_range_df) %>%
+  # filter(in_covar_range) %>%
+  st_transform(st_crs(trap_poly)) %>%
+  select(everything(), geometry)
+
+# rch_200_cap %>%
+#   st_drop_geometry() %>%
+#   xtabs(~ (chnk_per_m > cap_max) + in_covar_range, .)
+# 
+# rch_200_cap %<>%
+#   mutate(chnk_per_m_se = if_else(chnk_per_m > cap_max, 
+#                                  as.numeric(NA), chnk_per_m_se),
+#          chnk_per_m = if_else(chnk_per_m > cap_max, 
+#                               cap_max, chnk_per_m))
+
+
+rm(rch_200, all_preds)
+
+qrf_caps = trap_poly %>%
+  st_join(rch_200_cap) %>%
+  mutate_at(vars(chnk_ESU_DPS, chnk_MPG, chnk_NWR_NAME),
+            list(fct_explicit_na)) %>%
+  group_by(chnk_ESU_DPS, chnk_MPG, trap_name) %>%
+  summarise(n_rch = n_distinct(UniqueID),
+            tot_lgth = sum(reach_leng, na.rm = T),
+            cap = sum(chnk_tot, na.rm = T),
+            cap_se = mean(chnk_per_m_se, na.rm = T) * tot_lgth) %>%
+            # cap_se = sqrt(sum(chnk_tot_se^2))) %>%
+  ungroup() %>%
+  mutate(cap_cv = cap_se / cap) %>%
+  rename(Trap = trap_name) %>%
+  mutate(Trap = recode(Trap,
+                       'Minam R.' = 'Minam River',
+                       'Entiat R.' = 'Entiat River',
+                       'Crooked Fork Creek' = 'Crooked Fork',
+                       'Upper Grande Ronde R.' ='Upper Grande Ronde River',
+                       'Toucannon R.' = 'Tucannon River',
+                       'Pahsimeroi' = 'Pahsimeroi River',
+                       'Hood R.' = 'Hood River',
+                       'John Day Middle Fork' = 'Middle Fork John Day',
+                       'Upper Salmon River' = 'Upper Salmon River Chinook',
+                       'John Day Upper Mainstem' = 'Upper Mainstem John Day',
+                       'East Fork Salmon' = 'East Fork Salmon River',
+                       'Lostine R.' = 'Lostine River'))
+```
+
 
 ```{r master-sample-pts-cap, eval = T}
 # read in capacity estimates and create a shapefile
@@ -327,7 +391,8 @@ trp_comp = qrf_caps %>%
   bind_rows(qrf_caps2 %>%
               as_tibble() %>%
               select(chnk_ESU_DPS:cap_se) %>%
-              mutate(method = "point")) %>%
+              mutate(method = "point") %>%
+              mutate(tot_lgth = as.numeric(tot_lgth))) %>%
   pivot_wider(id_cols = c(chnk_ESU_DPS:Trap),
               names_from = "method",
               values_from = c("tot_lgth",
@@ -659,6 +724,16 @@ keep_wtsds = qrf_caps %>%
   filter(!is.na(cap)) %>%
   filter(!Trap %in% c('Methow R.')) %>%
   pull(Trap)
+
+# keep_wtsds = c('Catherine Creek',
+#                'Chiwawa R.',
+#                'Lostine River', 
+#                'Marsh Creek',
+#                'Minam River',
+#                'Pahsimeroi River',
+#                'Upper Grande Ronde River',
+#                'Upper Lemhi',
+#                'Upper Mainstem John Day')
 
 spawn_rec_comp_p = spawn_rec_params %>%
   # filter out a couple populations with super poor fits
