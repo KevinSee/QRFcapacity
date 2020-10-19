@@ -22,7 +22,7 @@ theme_set(theme_bw())
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[2]
+               'redds')[3]
 
 load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
@@ -462,6 +462,18 @@ mod_data_weights = mod_data %>%
   mutate(adj_weight = site_weight / sum_weights)
 
 #-------------------------------------------------------------
+# clean up some memory
+#-------------------------------------------------------------
+rm(champ_dash, champ_dash_avg, champ_frame_df, champ_temps, champ_site_rch,
+   chnk_strata_length, sthd_strata_length, fish_hab,
+   frame_strata, strata_length, strata_tab, strata_test,
+   gaa,
+   hab_avg,
+   hab_data,
+   hab_impute,
+   rch_200)
+
+#-------------------------------------------------------------
 # Set up the survey design.
 #-------------------------------------------------------------
 # getOption('survey.lonely.psu')
@@ -878,21 +890,21 @@ model_rf_df = inner_join(pred_hab_df,
                          rch_200_df %>%
                            select(UniqueID, one_of(extrap_covars))) %>%
   gather(response, qrf_cap, matches('per_m')) %>%
-  mutate(log_qrf_cap = log(qrf_cap)) %>%
+  # mutate(log_qrf_cap = log(qrf_cap)) %>%
   group_by(Species, response) %>%
   nest() %>%
-  ungroup()%>%
+  ungroup() %>%
   mutate(mod_no_champ = map(data,
                             .f = function(x) {
                               randomForest(update(full_form, qrf_cap ~ .),
                                            data = x,
-                                           ntree = 5000)
+                                           ntree = 2000)
                             }),
          mod_champ = map(data,
                          .f = function(x) {
                            randomForest(update(full_form, qrf_cap ~. + Watershed),
                                         data = x,
-                                        ntree = 5000)
+                                        ntree = 2000)
                          })) %>%
   # make predictions at all possible reaches, using both models
   mutate(pred_all_rchs = list(rch_200_df %>%
@@ -925,7 +937,7 @@ model_rf_df = inner_join(pred_hab_df,
   mutate(pred_no_champ = map2(mod_no_champ,
                               pred_all_rchs,
                               .f = function(x, y) {
-                                # # this doesn't work because I run out of memory. So I can't get a SE on non-CHaMP predictions
+                                # this doesn't work because I run out of memory. So I can't get a SE on non-CHaMP predictions
                                 # preds = predict(x,
                                 #                 newdata = y,
                                 #                 predict.all = T)
@@ -935,37 +947,66 @@ model_rf_df = inner_join(pred_hab_df,
                                 #   bind_cols(tibble(pred_cap = preds$aggregate,
                                 #                    pred_se = preds$individual %>%
                                 #                      apply(1, sd)))
-
+                                
+                                # split into smaller datasets by HUC
                                 y %>%
-                                  select(UniqueID) %>%
-                                  bind_cols(tibble(pred_cap = predict(x,
-                                                                      newdata = y)))
+                                  group_by(HUC8_code) %>%
+                                  group_split() %>%
+                                  map_df(.f = function(z) {
+                                    preds = predict(x,
+                                                    newdata = z,
+                                                    predict.all = T)
+                                    
+                                    z %>%
+                                      select(UniqueID) %>%
+                                      bind_cols(tibble(pred_cap = preds$aggregate,
+                                                       pred_se = preds$individual %>%
+                                                         apply(1, sd)))
+                                  })
+                                
+                                
+
+                                # # this version doesn't provide any standard errors
+                                # y %>%
+                                #   select(UniqueID) %>%
+                                #   bind_cols(tibble(pred_cap = predict(x,
+                                #                                       newdata = y)))
                                   
                               }),
          pred_champ = map2(mod_champ,
                            pred_champ_rchs,
                            .f = function(x, y) {
-                             preds = predict(x,
-                                             newdata = y,
-                                             predict.all = T)
-                             
-                             y %>%
-                               select(UniqueID) %>%
-                               bind_cols(tibble(response = preds$aggregate,
-                                                SE = preds$individual %>%
-                                                  apply(1, sd))) %>%
-                               rename(log_fit = response,
-                                      log_se = SE) %>%
-                               mutate(pred_cap = exp(log_fit) * (1 + log_se^2 / 2),
-                                      pred_se = pred_cap * log_se)
-                             
-                             
+                             # preds = predict(x,
+                             #                 newdata = y,
+                             #                 predict.all = T)
+                             # 
                              # y %>%
                              #   select(UniqueID) %>%
-                             #   bind_cols(tibble(log_fit = predict(x,
-                             #                                       newdata = y))) %>%
-                             #   # this doesn't have the bias correction for log-transformation
-                             #   mutate(pred_cap = exp(log_fit))
+                             #   bind_cols(tibble(pred_cap = preds$aggregate,
+                             #                    pred_se = preds$individual %>%
+                             #                      apply(1, sd)))
+                             
+                             # split into smaller datasets by HUC
+                             y %>%
+                               group_by(HUC8_code) %>%
+                               group_split() %>%
+                               map_df(.f = function(z) {
+                                 preds = predict(x,
+                                                 newdata = z,
+                                                 predict.all = T)
+                                 
+                                 z %>%
+                                   select(UniqueID) %>%
+                                   bind_cols(tibble(pred_cap = preds$aggregate,
+                                                    pred_se = preds$individual %>%
+                                                      apply(1, sd)))
+                               })
+                             
+                             # # this version doesn't include any standard errors
+                             # y %>%
+                             #   select(UniqueID) %>%
+                             #   bind_cols(tibble(pred_cap = predict(x,
+                             #                                       newdata = y)))
                              
                            })) %>%
   arrange(Species, response)
@@ -977,21 +1018,19 @@ all_preds = model_rf_df %>%
   select(Species, type = response, 
          pred_no_champ) %>%
   unnest(cols = pred_no_champ) %>%
-  rename(resp_no_champ = pred_cap) %>%
-  # rename(resp_no_champ = pred_cap,
-  #        se_no_champ = pred_se) %>%
-  select(-log_fit, -log_se) %>%
+  # rename(resp_no_champ = pred_cap) %>%
+  rename(resp_no_champ = pred_cap,
+         se_no_champ = pred_se) %>%
   left_join(model_rf_df %>%
               select(Species, type = response, 
                      pred_champ) %>%
               unnest(cols = pred_champ) %>%
               # rename(resp_champ = pred_cap)) %>%
               rename(resp_champ = pred_cap,
-                     se_champ = pred_se) %>%
-              select(-log_fit, -log_se)) %>%
-  mutate_at(vars(starts_with("resp"), 
-                 starts_with("se")),
-            list(exp)) %>%
+                     se_champ = pred_se)) %>%
+  # mutate_at(vars(starts_with("resp"), 
+  #                starts_with("se")),
+  #           list(exp)) %>%
   # add in direct QRF estimates
   left_join(pred_hab_sites %>%
               select(UniqueID, Watershed,
@@ -1025,8 +1064,8 @@ all_preds = model_rf_df %>%
                       0,
                       if_else(model == 'CHaMP',
                               se_champ,
-                              NA_real_))) %>%
-                              # se_no_champ))) %>%
+                              # NA_real_))) %>%
+                              se_no_champ))) %>%
   select(Species, type, UniqueID, model, response, SE) %>%
   # add watershed name (and HUC8 code)
   left_join(rch_200_df %>%
@@ -1063,7 +1102,6 @@ save(extrap_covars,
      model_rf_df,
      all_preds,
      file = paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
-
 
 # using the randomForestSRC package
 library(randomForestSRC)
@@ -1237,6 +1275,39 @@ save(extrap_covars,
      file = paste0('output/modelFits/extrap_200rch_RFSRC_', mod_choice, '.rda'))
 
 
+#---------------------------
+# create a geopackage from random forest extrapolation
+load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
+data("rch_200")
+
+rch_200_cap = rch_200 %>%
+  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
+         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
+  left_join(all_preds %>%
+              select(-HUC8_code)) %>%
+  filter(reach_leng < 500)
+
+rm(mod_data_weights, model_rf_df, extrap_covars)
+rm(rch_200, all_preds)
+
+# try splitting it up and appending each one subsequently, to help speed it up.
+rch_200_cap %>%
+  mutate_at(vars(HUC6_name),
+            list(fct_explicit_na)) %>%
+  tabyl(HUC6_name) %>%
+  adorn_totals()
+
+rch_200_cap_split = rch_200_cap %>%
+  group_split(HUC6_name)
+for(i in 1:length(rch_200_cap_split)) {
+  cat(paste("Working on group", i, "out of", length(rch_200_cap_split), "with", nrow(rch_200_cap_split[[i]]), " rows\n"))
+  
+  st_write(rch_200_cap_split[[i]],
+           dsn = paste0('output/gpkg/Rch_Cap_RF_', mod_choice, '.gpkg'),
+           driver = 'GPKG',
+           append = if_else(i == 1, F, T))
+}
 
 
 #-----------------------------------------------
