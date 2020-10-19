@@ -15,6 +15,7 @@ library(quantregForest)
 library(survey)
 library(caret)
 library(mgcv)
+library(randomForestSRC)
 
 # set default theme for ggplot
 theme_set(theme_bw())
@@ -656,8 +657,8 @@ cv_rf2 = cv_data %>%
                            }))
 
 # calculate some summary statistics
-cv_rf %>%
-# cv_rf2 %>%
+# cv_rf %>%
+cv_rf2 %>%
   mutate(cv_stats = map(fold_preds,
                         .f = function(x) {
                           x %>%
@@ -685,6 +686,65 @@ cv_rf %>%
   summarise(across(where(is.numeric), 
                    mean),
             .groups = "drop")
+
+# using random forest model with randomForestSRC package that ignores design weights
+cv_rfsrc = cv_data %>%
+  mutate(mod_no_champ = map(fold_mod_data,
+                            .f = function(x) {
+                              rfsrc(update(full_form, qrf_cap ~ .),
+                                    data = as.data.frame(x),
+                                    ntree = 1000)
+                            }),
+         mod_champ = map(fold_mod_data,
+                         .f = function(x) {
+                           rfsrc(update(full_form, qrf_cap ~. + Watershed),
+                                 data = as.data.frame(x),
+                                 ntree = 1000)
+                         })) %>%
+  pivot_longer(cols = c(mod_champ, mod_no_champ),
+               names_to = "model_type",
+               values_to = "model") %>%
+  mutate(fold_preds = map2(fold_cv_data,
+                           model,
+                           .f = function(x, y) {
+                             preds = predict(y,
+                                             newdata = as.data.frame(x))
+                             
+                             x %>%
+                               bind_cols(tibble(pred_cap = preds$predicted,
+                                                pred_se = preds$err.rate[!is.na(preds$err.rate)]))
+                               
+                           }))
+
+cv_rfsrc %>%
+  mutate(cv_stats = map(fold_preds,
+                        .f = function(x) {
+                          x %>%
+                            mutate(err = qrf_cap - pred_cap,
+                                   rel_err = err / qrf_cap) %>%
+                            mutate(inCI = if_else(qrf_cap <= (pred_cap + pred_se * qnorm(0.975)) &
+                                                    qrf_cap >= (pred_cap + pred_se * qnorm(0.025)),
+                                                  T, F)) %>%
+                            summarise(avg_qrf = mean(qrf_cap),
+                                      median_se = median(pred_se),
+                                      median_cv = median(pred_se / pred_cap),
+                                      bias = mean(err),
+                                      abs_bias = mean(abs(err)),
+                                      rel_bias = mean(rel_err),
+                                      rel_abs_bias = mean(abs(rel_err)),
+                                      cover95 = sum(inCI) / n(),
+                                      rmse = sqrt(mean(err^2)),
+                                      cv_rmse = rmse / mean(qrf_cap),
+                                      nrmse = rmse / IQR(qrf_cap))
+                        })) %>%
+  select(Species, response, model_type,
+         cv_stats) %>%
+  unnest(cols = cv_stats) %>%
+  group_by(Species, response, model_type) %>%
+  summarise(across(where(is.numeric), 
+                   mean),
+            .groups = "drop")
+
 
 
 # using GAMs that try to incorporate design weights
@@ -957,7 +1017,8 @@ cv_wtsd_gam %>%
 #--------------------------------------------------------
 # cv_gam %>%
 # cv_lm %>%
-cv_rf %>%
+# cv_rf %>%
+cv_rfsrc %>%
   select(Species,
          resp_nm = response,
          model_type,
@@ -979,7 +1040,8 @@ cv_rf %>%
 
 # cv_gam %>%
 # cv_lm %>%
-cv_rf %>%
+# cv_rf %>%
+cv_rfsrc %>%
 # cv_wtsd_rf %>%
 # cv_wtsd_lm %>%
   select(Species,
@@ -1000,3 +1062,58 @@ cv_rf %>%
   theme(axis.text.x = element_text(angle = 45,
                                    hjust = 1)) +
   labs(y = "95% Confidence Interval Coverage")
+
+
+cv_rf2 %>%
+  select(Species,
+         resp_nm = response,
+         # Watershed,
+         model_type,
+         fold_preds) %>%
+  unnest(cols = fold_preds) %>%
+  ggplot(aes(x = qrf_cap,
+             y = pred_cap,
+             color = Watershed)) +
+  geom_abline(linetype = 2) +
+  geom_errorbar(aes(ymin = pred_cap - pred_se,
+                    ymax = pred_cap + pred_se),
+                width = 0) +
+  geom_point() +
+  labs(x = "QRF",
+       y = "Extrapolation") +
+  facet_wrap(~ Species + resp_nm + model_type,
+             scales = "free")
+
+cv_rf %>%
+  select(Species, response, 
+         model_type, fold_num,
+         model) %>%
+  mutate(imp = map(model,
+                   .f = function(x) {
+                     importance(x) %>%
+                       as_tibble(rownames= "param") %>%
+                       mutate(relImp = IncNodePurity / max(IncNodePurity))
+                     })) %>%
+  unnest(cols = imp) %>%
+  group_by(Species,
+           response,
+           model_type,
+           param) %>%
+  summarise_at(vars(relImp),
+               list(mean = mean,
+                    median = median,
+                    sd = sd)) %>%
+  mutate(param = fct_reorder(param,
+                             mean)) %>%
+  ggplot(aes(x = param,
+             y = mean,
+             color = model_type)) +
+  geom_errorbar(aes(ymin = mean - sd,
+                    ymax = mean + sd),
+                width = 0) +
+  geom_point() +
+  coord_flip() +
+  facet_grid(Species ~ response) +
+  labs(x = 'Relative Importance',
+       y = "Covariate")
+
