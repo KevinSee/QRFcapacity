@@ -11,7 +11,7 @@
 #' @param method which method to use, either by creating random forests using the \code{missForest} package, or by predictive mean matching using the \code{aregImpute} function in the \code{Hmisc} package
 #' @param ntree how many trees to build if \code{method = 'missForest'} or \code{method == 'randomForestSRC'}
 #' @param nk how many knots to use in smoothing splines if using \code{method = 'Hmisc'}
-#' @param ... other arguements to be passed to either \code{missForest}, \code{aregImpute} or \code{impute} functions
+#' @param ... other arguments to be passed to either \code{missForest}, \code{aregImpute} or \code{impute} functions
 #'
 #' @import dplyr tidyr missForest
 #' @importFrom Hmisc aregImpute
@@ -74,7 +74,11 @@ impute_missing_data = function(data = NULL,
   for(colNm in all_cols) {
     if(!colNm %in% names(areg_data$imputed) |
        is.null(areg_data$imputed[[colNm]])) next
-    imputed_data[as.numeric(rownames(areg_data$imputed[[colNm]])), colNm] = rowMeans(areg_data$imputed[[colNm]])
+    if(class(pull(imputed_data, colNm)) == "integer") {
+      imputed_data[as.numeric(rownames(areg_data$imputed[[colNm]])), colNm] = as.integer(round(rowMeans(areg_data$imputed[[colNm]])))
+    } else {
+      imputed_data[as.numeric(rownames(areg_data$imputed[[colNm]])), colNm] = rowMeans(areg_data$imputed[[colNm]])
+    }
   }
   
   # pull out non-imputed data, combine with imputed data
