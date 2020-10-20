@@ -22,7 +22,7 @@ theme_set(theme_bw())
 mod_choice = c('juv_summer',
                'juv_summer_dash',
                'redds',
-               'juv_winter')[2]
+               'juv_winter')[4]
 
 for(mod_choice in c('juv_summer',
                     'juv_summer_dash',
@@ -199,20 +199,21 @@ for(mod_choice in c('juv_summer',
     # add a metric showing "some" fish cover
     mutate(FishCovSome = 100 - FishCovNone)
   
-  if(mod_choice != "juv_winter") {
+  # add a metric showing "some" riparian canopy
+  if(!mod_choice %in% c("juv_winter", "juv_summer_dash")) {
+    
     fish_hab %<>%
-      # add a metric showing "some" riparian canopy
       mutate(RipCovCanSome = 100 - RipCovCanNone)
     
     hab_data %<>%
-      # add a metric showing "some" riparian canopy
       mutate(RipCovCanSome = 100 - RipCovCanNone)
     
     hab_avg %<>%
-      # add a metric showing "some" riparian canopy
       mutate(RipCovCanSome = 100 - RipCovCanNone)
-    
-    # add temperature metrics
+  }
+  
+  # add temperature metrics
+  if(mod_choice != "juv_winter") {
     data("champ_temps")
     hab_avg %<>%
       left_join(champ_temps %>%
@@ -382,6 +383,9 @@ for(mod_choice in c('juv_summer',
   if(mod_choice == "redds") {
     impute_covars = impute_covars[!grepl('Year', impute_covars)]
   }
+  if(mod_choice == "juv_summer_dash") {
+    impute_covars = str_replace(impute_covars, "^Sin$", "Sin_CL")
+  }
   
   qrf_mod_df = fish_hab %>%
     mutate(id = 1:n()) %>%
@@ -396,9 +400,8 @@ for(mod_choice in c('juv_summer',
                 select(id, 
                        Species, Site, Watershed,
                        LON_DD, LAT_DD,
-                       VisitID,
                        fish_dens)) %>%
-    select(id, Species, Site, Watershed, LON_DD, LAT_DD, fish_dens, VisitID, one_of(all_covars))
+    select(id, Species, Site, Watershed, LON_DD, LAT_DD, fish_dens, one_of(all_covars))
   
   if(mod_choice %in% c('juv_summer',
                        'juv_summer_dash')) {
@@ -406,9 +409,11 @@ for(mod_choice in c('juv_summer',
       left_join(fish_hab %>%
                   mutate(id = 1:n()) %>%
                   select(id, 
+                         VisitID,
                          Year)) %>%
       select(Species:Watershed,
              Year,
+             VisitID,
              everything(),
              -id)
   } else if(mod_choice == "redds") {
@@ -426,8 +431,10 @@ for(mod_choice in c('juv_summer',
       left_join(fish_hab %>%
                   mutate(id = 1:n()) %>%
                   select(id, 
+                         VisitID,
                          Year, ChUnitNumber, SiteUnit)) %>%
       select(Species:Watershed,
+             VisitID,
              Year, ChUnitNumber, SiteUnit,
              everything(),
              -id)
