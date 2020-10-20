@@ -333,11 +333,11 @@ mine_plot_list = mine_res %>%
   split(list(.$dataset)) %>%
   map(.f = function(x) {
     x %>%
-  # put the metric names in descending order by MIC
-  mutate_at(vars(Metric, Name),
-            list(~ fct_reorder(., .x = MIC))) %>%
-  select(species, MetricCategory, Metric, everything()) %>%
-  arrange(species, MetricCategory, desc(MIC)) %>%
+      # put the metric names in descending order by MIC
+      mutate_at(vars(Metric, Name),
+                list(~ fct_reorder(., .x = MIC))) %>%
+      select(species, MetricCategory, Metric, everything()) %>%
+      arrange(species, MetricCategory, desc(MIC)) %>%
       # filter out some metrics with too many NAs or 0s
       filter((perc_NA < 0.5 & non_0 > 100)) %>%
       # filter out metrics with very low variance
@@ -355,7 +355,7 @@ mine_plot_list = mine_res %>%
                             'Area_Bf', 
                             'WetVol', 
                             'BfVol'))
-    })
+  })
 
 
 #-----------------------------------------------------
