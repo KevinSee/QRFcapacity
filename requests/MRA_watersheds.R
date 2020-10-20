@@ -16,6 +16,70 @@ library(QRFcapacity)
 theme_set(theme_bw())
 
 #-----------------------------------------------------------------
+# 200 m Reach Extrapolation
+#-----------------------------------------------------------------
+mod_choice = c('juv_summer',
+               'juv_summer_dash',
+               'redds')[2]
+
+load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
+data("rch_200")
+
+rch_200_cap = rch_200 %>%
+  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
+         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
+  left_join(all_preds %>%
+              select(-HUC8_code)) %>%
+  filter(reach_leng < 500)
+#-----------------------------------------------------------------
+# filter QRF capacities and species' domains to the upper Salmon area
+ups_cap = rch_200_cap %>%
+  filter(HUC6_name == 'Salmon',
+         (grepl("Lemhi", chnk_NWR_NAME) | grepl("Lemhi", sthd_NWR_NAME)) |
+           (grepl("Pahsimeroi", chnk_NWR_NAME) | grepl("Pahsimeroi", sthd_NWR_NAME)) |
+           (grepl("above Redfish Lake", chnk_NWR_NAME) | grepl("Salmon River Upper Mainstem", sthd_NWR_NAME)))
+
+ups_cap = rch_200_cap %>%
+  filter(HUC6_name == 'Salmon',
+         (grepl("Lemhi", chnk_NWR_NAME) & Watershed == "Lemhi") |
+           (grepl("Pahsimeroi", chnk_NWR_NAME)) |
+           (grepl("above Redfish Lake", chnk_NWR_NAME)))
+
+ups_cap %>%
+  ggplot() +
+  # geom_sf(aes(fill = chnk_NWR_NAME,
+  #             color = chnk_NWR_NAME)) +
+  geom_sf(aes(fill = as.factor(Watershed),
+              color = as.factor(Watershed))) +
+  theme_bw()
+
+ups_cap %>%
+  ggplot() +
+  geom_sf(aes(fill = sthd_NWR_NAME,
+              color = sthd_NWR_NAME)) +
+  theme_bw()
+
+ups_cap %>%
+  filter(grepl('Redfish', chnk_NWR_NAME),
+         chnk) %>%
+  ggplot() +
+  geom_sf(aes(fill = chnk_per_m2,
+              color = chnk_per_m2)) +
+  scale_fill_viridis_c(direction = -1) +
+  scale_color_viridis_c(direction = -1)
+
+
+# save it
+# as GPKG
+st_write(ups_cap,
+         dsn = paste0('output/gpkg/UpperSalmon_Rch200_Cap_', mod_choice, '.gpkg'),
+         driver = 'GPKG')
+
+
+#-----------------------------------------------------------------
+# Master Sample Point Extrapolation
+#-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
                'redds')[2]
