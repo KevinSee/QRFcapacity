@@ -16,6 +16,16 @@ library(tidyverse)
 library(sf)
 library(magrittr)
 
+#-------------------------
+# set NAS prefix, depending on operating system
+#-------------------------
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = "S:"
+} else if(.Platform$OS.type == 'unix') {
+  nas_prefix = "~/../../Volumes/ABS/"
+}
+
+
 #-----------------------------------------------------------------
 # set projection we'd like to use consistently
 myCRS = 5070
@@ -24,7 +34,7 @@ myCRS = 5070
 # read in stream network
 #-----------------------------------------------------------------
 # original 200 m reaches from Morgan Bond
-rch_200_org = st_read('data/raw/stream_network/crb_streams_v2_master.shp') %>%
+rch_200_org = st_read(paste0(nas_prefix, 'data/qrf/stream_network/crb_streams_v2_master.shp')) %>%
   st_transform(crs = myCRS) %>%
   st_zm()
 
@@ -134,9 +144,9 @@ rm(clearwater_full_join,
 ### THIS TOOK TOO LONG, ENDED UP RUNNING IN QGIS ###
 
 # # read in population boundaries (polygons)
-# chnk_pops = st_read('data/raw/domain/CHNK_SPSU_All.shp') %>%
+# chnk_pops = st_read(paste0(nas_prefix, 'data/qrf/domain/CHNK_SPSU_All.shp')) %>%
 #   st_transform(crs = myCRS)
-# sthd_pops = st_read('data/raw/domain/STHD_SUWI_All.shp') %>%
+# sthd_pops = st_read(paste0(nas_prefix, 'data/qrf/domain/STHD_SUWI_All.shp')) %>%
 #   st_transform(crs = myCRS) %>%
 #   filter(grepl('summer', RUN_TIMING))
 
@@ -200,10 +210,10 @@ rm(clearwater_full_join,
 # read in version with species' populations
 #-----------------------------------------------------------------
 # Chinook pops did not keep every UniqueID, but steelhead one did
-rch_pops_chnk = st_read('data/raw/stream_network/crb_streams_v2_chnk_pop.gpkg') %>%
+rch_pops_chnk = st_read(paste0(nas_prefix, 'data/qrf/stream_network/crb_streams_v2_chnk_pop.gpkg')) %>%
   st_transform(crs = myCRS)
 
-rch_pops_sthd = st_read('data/raw/stream_network/crb_streams_v2_sthd_pop.gpkg') %>%
+rch_pops_sthd = st_read(paste0(nas_prefix, 'data/qrf/stream_network/crb_streams_v2_sthd_pop.gpkg')) %>%
   st_transform(crs = myCRS)
 
 rch_200$UniqueID[!rch_200$UniqueID %in% rch_pops_sthd$UniqueID]
@@ -224,15 +234,15 @@ xtabs(~ is.na(chnk_NWR_NAME) + is.na(sthd_NWR_NAME), rch_200)
 #-----------------------------------------------------------------
 # get species' ranges
 #-----------------------------------------------------------------
-spr_chnk = st_read('data/raw/domain/crb_v2_spr_chnk.gpkg') %>%
+spr_chnk = st_read(paste0(nas_prefix, 'data/qrf/domain/crb_v2_spr_chnk.gpkg')) %>%
   st_transform(crs = myCRS) %>%
   st_zm()
 
-sum_chnk = st_read('data/raw/domain/crb_v2_sum_chnk.gpkg') %>%
+sum_chnk = st_read(paste0(nas_prefix, 'data/qrf/domain/crb_v2_sum_chnk.gpkg')) %>%
   st_transform(crs = myCRS) %>%
   st_zm()
 
-sum_sthd = st_read('data/raw/domain/crb_v2_sum_sthd.gpkg') %>%
+sum_sthd = st_read(paste0(nas_prefix, 'data/qrf/domain/crb_v2_sum_sthd.gpkg')) %>%
   st_transform(crs = myCRS) %>%
   st_zm()
 
@@ -354,14 +364,14 @@ sthd_domain = rch_200 %>%
 # # get species' ranges
 # #-----------------------------------------------------------------
 # # read in StreamNet shapefile
-# StmNt = st_read('data/raw/domain/FishDist_AllSpecies.shp') %>%
-# # StmNt = st_read('data/raw/domain/StreamNet_FishDist.shp') %>%
+# StmNt = st_read(paste0(nas_prefix, 'data/qrf/domain/FishDist_AllSpecies.shp')) %>%
+# # StmNt = st_read(paste0(nas_prefix, 'data/qrf/domain/StreamNet_FishDist.shp')) %>%
 #   st_transform(crs = myCRS)
 # 
 # # read in population boundaries (polygons)
-# chnk_pops = st_read('data/raw/domain/CHNK_SPSU_All.shp') %>%
+# chnk_pops = st_read(paste0(nas_prefix, 'data/qrf/domain/CHNK_SPSU_All.shp')) %>%
 #   st_transform(crs = myCRS)
-# sthd_pops = st_read('data/raw/domain/STHD_SUWI_All.shp') %>%
+# sthd_pops = st_read(paste0(nas_prefix, 'data/qrf/domain/STHD_SUWI_All.shp')) %>%
 #   st_transform(crs = myCRS) %>%
 #   filter(grepl('summer', RUN_TIMING))
 # 
@@ -414,7 +424,7 @@ sthd_domain = rch_200 %>%
 # upper Salmon extents, based on BoR designations
 #-----------------------------------------------------------------
 # Chinook
-uppSalmChnk = st_read('data/raw/domain/UP_Salmon_ChinookExtents_All.shp') %>%
+uppSalmChnk = st_read(paste0(nas_prefix, 'data/qrf/domain/UP_Salmon_ChinookExtents_All.shp')) %>%
   st_transform(myCRS) %>%
   st_zm() %>%
   # all NAs for Basin are in North Fork Salmon
@@ -633,7 +643,7 @@ ggpubr::ggarrange(plotlist = list(p4, p5),
 
 
 # Steelhead
-uppSalmSthd = st_read('data/raw/domain/UPsalmon_SteelheadExtent_All.shp') %>%
+uppSalmSthd = st_read(paste0(nas_prefix, 'data/qrf/domain/UPsalmon_SteelheadExtent_All.shp')) %>%
   st_transform(myCRS) %>%
   st_zm() %>%
   # mutate(StreamName = GNIS_Name) %>%
@@ -737,7 +747,7 @@ rch_200 %<>%
 # Upper Grande Ronde extents, based on ODFW designations
 #-----------------------------------------------------------------
 # Chinook
-ugrChnk = st_read('data/raw/domain/CRITFC_Chinook_Target_Frame_April2012Copy.shp') %>%
+ugrChnk = st_read(paste0(nas_prefix, 'data/qrf/domain/CRITFC_Chinook_Target_Frame_April2012Copy.shp')) %>%
   st_transform(myCRS) %>%
   mutate(Basin = recode(Basin,
                         'Upper Grande Ronde River' = 'Grande Ronde River Upper Mainstem'),
@@ -791,7 +801,7 @@ chnk_domain %>%
   rbind(ugrChnk) -> chnk_domain
 
 # steelhead
-ugrSthd = st_read('data/raw/domain/StS_Grum_Spawning_Universe.shp') %>%
+ugrSthd = st_read(paste0(nas_prefix, 'data/qrf/domain/StS_Grum_Spawning_Universe.shp')) %>%
   st_transform(myCRS) %>%
   rename(StreamName = FEAT_NAME) %>%
   mutate(NWR_NAME = 'Steelhead (Snake River Basin DPS) - Grande Ronde River Upper Mainstem',
@@ -811,7 +821,7 @@ sthd_domain %>%
 #-----------------------------------------------------------------
 # John Day extent for Chinook, based on ODFW
 #-----------------------------------------------------------------
-jd_chnk = st_read("data/raw/domain/ODFW_ChS_Distribution.shp") %>%
+jd_chnk = st_read(paste0(nas_prefix, "data/qrf/domain/ODFW_ChS_Distribution.shp")) %>%
   st_transform(myCRS) %>%
   st_intersection(st_read("/Users/seek/OneDrive - Merck Sharp & Dohme, Corp/Data/WatershedBoundaries/WBDHU6.shp") %>%
                     filter(NAME == 'John Day') %>%
