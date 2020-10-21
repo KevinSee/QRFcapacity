@@ -17,12 +17,22 @@ library(usethis)
 
 theme_set(theme_bw())
 
+#-------------------------
+# set NAS prefix, depending on operating system
+#-------------------------
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = "S:"
+} else if(.Platform$OS.type == 'unix') {
+  nas_prefix = "~/../../Volumes/ABS/"
+}
+
+
 #-----------------------------------------------------------
 # pull in some spawner-recruit data from Morgan Bond that he compiled from a variety of agencies
 #-----------------------------------------------------------
 # best guess for over-winter survival
 overwinter_surv = 0.32
-sr_data = read_csv('data/raw/spawn_rec/CRB_spawn_juv_kevin_all.csv') %>%
+sr_data = read_csv(paste0(nas_prefix, 'data/qrf/spawn_rec/CRB_spawn_juv_kevin_all.csv')) %>%
   rename(Fry_spring = `Fry migrants (spring/summer)`,
          Parr_fall = `Fall Parr migrants (Fall)`,
          Smolt_spring = `Spring smolt migrants`,
@@ -53,12 +63,12 @@ sr_data = read_csv('data/raw/spawn_rec/CRB_spawn_juv_kevin_all.csv') %>%
 
 
 # ODFW redd / parr data
-odfw_data = read_excel('data/raw/spawn_rec/Snake_ChS_CATH_GRUM_wWeir_NOSAEJ_TSAEJ_SummerParr_forKevinSee_20141013.xlsx') %>%
+odfw_data = read_excel(paste0(nas_prefix, 'data/qrf/spawn_rec/Snake_ChS_CATH_GRUM_wWeir_NOSAEJ_TSAEJ_SummerParr_forKevinSee_20141013.xlsx')) %>%
   rename(Tot_spawners = TSAEJ,
          Nat_spawners = NOSAEJ,
          Parr = LateSummerParr) %>%
   select(NMFS_Common_Name, BroodYear, OutmigrationYear, Nat_spawners:Parr) %>%
-  bind_rows(read_excel('data/raw/spawn_rec/Snake_ChS_NOSAEJ_TSAEJ_fromReddEst_SummerParr_forKevinSee_20151013.xlsx') %>%
+  bind_rows(read_excel(paste0(nas_prefix, 'data/qrf/spawn_rec/Snake_ChS_NOSAEJ_TSAEJ_fromReddEst_SummerParr_forKevinSee_20151013.xlsx')) %>%
               rename(Tot_spawners = TSAEJ,
                      Nat_spawners = NOSAEJ,
                      Parr = LateSummerParr) %>%
@@ -68,7 +78,7 @@ odfw_data = read_excel('data/raw/spawn_rec/Snake_ChS_CATH_GRUM_wWeir_NOSAEJ_TSAE
          Spawner_type = 'total spawners')
 
 # Data for the Chiwawa from Tracy Hilman
-chiw_data = read_csv('data/raw/spawn_rec/ChiwawaData_TracyHillman.csv') %>%
+chiw_data = read_csv(paste0(nas_prefix, 'data/qrf/spawn_rec/ChiwawaData_TracyHillman.csv')) %>%
   rename(BroodYear = BY,
          Spawners = `Stock (Spawners)`,
          Eggs = `Total Eggs`,
@@ -94,8 +104,8 @@ lem_spwn = 2010:2018 %>%
            
            cat(paste('Compiling', spp, 'in', yr, '\n'))
            
-           load(paste0('/Users/kevin/Dropbox/ISEMP/Git/SnakeBasinFishStatus/STADEM_results/LGR_STADEM_', spp, '_', yr,'.rda')) 
-           load(paste0('/Users/kevin/Dropbox/ISEMP/Git/SnakeBasinFishStatus/DABOM_results/LGR_DABOM_', spp, '_', yr,'.rda'))
+           load(paste0('/Users/seek/Documents/GitProjects/MyProjects/SnakeBasinFishStatus/STADEM_results/LGR_STADEM_', spp, '_', yr,'.rda')) 
+           load(paste0('/Users/seek/Documents/GitProjects/MyProjects/SnakeBasinFishStatus/DABOM_results/LGR_DABOM_', spp, '_', yr,'.rda'))
            
            lem_summ = calcTribEscape_LGD(dabom_mod,
                                          stadem_mod,
@@ -116,7 +126,7 @@ lem_spwn = 2010:2018 %>%
             list(as.numeric))
 
 # screw trap estimates by lifestage and population
-lem_rst = excel_sheets('data/raw/spawn_rec/Lemhi RST Chinook Outmigration Status.xlsx') %>%
+lem_rst = excel_sheets(paste0(nas_prefix, 'data/qrf/spawn_rec/Lemhi RST Chinook Outmigration Status.xlsx')) %>%
   as.list() %>%
   rlang::set_names() %>%
   map_df(.id = 'Trap',
@@ -126,7 +136,7 @@ lem_rst = excel_sheets('data/raw/spawn_rec/Lemhi RST Chinook Outmigration Status
                                'A:K',
                                'A:H')
            
-           rst_est = read_excel('data/raw/spawn_rec/Lemhi RST Chinook Outmigration Status.xlsx',
+           rst_est = read_excel(paste0(nas_prefix, 'data/qrf/spawn_rec/Lemhi RST Chinook Outmigration Status.xlsx'),
                       x,
                       range = cell_cols(col_range))
            if(x == "L3AO") {
@@ -151,7 +161,7 @@ lem_rst = excel_sheets('data/raw/spawn_rec/Lemhi RST Chinook Outmigration Status
   select(Population, BroodYear, lifestage, RST_est:UB)
 
 # survival estimates by lifestage and population (generated from TribPIT)
-lem_surv = read_excel('data/raw/spawn_rec/Lemhi Chinook Survival 191015.xlsx',
+lem_surv = read_excel(paste0(nas_prefix, 'data/qrf/spawn_rec/Lemhi Chinook Survival 191015.xlsx'),
                           'Survival estimates',
                           range = 'A13:L21') %>%
   rename(lifestage = `Upper Lemhi sub-population`) %>%
@@ -159,7 +169,7 @@ lem_surv = read_excel('data/raw/spawn_rec/Lemhi Chinook Survival 191015.xlsx',
   gather(BroodYear, survival, -Population, -lifestage) %>%
   mutate(survival = str_split(survival, '\\(', simplify = T)[,1],
          survival = as.numeric(survival)) %>%
-  bind_rows(read_excel('data/raw/spawn_rec/Lemhi Chinook Survival 191015.xlsx',
+  bind_rows(read_excel(paste0(nas_prefix, 'data/qrf/spawn_rec/Lemhi Chinook Survival 191015.xlsx'),
                        'Survival estimates',
                        range = 'A3:L11') %>%
               rename(lifestage = `Hayden sub-population`) %>%
@@ -167,7 +177,7 @@ lem_surv = read_excel('data/raw/spawn_rec/Lemhi Chinook Survival 191015.xlsx',
               gather(BroodYear, survival, -Population, -lifestage) %>%
               mutate(survival = str_split(survival, '\\(', simplify = T)[,1],
                      survival = as.numeric(survival))) %>%
-  bind_rows(read_excel('data/raw/spawn_rec/Lemhi Chinook Survival 191015.xlsx',
+  bind_rows(read_excel(paste0(nas_prefix, 'data/qrf/spawn_rec/Lemhi Chinook Survival 191015.xlsx'),
                        'Survival estimates',
                        range = 'A23:L29') %>%
               rename(lifestage = `Combined Lemhi subbasin`) %>%
