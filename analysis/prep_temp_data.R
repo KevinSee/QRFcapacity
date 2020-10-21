@@ -13,33 +13,43 @@ library(sf)
 
 theme_set(theme_bw())
 
+#-------------------------
+# set NAS prefix, depending on operating system
+#-------------------------
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = "S:"
+} else if(.Platform$OS.type == 'unix') {
+  nas_prefix = "~/../../Volumes/ABS/"
+}
+
+
 #-----------------------------------------------------------------
 # set projection we'd like to use consistently
 my_crs = 5070
 
 #-----------------------------------------------------------------
 # read in shapefiles with mean aug temperature predictions from NorWeST
-int_crb_temp = read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_Salmon/NorWeST_PredictedStreamTempLines_Salmon.shp') %>%
+int_crb_temp = read_sf(paste0(nas_prefix, 'data/temperature/NorWeST/NorWeST_PredictedStreamTempLines_Salmon/NorWeST_PredictedStreamTempLines_Salmon.shp')) %>%
   st_transform(crs = my_crs) %>%
   mutate(NorWeST_area = 'Salmon') %>%
   select(OBSPRED_ID:BFI, NorWeST_area, GNIS_NAME, COMID, Air_Aug, Flow_Aug, everything()) %>%
-  rbind(read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_Clearwater/NorWeST_PredictedStreamTempLines_Clearwater.shp') %>%
+  rbind(read_sf(paste0(nas_prefix, 'data/temperature/NorWeST/NorWeST_PredictedStreamTempLines_Clearwater/NorWeST_PredictedStreamTempLines_Clearwater.shp')) %>%
           st_transform(crs = my_crs) %>%
           mutate(NorWeST_area = 'Clearwater') %>%
           select(one_of(names(.)))) %>%
-  rbind(read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_MidColumbia_MWMT/NorWeST_PredictedStreamTempLines_MidColumbia_MWMT.shp') %>%
+  rbind(read_sf(paste0(nas_prefix, 'data/temperature/NorWeST/NorWeST_PredictedStreamTempLines_MidColumbia_MWMT/NorWeST_PredictedStreamTempLines_MidColumbia_MWMT.shp')) %>%
           st_transform(crs = my_crs) %>%
           mutate(NorWeST_area = 'MidColumbia_MWMT') %>%
           rename(Air_Aug = Air_Temp,
                  Flow_Aug = Flow) %>%
           select(one_of(names(.)))) %>%
-  rbind(read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_UpperColumbiaYakima_MWMT/NorWeST_PredictedStreamTempLines_UpperColumbiaYakima_MWMT.shp') %>%
+  rbind(read_sf(paste0(nas_prefix, 'data/temperature/NorWeST/NorWeST_PredictedStreamTempLines_UpperColumbiaYakima_MWMT/NorWeST_PredictedStreamTempLines_UpperColumbiaYakima_MWMT.shp')) %>%
           st_transform(crs = my_crs) %>%
           mutate(NorWeST_area = 'UpperColumbiaYakima_MWMT') %>%
           rename(Air_Aug = Air_Temp,
                  Flow_Aug = Flow) %>%
           select(one_of(names(.)))) %>%
-  rbind(read_sf('data/raw/temperature/NorWeST_PredictedStreamTempLines_MiddleSnake/NorWeST_PredictedStreamTempLines_MiddleSnake.shp') %>%
+  rbind(read_sf(paste0(nas_prefix, 'data/temperature/NorWeST/NorWeST_PredictedStreamTempLines_MiddleSnake/NorWeST_PredictedStreamTempLines_MiddleSnake.shp')) %>%
           st_transform(crs = my_crs) %>%
           mutate(NorWeST_area = 'MiddleSnake') %>%
           add_column(S33_2012 = NA,
