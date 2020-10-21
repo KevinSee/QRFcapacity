@@ -135,6 +135,7 @@ for(mod_choice in c('juv_summer',
                    select(Site, Watershed, VisitID, VisitYear,
                           Channel_Type, Elev_M, CUMDRAINAG, 
                           LON_DD, LAT_DD,
+                          DistPrin1,
                           Discharge = Q,
                           Lgth_Wet, Area_Wet,
                           CU_Freq,
@@ -166,6 +167,7 @@ for(mod_choice in c('juv_summer',
                   select(Site, Watershed,
                          Channel_Type, Elev_M, CUMDRAINAG, 
                          LON_DD, LAT_DD,
+                         DistPrin1,
                          Discharge = Q,
                          Lgth_Wet, Area_Wet,
                          CU_Freq,
@@ -451,7 +453,6 @@ for(mod_choice in c('juv_summer',
                         0.005)
   
   # fit random forest models
-  set.seed(4)
   qrf_mods = qrf_mod_df %>%
     split(list(.$Species)) %>%
     map(.f = function(z) {
