@@ -9,16 +9,25 @@
 # load needed libraries
 library(tidyverse)
 
+#-------------------------
+# set NAS prefix, depending on operating system
+#-------------------------
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = "S:"
+} else if(.Platform$OS.type == 'unix') {
+  nas_prefix = "~/../../Volumes/ABS/"
+}
+
 #-----------------------------------------------------------------
 # Read in and prepare CHaMP habitat data
-champ_sites = read_csv(file = 'data/raw/fish/redds/CHAMPsites_With_RID_MEAS.csv') %>%
+champ_sites = read_csv(file = paste0(nas_prefix, 'data/qrf/fish/redds/CHAMPsites_With_RID_MEAS.csv')) %>%
   select(ProgramSiteID, Site = SiteName, WatershedID, Watershed = WatershedName, Stream, 
          LAT_DD, LON_DD,
          RID, MEAS_champ = MEAS, 
          NEAR_DIST, NEAR_X, NEAR_Y, minArea_m2)
 
 # Read in and prepare redd data
-redd_df = read_csv(file = 'data/raw/fish/redds/ReddData_With_RID_MEAS.csv') %>%
+redd_df = read_csv(file = paste0(nas_prefix, 'data/qrf/fish/redds/ReddData_With_RID_MEAS.csv')) %>%
   # For Entiat, we decided to remove the summer Chinook redd data. The summer Chinook population in the Entiat is completely a product of hatchery propagation.
   filter(!(Species == 'Chinook' & Basin == 'Entiat' & Run == 'Summer')) %>%
   rename(MEAS_redd = MEAS) %>%

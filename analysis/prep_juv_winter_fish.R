@@ -13,6 +13,14 @@ library(tidyverse)
 library(magrittr)
 library(measurements)
 
+#-------------------------
+# set NAS prefix, depending on operating system
+#-------------------------
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = "S:"
+} else if(.Platform$OS.type == 'unix') {
+  nas_prefix = "~/../../Volumes/ABS/"
+}
 
 #-----------------------------------------------------------------
 # Bring in some CHaMP habitat data at the channel unit scale, to fill in blank Tier 1 classifications.
@@ -40,7 +48,7 @@ cu_data = champ_cu %>%
 # ODFW
 #-----------------------------------------------------------------
 # snorkel
-odfw_snork = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
+odfw_snork = read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/ODFW - Basin Data for Kevin.xlsx'),
                        'SnorkelCount') %>%
   rename(SiteUnit = `Site_ID_+Unit`,
          SiteName = `Site ID`,
@@ -59,7 +67,7 @@ odfw_snork = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
             list(str_to_upper))
 
 # mark recapture
-odfw_mr = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
+odfw_mr = read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/ODFW - Basin Data for Kevin.xlsx'),
                     'MarkRecap') %>%
   rename(SiteName = `Site ID`,
          ChUnitNumber = `Unit No.`,
@@ -87,7 +95,7 @@ odfw_mr = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
          Pass3_R = Recap)
 
 # depletions
-odfw_depl_org = read_excel('data/raw/fish/winter/ODFW - Basin Data for Kevin.xlsx',
+odfw_depl_org = read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/ODFW - Basin Data for Kevin.xlsx'),
                          'Depletions') %>%
   rename(SiteName = `Site ID`,
          ChUnitNumber = `Unit No.`,
@@ -124,7 +132,7 @@ odfw_depl = odfw_depl_org %>%
 
 
 # snorkel counts
-odfw_snork_only = read_excel('data/raw/fish/winter/qry_Count_Salmonids_By_Unit_winter.xlsx',
+odfw_snork_only = read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/qry_Count_Salmonids_By_Unit_winter.xlsx'),
                            'Combined_Kevins_Format') %>%
   select(Stream:pass3_R) %>%
   rename(Pass1_M = pass1_M,
@@ -169,7 +177,7 @@ odfw_data %>%
 #-----------------------------------------------------------------
 # QCI
 #-----------------------------------------------------------------
-qci_2018 = read_excel('data/raw/fish/winter/QCI_winterQRF_capture.xlsx') %>%
+qci_2018 = read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/QCI_winterQRF_capture.xlsx')) %>%
   rename(ChUnitNumber = ChUnitNum,
          Stream = StreamName,
          Date = SurveyDateTime,
@@ -236,7 +244,7 @@ qci_2018 %<>%
 
 
 # get QCI/ABS data from 2018-2019
-qci_2019 = read_excel('data/raw/fish/winter/winterQRF_18to19_capture.xlsx') %>%
+qci_2019 = read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/winterQRF_18to19_capture.xlsx')) %>%
   rename(ChUnitNumber = HabitatUnit,
          Stream = StreamName,
          Date = SampledDate,
@@ -299,7 +307,7 @@ qci_data = qci_2018 %>%
 # WDFW
 #-----------------------------------------------------------------
 # Flow data
-wdfw_flow = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
+wdfw_flow = read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/WDFW Night Snorkel Data.xlsx'),
                       'Flow',
                       range = 'O4:Q39') %>%
   rename(Stream = 1,
@@ -311,7 +319,7 @@ wdfw_flow = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
                                'm3_per_sec'),
          VisitID = as.integer(str_replace(VisitID, '_1$', ''))) %>%
   select(-FlowCFS) %>%
-  full_join(read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
+  full_join(read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/WDFW Night Snorkel Data.xlsx'),
                        'Flow',
                        range = 'A1:D632') %>%
               rename(VisitID = `Stream ID`) %>%
@@ -326,7 +334,7 @@ wdfw_flow = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
 
 
 # snorkel
-wdfw_snork = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
+wdfw_snork = read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/WDFW Night Snorkel Data.xlsx'),
                        'Raw Snorkel Data') %>%
   select(Date,
          Time = `Start Time`,
@@ -382,7 +390,7 @@ wdfw_snork = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
 # WDFW mark-recapture / snorkel calibration surveys
 
 # by size class
-wdfw_mr_size_cls = read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
+wdfw_mr_size_cls = read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/WDFW Night Snorkel Data.xlsx'),
                            'Correction Factor',
                            range = 'S40:BP60') %>%
   rename(Stream = 1,
@@ -455,7 +463,7 @@ wdfw_mr = wdfw_mr_size_cls %>%
   mutate(Tier2 = recode(Tier2,
                         'Fast Non Turb' = 'Run')) %>%
   select(-id) %>%
-  left_join(read_excel('data/raw/fish/winter/WDFW Night Snorkel Data.xlsx',
+  left_join(read_excel(paste0(nas_prefix, 'data/qrf/fish/winter/WDFW Night Snorkel Data.xlsx'),
                        'Correction Factor',
                        range = 'A1:Q392') %>%
               select(Date,
