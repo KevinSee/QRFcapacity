@@ -30,7 +30,7 @@ impute_missing_data(
 
 \item{nk}{how many knots to use in smoothing splines if using \code{method = 'Hmisc'}}
 
-\item{...}{other arguements to be passed to either \code{missForest}, \code{aregImpute} or \code{impute} functions}
+\item{...}{other arguments to be passed to either \code{missForest}, \code{aregImpute} or \code{impute} functions}
 }
 \value{
 data.frame containing non-missing and imputed data
