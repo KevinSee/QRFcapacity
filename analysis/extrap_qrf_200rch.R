@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Extrapolate QRF model to all 200 m reaches
 # Created: 3/20/2020
-# Last Modified: 7/17/2020
+# Last Modified: 12/14/2020
 # Notes: 
 
 #-----------------------------------------------------------------
@@ -192,21 +192,196 @@ range_max = range_comp %>%
   ungroup() %>%
   gather(type, value, -Metric, -Source)
 
+range_max_all = range_max %>%
+  bind_rows(range_comp %>%
+              group_by(Metric, Source) %>%
+              summarize(across(value,
+                               tibble::lst(quantile),
+                               probs = c(0.25),
+                               na.rm = T)) %>%
+              rename(lower_quant = value_quantile) %>%
+              left_join(range_comp %>%
+                          group_by(Metric, Source) %>%
+                          summarize(across(value,
+                                           tibble::lst(quantile),
+                                           probs = c(0.75),
+                                           na.rm = T)) %>%
+                          rename(upper_quant = value_quantile)) %>%
+              filter(Source == 'CHaMP Reaches') %>%
+              ungroup() %>%
+              pivot_longer(cols = ends_with('quant'),
+                           names_to = "type",
+                           values_to = "value")) %>%
+  mutate(range_type = if_else(type %in% c('min', 'max'),
+                              'Range',
+                              'IQR'))
 
-# covar_range_p = range_comp %>%
-#   ggplot(aes(x = Source,
-#              y = value,
-#              fill = Source)) +
-#   geom_boxplot() +
-#   facet_wrap(~ Metric,
-#              scales = 'free') +
-#   geom_hline(data = range_max,
-#              aes(yintercept = value),
-#              lty = 2,
-#              color = 'darkgray') +
-#   theme_minimal()
+covar_range_p = range_comp %>%
+  mutate(Source = str_remove(Source, " Reaches$")) %>%
+  ggplot(aes(x = Source,
+             y = value,
+             fill = Source)) +
+  geom_boxplot() +
+  facet_wrap(~ Metric,
+             scales = 'free') +
+  geom_hline(data = range_max,
+             aes(yintercept = value),
+             lty = 2,
+             color = 'darkgray') +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
 # covar_range_p
+# ggsave('~/Desktop/GAA_200rch_comparison.pdf',
+ggsave('output/figures/GAA_200rch_comparison.pdf',
+       covar_range_p,
+       height = 7,
+       width = 10)
+
+# another way to look at it
+# break it down by HUC6
+comp_df = rch_200_df %>%
+  mutate(Source = if_else(UniqueID %in% unique(pred_hab_sites$UniqueID),
+                          "CHaMP Reaches",
+                          "non-CHaMP Reaches")) %>%
+  filter(strm_order <= 6,
+         !GNIS_Name %in% c("Columbia River",
+                           "Snake River")) %>%
+  filter(sthd | chnk) %>%
+  pivot_longer(cols = any_of(extrap_num),
+               names_to = "Metric",
+               values_to = "value") %>%
+  left_join(range_max_all %>%
+              select(-range_type) %>%
+              pivot_wider(names_from = "type",
+                          values_from = "value") %>%
+              select(-Source)) %>%
+  mutate(in_range = if_else(value >= min & value <= max,
+                            T, F),
+         in_iqr = if_else(value >= lower_quant & value <= upper_quant,
+                          T, F)) %>%
+  filter(!(Metric == "S2_02_11" & value < -9000)) %>%
+  filter(!is.na(value))
+
+# log these covariates for plotting purposes
+log_mets = c('alp_accum',
+             'fines_accu',
+             'flow_accum',
+             'grav_accum',
+             'p_accum',
+             'fp_cur')
+
+# 2 plots, one with logged covariates, one without
+covar_comp_log = comp_df %>%
+  filter(Metric %in% log_mets) %>%
+  ggplot(aes(x = HUC6_name,
+             y = value,
+             fill = HUC6_name)) +
+  scale_fill_brewer(palette = "Spectral") +
+  geom_hline(data = range_max_all %>%
+               filter(Metric %in% log_mets),
+             aes(yintercept = value,
+                 linetype = range_type),
+             color = 'darkblue') +
+  scale_linetype(guide = 'none') +
+  geom_boxplot(outlier.color = 'gray70') +
+  facet_wrap(~ Metric,
+             ncol = 3,
+             scales = 'free') +
+  scale_y_continuous(trans = "log",
+                     breaks = scales::pretty_breaks()) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        axis.title = element_blank(),
+        axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size = 6),
+        axis.text.y = element_text(size = 6))
+
+covar_comp_nolog = comp_df %>%
+  filter(!Metric %in% log_mets) %>%
+  ggplot(aes(x = HUC6_name,
+             y = value,
+             fill = HUC6_name)) +
+  scale_fill_brewer(palette = "Spectral") +
+  geom_hline(data = range_max_all %>%
+               filter(!Metric %in% log_mets),
+             aes(yintercept = value,
+                 linetype = range_type),
+             color = 'darkblue') +
+  scale_linetype(guide = 'none') +
+  geom_boxplot(outlier.color = 'gray70') +
+  facet_wrap(~ Metric,
+             nrow = 2,
+             scales = 'free') +
+  scale_y_continuous(trans = "identity",
+                     breaks = scales::pretty_breaks()) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        axis.title = element_blank(),
+        axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size = 6),
+        axis.text.y = element_text(size = 6))
+
+covar_comp_p = ggpubr::ggarrange(plotlist = list(covar_comp_log,
+                                                 covar_comp_nolog),
+                                 nrow = 1,
+                                 common.legend = T,
+                                 legend = "bottom")
+# save the plot
+ggsave('output/figures/GAA_200rch_comparison_huc6.pdf',
+       covar_comp_p,
+       height = 8,
+       width = 11)
+
+# another way to summarize these results
+comp_summ = comp_df %>%
+  mutate(across(HUC6_name,
+                fct_drop)) %>%
+  group_by(Metric,
+           HUC6_name,
+           min, 
+           lower_quant, upper_quant,
+           max) %>%
+  summarise(n_rch = n_distinct(UniqueID),
+            n_champ = n_distinct(UniqueID[Source == 'CHaMP Reaches']),
+            n_in_range = n_distinct(UniqueID[in_range]),
+            n_out_range = n_distinct(UniqueID[!in_range]),
+            # n_in_range = n_distinct(UniqueID[in_iqr]),
+            # n_out_range = n_distinct(UniqueID[!in_iqr]),
+            pct_in_range = n_in_range / n_rch,
+            max_huc = max(value, na.rm = T),
+            min_huc = min(value, na.rm = T),
+            .groups = "drop") %>%
+  mutate(pct_max_over = if_else(max_huc > max,
+                                (max_huc - max) / max,
+                                NA_real_),
+         pct_min_under = if_else(min_huc < min,
+                                 (min_huc - min) / min,
+                                 NA_real_))
+
+tabyl(comp_summ,
+      HUC6_name)
+
+comp_summ %>%
+  # filter(!is.na(pct_min_under))
+  # arrange(pct_in_range)
+  # arrange(desc(pct_max_over))
+
+comp_summ %>%
+  filter(HUC6_name == "Clearwater") %>%
+  pull(pct_in_range)
+
+comp_df %>%
+  filter(HUC6_name == "Upper Columbia",
+         !in_range) %>%
+  group_by(GNIS_Name) %>%
+  summarise(n_rch = n_distinct(UniqueID),
+            .groups = "drop") %>%
+  arrange(desc(n_rch))
+
+
 
 # # correlation between numeric covariates
 # rch_200_df %>%
