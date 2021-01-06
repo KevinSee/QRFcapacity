@@ -6,16 +6,6 @@ author:
     email: kevin.see@merck.com
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output:
-  bookdown::pdf_document2:
-    pandoc_args:
-    - --lua-filter=templates/scholarly-metadata.lua
-    - --lua-filter=templates/author-info-blocks2.lua
-    - --lua-filter=templates/pagebreak.lua
-    fig_height: 8
-    fig_width: 6
-    number_sections: no
-    includes:
-      in_header: "templates/header_ABS.tex"
   bookdown::html_document2:
     theme: simplex
     toc: yes
@@ -28,6 +18,16 @@ output:
     - --lua-filter=templates/scholarly-metadata.lua
     - --lua-filter=templates/author-info-blocks.lua
     - --lua-filter=templates/pagebreak.lua
+  bookdown::pdf_document2:
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks2.lua
+    - --lua-filter=templates/pagebreak.lua
+    fig_height: 8
+    fig_width: 6
+    number_sections: no
+    includes:
+      in_header: "templates/header_ABS.tex"
   bookdown::word_document2: 
     fig_caption: yes
     fig_height: 7
@@ -73,7 +73,8 @@ library(ggpubr)
 library(ggrepel)
 library(scales)
 
-theme_set(theme_bw())
+# theme_set(theme_bw())
+theme_set(theme_pubr(base_size = 10))
 ```
 
 ```{r package-bibtex, eval = F}
@@ -85,91 +86,46 @@ knitr::write_bib(c("base",
                  file = 'packages.bib')
 ```
 
-```{r lifestage, eval = F}
-# which QRF model to use?
-mod_choice = c('juv_summer',
-               'juv_summer_dash',
-               'redds')[2]
-```
-
-```{r reach-capacity, eval = F}
-# read in capacity estimates and create a shapefile
-load(paste0('../output/modelFits/extrap_200rch_', mod_choice, '.rda'))
-in_covar_range_rch = model_svy_df$pred_all_rchs[[1]] %>%
-  select(UniqueID, in_covar_range)
-rch_covars = extrap_covars
-
-mod_rch = model_svy_df %>%
-  filter(Species == 'Chinook',
-         response == 'cap_per_m') %>%
-  mutate(type = "Reaches") %>%
-  select(Species,
-         response,
-         type,
-         mod_champ,
-         mod_no_champ) %>%
-  pivot_longer(cols = starts_with("mod"),
-               names_to = "version",
-               values_to = "model") %>%
-  mutate(tidy_summ = map(model,
-                         broom::tidy))
-
-data("chnk_domain")
-data("rch_200")
-
-rch_200_cap = rch_200 %>%
-  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
-         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
-         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
-  left_join(all_preds %>%
-              select(-HUC8_code)) %>%
-  mutate(chnk_tot = chnk_per_m * reach_leng,
-         chnk_tot_se = chnk_per_m_se * reach_leng) %>%
-  mutate(sthd_tot = sthd_per_m * reach_leng,
-         sthd_tot_se = sthd_per_m_se * reach_leng) %>%
-  mutate_at(vars(starts_with("chnk_tot")),
-            list(~ if_else(!chnk, NA_real_, .))) %>%
-  mutate_at(vars(starts_with("sthd_tot")),
-            list(~ if_else(!sthd, NA_real_, .))) %>%
-  # focus on andromous ranges
-  filter(chnk | sthd) %>%
-  left_join(in_covar_range_rch) %>%
-  st_transform(st_crs(chnk_domain)) %>%
-  select(everything(), geometry)
-
-rch_200_cap %<>%
-  mutate(model_choice = mod_choice) %>%
-  select(model_choice, everything())
-
-rm(mod_data_weights, model_svy_df, extrap_covars, rch_200, all_preds)
-```
-
 ```{r reach-cap-all-models}
-all_rch_preds = c('juv_summer',
-                  'juv_summer_dash',
-                  'redds') %>%
+rch_res_list = c('juv_summer',
+                 'juv_summer_dash',
+                 'redds') %>%
   as.list() %>%
-  map_df(.f = function(x) {
-    load(paste0('../output/modelFits/extrap_200rch_', x, '.rda'))
-    all_preds %>%
-      mutate(model_choice = x) %>%
-      select(model_choice, everything())
+  rlang::set_names() %>%
+  map(.f = function(x) {
+    load(paste0('../output/modelFits/extrap_200rch_RF_', x, '.rda'))
+    model_df = model_rf_df
+
+    list(rch_preds = all_preds,
+         rch_in_covar_range = model_df$pred_all_rchs[[1]] %>%
+           select(UniqueID, in_covar_range),
+         extrap_covars = extrap_covars) %>%
+      return()
   })
 
-in_covar_range_rch = c('juv_summer',
-                       'juv_summer_dash',
-                       'redds') %>%
-  as.list() %>%
+all_rch_preds = rch_res_list %>%
+  map_df(.id = "model_choice",
+         .f = "rch_preds")
+
+in_covar_range_rch = rch_res_list %>%
+  map_df(.id = "model_choice",
+         .f = "rch_in_covar_range")
+
+extrap_covars_rch = rch_res_list %>%
   map_df(.f = function(x) {
-    load(paste0('../output/modelFits/extrap_200rch_', x, '.rda'))
-    model_svy_df$pred_all_rchs[[1]] %>%
-      select(UniqueID, in_covar_range) %>%
-      mutate(model_choice = x) %>%
-      select(model_choice, everything())
-  })
+    tibble(covars = x$extrap_covars)
+  }) %>%
+  distinct() %>%
+  pull(covars)
 
 data("chnk_domain")
 data("rch_200")
+
+rch_200_df = rch_200 %>%
+  st_drop_geometry() %>%
+  as_tibble() %>%
+  mutate_at(vars(regime),
+            list(~ as.factor(as.character(.))))
 
 rch_200_cap = rch_200 %>%
   select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
@@ -187,186 +143,316 @@ rch_200_cap = rch_200 %>%
             list(~ if_else(!chnk, NA_real_, .))) %>%
   mutate_at(vars(starts_with("sthd_tot")),
             list(~ if_else(!sthd, NA_real_, .))) %>%
-  # focus on andromous ranges
+  # focus on anadromous ranges
   filter(chnk | sthd) %>%
   left_join(in_covar_range_rch) %>%
   st_transform(st_crs(chnk_domain)) %>%
-  select(everything(), geometry)
+  select(everything(), geometry) %>%
+  arrange(UniqueID,
+          model_choice)
 
 # rm(mod_data_weights, model_svy_df, extrap_covars, rch_200, all_preds)
 
 ```
 
+```{r extrap-glm-results, eval = F}
+rch_glm_list = c('juv_summer',
+                 'juv_summer_dash',
+                 'redds') %>%
+  as.list() %>%
+  rlang::set_names() %>%
+  map(.f = function(x) {
+    load(paste0('../output/modelFits/extrap_200rch_', x, '.rda'))
+    model_df = model_svy_df
 
-```{r master-point-capacity, eval = F}
-# read in capacity estimates and create a shapefile
-load(paste0('../output/modelFits/extrap_mastPts_', mod_choice, '.rda'))
-in_covar_range_pts = model_svy_df$pred_all_rchs[[1]] %>%
-  select(Site, in_covar_range)
-pts_covars = extrap_covars
+    list(rch_preds = all_preds,
+         rch_in_covar_range = model_df$pred_all_rchs[[1]] %>%
+           select(UniqueID, in_covar_range),
+         extrap_covars = extrap_covars) %>%
+      return()
+  })
 
-mod_pts = model_svy_df %>%
-  # filter(Species == 'Chinook',
-  #        response == 'cap_per_m') %>%
-  mutate(type = "Points") %>%
-  select(Species,
-         response,
-         type,
-         mod_champ,
-         mod_no_champ) %>%
-  pivot_longer(cols = starts_with("mod"),
-               names_to = "version",
-               values_to = "model") %>%
-  mutate(tidy_summ = map(model,
-                         broom::tidy))
+all_glm_preds = rch_glm_list %>%
+  map_df(.id = "model_choice",
+         .f = "rch_preds")
 
-data("chnk_domain")
-data("gaa")
-
-master_pts_cap = gaa %>%
-  select(Site, GNIS_Name = GNIS_NA, 
-         HUC6_code = HUC_6,
-         HUC6_name = HUC6NmNRCS,
-         HUC8_code = HUC_8,
-         Lat, Lon) %>%
-  filter(!is.na(Lon), !is.na(Lat)) %>%
-  st_as_sf(coords = c('Lon', 'Lat'),
-           crs = 4326) %>%
-  st_transform(crs = st_crs(chnk_domain)) %>%
-  inner_join(all_preds)
-
-# nhdplus_100 <- st_read("~/Desktop/Flowline_PN17_NSI/Flowline_PN17_NSI.shp") %>%
-#   st_transform(st_crs(chnk_domain))
-
-# # this takes longer than 14 hours to run
-# test = master_pts_cap %>%
-#   st_join(nhdplus_100 %>%
-#             select(COMID,
-#                    GNIS_ID, 
-#                    GNIS_NAME,
-#                    reach_leng = LENGTHKM,
-#                    reach_code = REACHCODE),
-#           join = st_is_within_distance,
-#           dist = 200) %>%
-#   mutate_at(vars(reach_leng),
-#             list(~ . *1000))
-
-# re-define speceies domains to match 200m reaches
-chnk_domain = rch_200 %>%
-  filter(chnk) %>%
+rch_200_cap_glm = rch_200 %>%
   select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
-         starts_with("chnk"))
-
-chnk_buff = chnk_domain %>%
-  st_buffer(dist = 200,
-            endCapStyle = 'FLAT')
-
-# filter out points outside Chinook domain
-keep_rows = master_pts_cap %>%
-  st_covered_by(chnk_buff) %>%
-  as_tibble() %>%
-  pull(row.id) %>%
-  unique() %>%
-  sort()
-
-chnk_pts_cap = master_pts_cap %>%
-  slice(keep_rows) %>%
-  st_join(chnk_domain %>%
-            select(-one_of(names(master_pts_cap))),
-          join = st_nearest_feature)
-
-rm(keep_rows)
-
-chnk_strm_lng = chnk_domain %>%
-  mutate(length_m = st_length(.)) %>%
-  mutate_at(vars(chnk_ESU_DPS, chnk_NWR_POPID, chnk_NWR_NAME, chnk_MPG, GNIS_Name),
+         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
+         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
+  left_join(all_glm_preds) %>%
+  mutate_at(vars(chnk_ESU_DPS:chnk_NWR_NAME, sthd_ESU_DPS:sthd_NWR_NAME),
             list(fct_explicit_na)) %>%
-  group_by(chnk_ESU_DPS, chnk_MPG, chnk_NWR_POPID, chnk_NWR_NAME, GNIS_Name) %>%
-  summarise_at(vars(length_m, reach_leng),
-               list(sum))
+  mutate(chnk_tot = chnk_per_m * reach_leng,
+         chnk_tot_se = chnk_per_m_se * reach_leng) %>%
+  mutate(sthd_tot = sthd_per_m * reach_leng,
+         sthd_tot_se = sthd_per_m_se * reach_leng) %>%
+  mutate_at(vars(starts_with("chnk_tot")),
+            list(~ if_else(!chnk, NA_real_, .))) %>%
+  mutate_at(vars(starts_with("sthd_tot")),
+            list(~ if_else(!sthd, NA_real_, .))) %>%
+  # focus on anadromous ranges
+  filter(chnk | sthd) %>%
+  left_join(in_covar_range_rch) %>%
+  st_transform(st_crs(chnk_domain)) %>%
+  select(everything(), geometry) %>%
+  arrange(UniqueID,
+          model_choice)
 
-chnk_strm_cap = chnk_strm_lng %>%
-  full_join(chnk_pts_cap %>%
-              mutate_at(vars(chnk_ESU_DPS, chnk_NWR_POPID, chnk_NWR_NAME, chnk_MPG, GNIS_Name),
-                        list(fct_explicit_na)) %>%
-              group_by(chnk_ESU_DPS, chnk_MPG, chnk_NWR_POPID, chnk_NWR_NAME, GNIS_Name) %>%
-              summarise_at(vars(chnk_per_m,
-                                chnk_per_m_se),
-                           list(mean),
-                           na.rm = T) %>%
-              st_drop_geometry() %>%
-              as_tibble()) %>%
-  mutate(chnk_tot = chnk_per_m * length_m,
-         chnk_tot_se = chnk_per_m_se * length_m)
 
-chnk_strm_cap %<>%
-  mutate(model_choice = mod_choice) %>%
-  select(model_choice, everything())
+```
 
-sthd_domain = rch_200 %>%
-  filter(sthd) %>%
-  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
-         starts_with("sthd"))
+```{r reach-comp-plots}
+champ_ids = rch_200_cap %>%
+  filter(model == 'QRF') %>%
+  # filter(model %in% c("QRF",
+  #                     "CHaMP")) %>%
+  pull(UniqueID) %>%
+  unique()
 
-sthd_buff = sthd_domain %>%
-  st_buffer(dist = 200,
-            endCapStyle = 'FLAT')
+extrap_class_rch = rch_200_df %>%
+  summarise(across(one_of(extrap_covars_rch),
+                   class))
+# which ones are numeric?
+extrap_num_rch = names(extrap_class_rch)[extrap_class_rch %in% c('integer', 'numeric')]
+# which ones are categorical?
+extrap_catg_rch = names(extrap_class_rch)[extrap_class_rch %in% c('factor', 'character', 'ordered')]
 
-# filter out points outside Chinook domain
-keep_rows = master_pts_cap %>%
-  st_covered_by(sthd_buff) %>%
-  as_tibble() %>%
-  pull(row.id) %>%
-  unique() %>%
-  sort()
+# create the comparison data.frame
+comp_rch_df = rch_200_df %>%
+  mutate(Source = if_else(UniqueID %in% champ_ids,
+                          "CHaMP Reaches",
+                          "non-CHaMP Reaches")) %>%
+  filter(strm_order <= 6,
+         !GNIS_Name %in% c("Columbia River",
+                           "Snake River")) %>%
+  filter(sthd | chnk) %>%
+  pivot_longer(cols = any_of(extrap_num_rch),
+               names_to = "Metric",
+               values_to = "value") %>%
+  filter(!(Metric == "S2_02_11" & value < -9000)) %>%
+  filter(!is.na(value))
 
-sthd_pts_cap = master_pts_cap %>%
-  slice(keep_rows) %>%
-  st_join(sthd_domain %>%
-            select(-one_of(names(master_pts_cap))),
-          join = st_nearest_feature)
-rm(keep_rows)
+# grab some summary statistics of CHaMP reaches
+range_max_all = comp_rch_df %>%
+  filter(Source == 'CHaMP Reaches') %>%
+  select(UniqueID,
+         Metric, value) %>%
+  group_by(Metric) %>%
+  summarise(across(value,
+                   tibble::lst(min, max),
+                   na.rm = T),
+            .groups = "drop") %>%
+  left_join(comp_rch_df %>%
+              filter(Source == 'CHaMP Reaches') %>%
+              select(UniqueID,
+                     Metric, value) %>%
+              group_by(Metric) %>%
+              summarise(across(value,
+                               list(lower_quant = ~ quantile(., probs = 0.25, na.rm = T),
+                                    upper_quant = ~ quantile(., probs = 0.75, na.rm = T))),
+                        .groups = "drop")) %>%
+  pivot_longer(starts_with("value"),
+               names_to = "type") %>%
+  mutate(type = str_remove(type,
+                           "value_")) %>%
+  mutate(range_type = if_else(type %in% c('min', 'max'),
+                              'Range',
+                              'IQR'))
 
-sthd_strm_lng = sthd_domain %>%
-  mutate(length_m = st_length(.)) %>%
-  mutate_at(vars(sthd_ESU_DPS, sthd_NWR_POPID, sthd_NWR_NAME, sthd_MPG, GNIS_Name),
-            list(fct_explicit_na)) %>%
-  group_by(sthd_ESU_DPS, sthd_MPG, sthd_NWR_POPID, sthd_NWR_NAME, GNIS_Name) %>%
-  summarise_at(vars(length_m, reach_leng),
-               list(sum))
+comp_rch_df %<>%
+  left_join(range_max_all %>%
+              select(-range_type) %>%
+              pivot_wider(names_from = "type",
+                          values_from = "value")) %>%
+  mutate(in_range = if_else(value >= min & value <= max,
+                            T, F),
+         in_iqr = if_else(value >= lower_quant & value <= upper_quant,
+                          T, F))
+  
 
-sthd_strm_cap = sthd_strm_lng %>%
-  full_join(sthd_pts_cap %>%
-              mutate_at(vars(sthd_ESU_DPS, sthd_NWR_POPID, sthd_NWR_NAME, sthd_MPG, GNIS_Name),
-                        list(fct_explicit_na)) %>%
-              group_by(sthd_ESU_DPS, sthd_MPG, sthd_NWR_POPID, sthd_NWR_NAME, GNIS_Name) %>%
-              summarise_at(vars(sthd_per_m,
-                                sthd_per_m_se),
-                           list(mean),
-                           na.rm = T) %>%
-              st_drop_geometry() %>%
-              as_tibble()) %>%
-  mutate(sthd_tot = sthd_per_m * length_m,
-         sthd_tot_se = sthd_per_m_se * length_m)
+champ_range_rch_p = comp_rch_df %>%
+  mutate(Source = str_remove(Source, " Reaches$")) %>%
+  ggplot(aes(x = Source,
+             y = value,
+             fill = Source)) +
+  geom_boxplot() +
+  facet_wrap(~ Metric,
+             scales = 'free_y') +
+  geom_hline(data = range_max_all %>%
+               filter(range_type == "Range"),
+             aes(yintercept = value),
+             linetype = 2,
+             color = 'darkblue') +
+  scale_linetype(guide = 'none') +
+  theme_pubr(base_size = 10) +
+  theme(legend.position = "bottom",
+        axis.title = element_blank(),
+        axis.text.x = element_blank()) +
+  labs(fill = "Reaches")
 
-sthd_strm_cap %<>%
-  mutate(model_choice = mod_choice) %>%
-  select(model_choice, everything())
+# break it down by HUC6
+# log these covariates for plotting purposes
+log_mets = c('alp_accum',
+             'fines_accu',
+             'flow_accum',
+             'grav_accum',
+             'p_accum',
+             'fp_cur')
 
-rm(mod_data_weights, model_svy_df, extrap_covars, gaa, all_preds)
+# 2 plots, one with logged covariates, one without
+covar_comp_log = comp_rch_df %>%
+  mutate(HUC6_name = as.character(HUC6_name),
+         HUC6_name = if_else(Source == "CHaMP Reaches",
+                             'CHaMP',
+                             HUC6_name),
+         HUC6_name = fct_relevel(HUC6_name,
+                                 'CHaMP')) %>%
+  filter(Metric %in% log_mets) %>%
+  mutate(across(value:upper_quant,
+                ~ if_else(. == 0,
+                          . + 0.5,
+                          .))) %>%
+  ggplot(aes(x = HUC6_name,
+             y = value,
+             fill = HUC6_name)) +
+  scale_fill_brewer(palette = "Set3") +
+  geom_boxplot(outlier.color = 'gray70',
+               outlier.size = 0.5) +
+  geom_hline(data = range_max_all %>%
+               filter(Metric %in% log_mets) %>%
+               mutate(across(value,
+                             ~ if_else(. == 0,
+                                       . + 0.5,
+                                       .))),
+             aes(yintercept = value,
+                 linetype = range_type),
+             color = 'darkblue') +
+  scale_linetype(guide = 'none') +
+  facet_wrap(~ Metric,
+             ncol = 2,
+             scales = 'free_y') +
+  scale_y_continuous(trans = "log",
+                     breaks = scales::pretty_breaks()) +
+  theme_pubr(base_size = 10) +
+  theme(legend.position = "bottom",
+        axis.title = element_blank(),
+        axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size = 6),
+        axis.text.y = element_text(size = 6))
+
+covar_comp_nolog = comp_rch_df %>%
+  mutate(HUC6_name = as.character(HUC6_name),
+         HUC6_name = if_else(Source == "CHaMP Reaches",
+                             'CHaMP',
+                             HUC6_name),
+         HUC6_name = fct_relevel(HUC6_name,
+                                 'CHaMP')) %>%
+  filter(!Metric %in% log_mets) %>%
+  ggplot(aes(x = HUC6_name,
+             y = value,
+             fill = HUC6_name)) +
+  scale_fill_brewer(palette = "Set3") +
+  geom_boxplot(outlier.color = 'gray70',
+               outlier.size = 0.5) +
+  geom_hline(data = range_max_all %>%
+               filter(!Metric %in% log_mets),
+             aes(yintercept = value,
+                 linetype = range_type),
+             color = 'darkblue') +
+  scale_linetype(guide = 'none') +
+  facet_wrap(~ Metric,
+             ncol = 3,
+             scales = 'free_y') +
+  scale_y_continuous(trans = "identity",
+                     breaks = scales::pretty_breaks()) +
+  theme_pubr(base_size = 10) +
+  theme(legend.position = "bottom",
+        axis.title = element_blank(),
+        axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size = 6),
+        axis.text.y = element_text(size = 6))
+
+huc6_rch_p = ggpubr::ggarrange(plotlist = list(covar_comp_log,
+                                               covar_comp_nolog),
+                               nrow = 1,
+                               widths = c(2, 3),
+                               common.legend = T,
+                               legend = "bottom")
+
 ```
 
 ```{r master-point-cap-all-models}
-all_pts_preds = c('juv_summer',
-              'juv_summer_dash',
-              'redds') %>%
+pts_res_list = c('juv_summer',
+                 'juv_summer_dash',
+                 'redds') %>%
   as.list() %>%
-  map_df(.f = function(x) {
+  rlang::set_names() %>%
+  map(.f = function(x) {
     load(paste0('../output/modelFits/extrap_mastPts_', x, '.rda'))
-    all_preds %>%
-      mutate(model_choice = x) %>%
-      select(model_choice, everything())
+
+    list(pts_preds = all_preds,
+         pt_in_covar_range = model_svy_df$pred_all_rchs[[1]] %>%
+           select(Site, in_covar_range),
+         extrap_covars = extrap_covars,
+         model_df = model_svy_df) %>%
+      return()
   })
+
+all_pts_preds = pts_res_list %>%
+  map_df(.id = "model_choice",
+         .f = "pts_preds")
+
+in_covar_range_pts = pts_res_list %>%
+  map_df(.id = "model_choice",
+         .f = "pt_in_covar_range")
+
+extrap_covars_pts = pts_res_list %>%
+  map_df(.f = function(x) {
+    tibble(covars = x$extrap_covars)
+  }) %>%
+  distinct() %>%
+  pull(covars)
+
+# model_df_pts = pts_res_list %>%
+#   map(.f = "model_df")
+# 
+# extrap_summ_pts = model_df_pts %>%
+#   map_df(.id = "model_choice",
+#          .f = function(z) {
+#            z %>%
+#              mutate(tidy_summ = map(mod_no_champ,
+#                                     .f = function(y) {
+#                                       broom::tidy(y)               
+#                                     })) %>%
+#              select(Species, response,
+#                     tidy_summ) %>%
+#              unnest(cols = tidy_summ)
+#          }) %>%
+#   mutate(model = "non-CHaMP") %>%
+#   bind_rows(model_df_pts %>%
+#               map_df(.id = "model_choice",
+#                      .f = function(z) {
+#                        z %>%
+#                          mutate(tidy_summ = map(mod_champ,
+#                                                 .f = function(y) {
+#                                                   broom::tidy(y)               
+#                                                 })) %>%
+#                          select(Species, response,
+#                                 tidy_summ) %>%
+#                          unnest(cols = tidy_summ)
+#                      }) %>%
+#               mutate(model = "CHaMP"))
+  
+
+# add a few others
+extrap_covars_pts_org = extrap_covars_pts
+extrap_covars_pts = c(extrap_covars_pts,
+                      "Precip",
+                      "GDD",
+                      "NatPrin2")
 
 data("chnk_domain")
 data("gaa")
@@ -382,7 +468,7 @@ master_pts = gaa %>%
            crs = 4326) %>%
   st_transform(crs = st_crs(chnk_domain))
 
-# re-define speceies domains to match 200m reaches
+# re-define species domains to match 200m reaches
 
 # Chinook
 chnk_domain = rch_200 %>%
@@ -397,10 +483,15 @@ chnk_buff = chnk_domain %>%
 # filter out points outside Chinook domain
 keep_rows = master_pts %>%
   st_covered_by(chnk_buff) %>%
-  as_tibble() %>%
-  pull(row.id) %>%
+  map_df(.id = 'row_id',
+         .f = function(x) {
+           tibble(n_polys = length(x))
+         }) %>%
+  filter(n_polys > 0) %>%
+  pull(row_id) %>%
   unique() %>%
-  sort()
+  sort() %>%
+  as.numeric()
 
 chnk_pts_cap = master_pts %>%
   slice(keep_rows) %>%
@@ -427,14 +518,12 @@ chnk_strm_cap = chnk_strm_lng %>%
               summarise(n_pts = n_distinct(Site),
                         chnk_per_m = mean(chnk_per_m, na.rm = T),
                         chnk_per_m_se = mean(chnk_per_m_se, na.rm = T)) %>%
-              # summarise_at(vars(chnk_per_m,
-              #                   chnk_per_m_se),
-              #              list(mean),
-              #              na.rm = T) %>%
               st_drop_geometry() %>%
               as_tibble()) %>%
   mutate(chnk_tot = chnk_per_m * length_m,
-         chnk_tot_se = chnk_per_m_se * length_m)
+         chnk_tot_se = chnk_per_m_se * length_m) %>%
+  mutate(across(starts_with('chnk_tot'),
+                as.numeric))
 
 # steelhead
 sthd_domain = rch_200 %>%
@@ -449,10 +538,15 @@ sthd_buff = sthd_domain %>%
 # filter out points outside Chinook domain
 keep_rows = master_pts %>%
   st_covered_by(sthd_buff) %>%
-  as_tibble() %>%
-  pull(row.id) %>%
+  map_df(.id = 'row_id',
+         .f = function(x) {
+           tibble(n_polys = length(x))
+         }) %>%
+  filter(n_polys > 0) %>%
+  pull(row_id) %>%
   unique() %>%
-  sort()
+  sort() %>%
+  as.numeric()
 
 sthd_pts_cap = master_pts %>%
   slice(keep_rows) %>%
@@ -485,14 +579,149 @@ sthd_strm_cap = sthd_strm_lng %>%
               st_drop_geometry() %>%
               as_tibble()) %>%
   mutate(sthd_tot = sthd_per_m * length_m,
-         sthd_tot_se = sthd_per_m_se * length_m)
+         sthd_tot_se = sthd_per_m_se * length_m) %>%
+  mutate(across(starts_with('sthd_tot'),
+                as.numeric))
 
 rm(mod_data_weights, model_svy_df, extrap_covars, gaa, all_preds)
 
 ```
 
+```{r pts-comp-figures}
+champ_sites = all_pts_preds %>%
+  filter(model == 'QRF') %>%
+  # filter(model %in% c("QRF",
+  #                     "CHaMP")) %>%
+  pull(Site) %>%
+  unique()
 
-```{r create-figures}
+
+extrap_class_pts = gaa %>%
+  rename(Channel_Type = ChanlType) %>%
+  summarise(across(one_of(extrap_covars_pts),
+                   class))
+# which ones are numeric?
+extrap_num_pts = names(extrap_class_pts)[extrap_class_pts %in% c('integer', 'numeric')]
+# which ones are categorical?
+extrap_catg_pts = names(extrap_class_pts)[extrap_class_pts %in% c('factor', 'character', 'ordered')]
+
+# create the comparison data.frame
+comp_pts_df = gaa %>%
+  filter(Site %in% union(sthd_pts_cap$Site,
+                         chnk_pts_cap$Site)) %>%
+  mutate(Source = if_else(Site %in% champ_sites,
+                          "CHaMP Reaches",
+                          "non-CHaMP Reaches")) %>%
+  filter(SO_v1 <= 6,
+         !GNIS_NA %in% c("Columbia River",
+                         "Snake River")) %>%
+  # filter(sthd | chnk) %>%
+  pivot_longer(cols = any_of(extrap_num_pts),
+               names_to = "Metric",
+               values_to = "value") %>%
+  filter(!(Metric == "S2_02_11" & value < -9000)) %>%
+  filter(!is.na(value)) %>%
+  mutate(Metric = fct_relevel(Metric,
+                              extrap_num_pts[extrap_num_pts %in% extrap_covars_pts_org],
+                              after = 0))
+
+# grab some summary statistics of CHaMP reaches
+range_max_all = comp_pts_df %>%
+  filter(Source == 'CHaMP Reaches') %>%
+  select(Site,
+         Metric, value) %>%
+  group_by(Metric) %>%
+  summarise(across(value,
+                   tibble::lst(min, max),
+                   na.rm = T),
+            .groups = "drop") %>%
+  left_join(comp_pts_df %>%
+              filter(Source == 'CHaMP Reaches') %>%
+              select(Site,
+                     Metric, value) %>%
+              group_by(Metric) %>%
+              summarise(across(value,
+                               list(lower_quant = ~ quantile(., probs = 0.25, na.rm = T),
+                                    upper_quant = ~ quantile(., probs = 0.75, na.rm = T))),
+                        .groups = "drop")) %>%
+  pivot_longer(starts_with("value"),
+               names_to = "type") %>%
+  mutate(type = str_remove(type,
+                           "value_")) %>%
+  mutate(range_type = if_else(type %in% c('min', 'max'),
+                              'Range',
+                              'IQR'))
+
+comp_pts_df %<>%
+  left_join(range_max_all %>%
+              select(-range_type) %>%
+              pivot_wider(names_from = "type",
+                          values_from = "value")) %>%
+  rowwise() %>%
+  mutate(in_range = if_else(value >= min & value <= max,
+                            T, F),
+         in_iqr = if_else(value >= lower_quant & value <= upper_quant,
+                          T, F)) %>%
+  ungroup()
+
+
+champ_range_pts_p = comp_pts_df %>%
+  mutate(Source = str_remove(Source, " Reaches$")) %>%
+  ggplot(aes(x = Source,
+             y = value,
+             fill = Source)) +
+  geom_boxplot() +
+  facet_wrap(~ Metric,
+             scales = 'free_y') +
+  geom_hline(data = range_max_all %>%
+               filter(range_type == "Range"),
+             aes(yintercept = value),
+             linetype = 2,
+             color = 'darkblue') +
+  scale_linetype(guide = 'none') +
+  theme_pubr(base_size = 10) +
+  theme(legend.position = "bottom",
+        axis.title = element_blank(),
+        axis.text.x = element_blank()) +
+  labs(fill = "Sites")
+
+
+huc6_pts_p = comp_pts_df %>%
+  mutate(HUC6_name = as.character(HUC6NmNRCS),
+         HUC6_name = if_else(Source == "CHaMP Reaches",
+                             'CHaMP',
+                             HUC6_name),
+         HUC6_name = fct_relevel(HUC6_name,
+                                 'CHaMP')) %>%
+  ggplot(aes(x = HUC6_name,
+             y = value,
+             fill = HUC6_name)) +
+  scale_fill_brewer(palette = "Set3") +
+  
+  geom_boxplot(outlier.color = 'gray70',
+               outlier.size = 0.5) +
+  # geom_violin(draw_quantiles = 0.5,
+  #             scale = "width") +
+  geom_hline(data = range_max_all,
+             aes(yintercept = value,
+                 linetype = range_type),
+             color = 'darkblue') +
+  scale_linetype(guide = 'none') +
+  facet_wrap(~ Metric,
+             ncol = 4,
+             scales = 'free_y') +
+  scale_y_continuous(trans = "identity",
+                     breaks = scales::pretty_breaks()) +
+  theme_pubr(base_size = 10) +
+  theme(legend.position = "bottom",
+        axis.title = element_blank(),
+        axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size = 6),
+        axis.text.y = element_text(size = 6))
+```
+
+```{r create-pop-figures}
 
 comp_pop = chnk_strm_cap %>%
   group_by(model_choice,
@@ -503,7 +732,8 @@ comp_pop = chnk_strm_cap %>%
   summarise(reach_leng = sum(reach_leng, na.rm = T),
             n_ids = sum(n_pts, na.rm = T),
             cap_tot = sum(chnk_tot, na.rm = T),
-            cap_tot_se = sqrt(sum(chnk_tot_se^2, na.rm = T))) %>%
+            cap_tot_se = sqrt(sum(chnk_tot_se^2, na.rm = T)),
+            .groups = "drop") %>%
   st_drop_geometry() %>%
   as_tibble() %>%
   mutate(Method = 'Points') %>%
@@ -517,7 +747,8 @@ comp_pop = chnk_strm_cap %>%
               summarise(reach_leng = sum(reach_leng),
                         n_ids = n_distinct(UniqueID),
                         cap_tot = sum(chnk_tot, na.rm = T),
-                        cap_tot_se = sqrt(sum(chnk_tot_se^2, na.rm = T))) %>%
+                        cap_tot_se = sqrt(sum(chnk_tot_se^2, na.rm = T)),
+                        .groups = "drop") %>%
               st_drop_geometry() %>%
               as_tibble() %>%
               mutate(Method = 'Reaches')) %>%
@@ -532,7 +763,8 @@ comp_pop = chnk_strm_cap %>%
               summarise(reach_leng = sum(reach_leng, na.rm = T),
                         n_ids = sum(n_pts, na.rm = T),
                         cap_tot = sum(sthd_tot, na.rm = T),
-                        cap_tot_se = sqrt(sum(sthd_tot_se^2, na.rm = T))) %>%
+                        cap_tot_se = sqrt(sum(sthd_tot_se^2, na.rm = T)),
+                        .groups = "drop") %>%
               st_drop_geometry() %>%
               as_tibble() %>%
               mutate(Method = 'Points') %>%
@@ -546,7 +778,8 @@ comp_pop = chnk_strm_cap %>%
                           summarise(reach_leng = sum(reach_leng),
                                     n_ids = n_distinct(UniqueID),
                                     cap_tot = sum(sthd_tot, na.rm = T),
-                                    cap_tot_se = sqrt(sum(sthd_tot_se^2, na.rm = T))) %>%
+                                    cap_tot_se = sqrt(sum(sthd_tot_se^2, na.rm = T)),
+                                    .groups = "drop") %>%
                           st_drop_geometry() %>%
                           as_tibble() %>%
                           mutate(Method = 'Reaches')) %>%
@@ -559,7 +792,7 @@ comp_pop %<>%
   filter(NWR_NAME != "(Missing)") %>%
   filter(!grepl("Outside legal", ESU_DPS)) %>%
   mutate(cap_dens = cap_tot / reach_leng) %>%
-  filter(cap_dens < 21) %>%
+  # filter(cap_dens < 21) %>%
   mutate(pop_label = str_split(NWR_NAME, " - ", simplify = T)[,2],
          pop_label = str_remove(pop_label, " River"))
 
@@ -611,8 +844,8 @@ cap_xy_p = comp_pop %>%
   #                  size = 3,
   #                  fill = 'gray80',
   #                  show.legend = F) +
-  theme_classic() +
-  theme(legend.position = "bottom") +
+  theme_pubr(base_size = 10) +
+  theme(legend.position = "right") +
   facet_wrap(~ model_choice + Species,
              ncol = 2,
              scales = 'free') +
@@ -646,13 +879,14 @@ rel_diff_p = comp_pop %>%
   geom_hline(yintercept = 0,
              linetype = 2) +
   geom_point(size = 4) +
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(angle = 45,
-                                   hjust = 1)) +
-  # facet_wrap(~ Species, 
-  #            scales = 'free_x') +
+  theme_pubr(base_size = 10) +
+  theme(legend.position = "right",
+        axis.text.x = element_blank()) +
+        # axis.text.x = element_text(angle = 45,
+        #                            size = 4,
+        #                            hjust = 1)) +
   facet_grid(model_choice ~ Species,
-             scales = 'free_x') +
+             scales = 'free_y') +
   labs(x = "Population",
        y = "Relative Difference",
        title = "Capacity")
@@ -669,7 +903,32 @@ For several years, our development of a QRF capacity model has relied on extrapo
 
 ## Master Sample Points
 
-The master sample points were generated in the design phase of CHaMP. These 551,046 sites were selected from the NHD Plus 1:100,000 stream layer covering WA, OR and ID at an average density of one site per kilometer [@Larsen2016]. Each CHaMP site where direct QRF capacity estimates were made corresponds to one of these master sample points. CHaMP generated a number o of attributes for each master sample point, referred to here as globally available attributes (GAAs) because they are associated with every master sample point across all watersheds. 
+The master sample points were generated in the design phase of CHaMP. These 551,046 sites were selected from the NHD Plus 1:100,000 stream layer covering WA, OR and ID at an average density of one site per kilometer [@Larsen2016]. Each CHaMP site where direct QRF capacity estimates were made corresponds to one of these master sample points. CHaMP generated a number of of attributes for each master sample point, referred to here as globally available attributes (GAAs) because they are associated with every master sample point across all watersheds. 
+
+```{r covars-pts-tab}
+gaa_meta = readxl::read_excel('../data/raw/master_sample_pts/GAA_Metadata_20150506.xlsx') %>%
+  clean_names() %>%
+  mutate(field_name = recode(field_name,
+                             "ChanlType" = "Channel_Type")) %>%
+  rename(ShortName = field_name,
+         Name = display_name, 
+         Description = description) %>%
+  bind_rows(tibble(ShortName = 'S2_02_11',
+                   Name = "Average August Temperature",
+                   Description = "NorWeST 10 year average August mean stream temperatures for 2002-2011"))
+tibble(ShortName = extrap_covars_pts_org) %>%
+  left_join(gaa_meta %>%
+              select(ShortName,
+                     Name,
+                     Description)) %>%
+  kable(booktabs = T,
+        linesep = "",
+        caption = "Attributes available at every master sample point, used as covariates in extrapolation model.") %>%
+  kable_styling() %>%
+  column_spec(3,
+              width = "3in")
+```
+
 
 The original extrapolation model used the log of capacity estimates at each CHaMP site (fish / m) as the response, and various GAAs as covariates. The model was fit using the *svyglm* function in the *survey* [@survey2004] package with R software [@R-base], accounting for the various survey design weights within each CHaMP watershed. We then used that model to predict capacity at every master sample point that was not a CHaMP site. To roll up capacity estimates to larger spatial scales, the average predicted capacity of master sample points along a stream was multiplied by the length of that stream, and then combinations of streams could be added together to generate overall capacity estimates for a watershed. 
 
@@ -711,47 +970,48 @@ coef_pts %>%
 
 We adapted this method to using a [stream layer](https://www.nwfsc.noaa.gov/research/datatech/data/col_basin_hist_project/index.cfm) created by Morgan Bond and Tyler Nodine at the Northwest Fisheries Science Center. This layer consisted of a line file divided into 200m reaches with various attributes attached to each reach. The line file is based on the [National Hydrography Dataset High Resolution](https://www.usgs.gov/core-science-systems/ngp/national-hydrography/nhdplus-high-resolution) (NHDPlus HR) dataset, which has a higher resolution, 1:24,000, compared to the older layer that the master sample points were chosen from. 
 
-We determined which reach was closest to each CHaMP site, and then followed a similar process as described above to model the log of predicted capacity using the attributes attached to each 200m reach as covariates. 
-
-```{r rch-covars, eval = F}
-coef_rch = mod_rch %>%
-  select(-model) %>%
-  unnest(cols = tidy_summ) %>%
-  select(Species:estimate, p.value) %>%
-  pivot_wider(names_from = "version",
-              values_from = c("estimate", 
-                              "p.value")) %>%
-  filter(!is.na(estimate_mod_champ),
-         !is.na(estimate_mod_no_champ))
-
-sig_cutoff = 0.05
-
-coef_rch %>%
-  mutate_at(vars(starts_with("estimate")),
-            list(round),
-            digits = 3) %>%
-  mutate(estimate_mod_champ = cell_spec(estimate_mod_champ,
-                                        format = "html",
-                                        bold = if_else(p.value_mod_champ < sig_cutoff, T, F)),
-         estimate_mod_no_champ = cell_spec(estimate_mod_no_champ,
-                                           format = "html",
-                                           bold = if_else(p.value_mod_no_champ < sig_cutoff, T, F))) %>%
-  select(Species,
-         Term = term,
-         CHaMP_model = estimate_mod_champ,
-         nonCHaMP_model = estimate_mod_no_champ) %>%
-  kable(caption = 'Covariates used in 200 m reach extrapolation models (including CHaMP watershed as a covariate, or not). Those deemed statistically significant are in bold.',
-        # digits = 3,
-        escape = F,
-        booktabs = T) %>%
+```{r covars-rch-tab}
+tibble(ShortName = extrap_covars_rch) %>%
+  left_join(gaa_meta %>%
+              select(ShortName,
+                     Description) %>%
+              bind_rows(read_csv('../data/raw/stream_network/crb_streams_24k_datadictionary.csv') %>%
+                          rename(ShortName = `Field Name`) %>%
+                          filter(!is.na(ShortName)) %>%
+                          select(-Units))) %>%
+  kable(booktabs = T,
+        linesep = "",
+        caption = "Attributes available at every 200m reach, used as covariates in extrapolation model.") %>%
   kable_styling()
 ```
 
+
+We determined which reach was closest to each CHaMP site, and used the predicted QRF capacity density of those CHaMP reaches as the response with the attributes attached to each 200m reach as covariates. We also took this opportunity to move to a random forest modeling framework. This accommodates possible non-linear or saturating effects of some of these covariates on capacity predictions, and prevents the extrapolation model from predicting capacity values well above or well below the range of predictions at CHaMP sites. 
+
+# Range of Covariates
+
+We examined the range of the covariates used in each method, and compared it to the range of values found at CHaMP sites or reaches. This exercise provides some context about how representative the suite of CHaMP sites are compared to the rest of the Columbia River Basin. 
+
+```{r pts-gaa-fig, fig.cap = "Boxplots of GAA values at CHaMP sites and non-CHaMP master sample points. Horizontal lines represent range of values at CHaMP sites."}
+champ_range_pts_p
+```
+
+```{r huc6-pts-fig, fig.cap = "Boxplots of GAA values at CHaMP sites and non-CHaMP master sample points, colored by HUC6. Horizontal lines represent range of values at CHaMP sites (dashed) and the 25th and 75th quantiles of the CHamP sites (solid)."}
+huc6_pts_p
+```
+
+```{r rch-gaa-fig, fig.cap = "Boxplots of GAA values at CHaMP reaches and non-CHaMP 200 m reaches. Horizontal lines represent range of values at CHaMP sites."}
+champ_range_rch_p
+```
+
+```{r huc6-rch-fig, fig.cap = "Boxplots of GAA values at CHaMP reaches and non-CHaMP 200 m reaches, colored by HUC6.  Horizontal lines represent range of values at CHaMP sites (dashed) and the 25th and 75th quantiles of the CHamP sites (solid)."}
+huc6_rch_p
+```
+
+
 # Capacity Comparisons
 
-We computed the total capacity of each species in each population using both methods, for summer juveniles (using both CHaMP and DASH habitat metrics) and redds, and compared them. A handful of populations with extrememly inflated estimates were left out. The correlations between the two estimates are shown in Table \@ref(tab:corr-tab). 
-
-<!-- We could go back and fix any extrapolation estimate that is too high to be the max observed density, or the max predicted density at a CHaMP site. This might help shrink some of the extreme values -->
+We computed the total capacity of each species in each population using both methods, for summer juveniles (using both CHaMP and DASH habitat metrics) and redds, and compared them. The correlations between the two estimates are shown in Table \@ref(tab:corr-tab). 
 
 ```{r corr-tab}
 pts_rch_cor %>%
@@ -759,7 +1019,8 @@ pts_rch_cor %>%
                                'juv_summer' = 'CHaMP',
                                'juv_summer_dash' = 'DASH',
                                'redds' = 'Redds')) %>%
-  rename(r = corr) %>%
+  rename(r = corr,
+         Model = model_choice) %>%
   kable(booktabs = T,
         digits = 3,
         caption = "Correlation coefficient between capacity estimates at the population scale using each method.") %>%
@@ -769,15 +1030,17 @@ pts_rch_cor %>%
 We plotted one estimate against the other in Figure \@ref(fig:comp-xy), and showed the relative difference in Figure \@ref(fig:comp-rel).
 
 ```{r comp-xy, fig.cap = "Capacity estimates for each population, calculated with the master sample points method on the x-axis and the line network on the y-axis."}
-cap_xy_p +
-  guides(color = guide_legend(ncol = 3))
+cap_xy_p
+# cap_xy_p +
+#   guides(color = guide_legend(ncol = 3))
 
 ```
 
 ```{r comp-rel, fig.height = 7, fig.cap = "Relative difference between the capacity estimates for each population, using the master sample points method as the reference."}
-rel_diff_p +
-  guides(color = guide_legend(ncol = 3)) +
-  theme(axis.text.x = element_text(size = 5))
+rel_diff_p
+# rel_diff_p +
+#   guides(color = guide_legend(ncol = 3)) +
+#   theme(axis.text.x = element_text(size = 5))
 ```
 
 # Maps
@@ -813,8 +1076,16 @@ ggarrange(plotlist = list(lem_pts, lem_rch),
 
 # Discussion
 
-For both species, across all three QRF models, the two extrapolation models resulted in very similar estimates of total capacity at the population scale, except for a handful of noteable exceptions. These were primarily in the Chinook summer parr model, using CHaMP metrics in the QRF model. 
+Extrapolations of QRF predictions are useful for higher-level spatial analyses or comparisons, such as at the watershed level. Examining predictions at individual master sample points or 200m reaches should be discouraged. For that scale, detailed habitat data should be collected, by using a protocol like DASH, and direct estimates of capacity can be made using a QRF model. On the other hand, extrapolation summaries of capacity at the watershed scale, for various species and life-stages, can be useful in broad prioritization discussions, to determine what life-stages and watersheds to target for rehabilitation.
 
-Although the master sample point method has been used for several years, there is no reason to believe estimates from that method are inherently superior to using a line network, so even in the cases when the two models result in different estimates of capacity, it is difficult to say which is "better". On the other hand, there are several reasons to support using the line network method, apart from the actual results, primarily based on the ease of interpretation. Extrapolation to a line network involves capacity predictions at actual 200 m reaches along a stream network, while the master sample point method provides estimates at instaneous "points" on the landscape. The summation of capacity to larger spatial scales is more straightforward when using a line network, and the maps that can be created are easier to interpret (Figure \@ref(fig:lem-map)).  
+For most of the GAAs, the range of values represented at CHaMP sites or reaches overlapped with the range of values in other places, with a few exceptions. The most notable is modeled precipitation (Precip) in the Clearwater basin (Figure \@ref(fig:huc6-pts-fig). We did not use Precip as a covariate in the master sample points extrapolation model, but it does indicate that something about the conditions in the Clearwater may be different from other places with the interior Columbia River Basin, and therefore extrapolations to that area should be scrutinized carefully.
+
+For both species, across all three QRF models, the two extrapolation models resulted in estimates of total capacity at the population scale that are very highly correlated. The linear network estimates were often greater than the master sample point estimates, to a greater or lesser degree, but not always.
+
+Changing the modeling framework from linear regression to a random forest has several benefits. Primarily, it provides a method to constrain extrapolation predictions naturally, even when the extrapolation covariates are beyond the range found at CHaMP sites. In addition, random forests accommodate potential non-linear associations between capacity predictions and GAAs while handling correlations among GAAs. The sample size of CHaMP sites with QRF predictions of capacity is sufficient to fit a random forest model, so we have no concerns about the "data-hungry" nature of this framework for this situation.
+
+Although the master sample point method has been used for several years, there is no reason to believe estimates from that method are inherently superior to using a line network, so even in the cases when the two models result in different estimates of capacity, it is difficult to say which is "better". On the other hand, there are several reasons to support using the line network method, apart from the actual results, primarily based on the ease of interpretation. Extrapolation to a line network involves capacity predictions at actual 200 m reaches along a stream network, while the master sample point method provides estimates at instantaneous "points" on the landscape. The summation of capacity to larger spatial scales is more straightforward when using a line network, and the maps that can be created are easier to interpret (Figure \@ref(fig:lem-map)).  
+
+Therefore, we conclude that the extrapolation to a linear network method presented here is superior to the master sample point method, and should be adopted moving forward for examining QRF outputs at large spatial scales. 
 
 # References
