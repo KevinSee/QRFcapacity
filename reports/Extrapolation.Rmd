@@ -23,7 +23,7 @@ output:
     - --lua-filter=templates/scholarly-metadata.lua
     - --lua-filter=templates/author-info-blocks2.lua
     - --lua-filter=templates/pagebreak.lua
-    fig_height: 8
+    fig_height: 7.5
     fig_width: 6
     number_sections: no
     includes:
@@ -65,13 +65,14 @@ library(kableExtra)
 
 ```{r}
 # load needed packages
+library(QRFcapacity)
 library(tidyverse)
 library(sf)
-library(QRFcapacity)
 library(janitor)
 library(ggpubr)
 library(ggrepel)
 library(scales)
+library(ggspatial)
 
 # theme_set(theme_bw())
 theme_set(theme_pubr(base_size = 10))
@@ -155,7 +156,7 @@ rch_200_cap = rch_200 %>%
 
 ```
 
-```{r extrap-glm-results, eval = F}
+```{r rch_cap-glm-results, eval = F}
 rch_glm_list = c('juv_summer',
                  'juv_summer_dash',
                  'redds') %>%
@@ -583,8 +584,6 @@ sthd_strm_cap = sthd_strm_lng %>%
   mutate(across(starts_with('sthd_tot'),
                 as.numeric))
 
-rm(mod_data_weights, model_svy_df, extrap_covars, gaa, all_preds)
-
 ```
 
 ```{r pts-comp-figures}
@@ -873,6 +872,7 @@ rel_diff_p = comp_pop %>%
          cap_tot_Reaches > 0) %>%
   mutate(diff = cap_tot_Reaches - cap_tot_Points,
          rel_diff = diff / cap_tot_Points) %>%
+  filter(rel_diff < 7) %>%
   ggplot(aes(x = pop_label,
              y = rel_diff,
              color = MPG)) +
@@ -893,17 +893,25 @@ rel_diff_p = comp_pop %>%
 
 ```
 
-
+\newpage
 
 # Introduction
 
-For several years, our development of a QRF capacity model has relied on extrapolation to master sample points to interpolate between CHaMP ([Columbia Habitat Monitoring Program](https://www.champmonitoring.org/)) sites and generate capacity estimates on larger spatial scales. Recently there has been interest in moving from a point-based prediction layer to a line-based prediction layer to aide with the interpretation and visualization of the capacity predictions. In this document, we present our method for doing so, and include some comparisons with the point-based estimates. 
+The quantile random forest (QRF) capacity model we have developed uses paired fish abundance and detailed habitat data from selected sites around the Columbia River Basin to estimate the carrying capacity at the 200-500 meter reach scale, where such detailed habitat data is available. Initially, and to date, the sites where such data was collected were monitored by CHaMP ([Columbia Habitat Monitoring Program](https://www.champmonitoring.org/)). This aspect of the QRF model is useful for examining empirical fish/habitat relationships, determining what habitat factors may be limiting capacity at a particular location, and examining the improvement to capacity after rehabilitation actions. However, there is also a need to generate capacity estimates on larger spatial scales (e.g. tributary, watershed, population, etc.). 
+
+To date, inference to areas without detailed habitat data and at larger spatial scales has relied on master sample points and attributes associated with them [@Larsen2016]. This method was developed because that dataset was available at the time, and covered the entire Columbia River Basin. However, each master sample point does not actually represent a stretch of river, rather they are a single location (latitude/longitude coordinates) that is meant to be representative of about a kilometer of stream. Some points are closer together than a kilometer though, due to tributary junctions or other issues. Because of how they're constructed and what they actually represent, the interpretation of capacity estimates at master sample points is slightly more complicated than we desire. 
+
+Recently, a group of NOAA researchers has developed a line layer that breaks down the Columbia River Basin into 200 meter reaches, with various attributes assigned to each reach. It covers the same area as the master sample point dataset, but provides better interpretation and visualization properties than the master sample point layer. In this document, we present details about how we have used both the master sample points and the line network as extrapolation tools, and include some comparisons of the results between them.
 
 # Methods
 
+## QRF Models
+
+We examined results from a total of six different QRF models, three each for spring/summmer Chinook and steelhead. These consisted of a model for redds, and two versions of a QRF model for summer juveniles. The first of these used what we considered the best choice of metrics from the entire CHaMP dataset. The second focused on metrics that are collected by DASH (Drone Assisted Stream Habitat protocol) that can be calculated from CHaMP data as well. This version allows direct QRF estimates to be made for areas sampled by DASH, since the CHaMP protocol is no longer in use.
+
 ## Master Sample Points
 
-The master sample points were generated in the design phase of CHaMP. These 551,046 sites were selected from the NHD Plus 1:100,000 stream layer covering WA, OR and ID at an average density of one site per kilometer [@Larsen2016]. Each CHaMP site where direct QRF capacity estimates were made corresponds to one of these master sample points. CHaMP generated a number of of attributes for each master sample point, referred to here as globally available attributes (GAAs) because they are associated with every master sample point across all watersheds. 
+The master sample points were generated in the design phase of CHaMP. These 551,046 sites were selected from the NHD Plus 1:100,000 stream layer covering WA, OR and ID at an average density of one site per kilometer [@Larsen2016]. Each CHaMP site where direct QRF capacity estimates were made corresponds to one of these master sample points, identified and selected using a generalized randomized tessellation stratification (GRTS) design [@Stevens2004; @Olsen2012]. CHaMP generated a number of of attributes for each master sample point, referred to here as globally available attributes (GAAs) because they are associated with every master sample point across all watersheds. We chose `r length(extrap_covars_pts_org)` to include in the extrapolation model (Table \@ref(tab:covars-pts-tab)).
 
 ```{r covars-pts-tab}
 gaa_meta = readxl::read_excel('../data/raw/master_sample_pts/GAA_Metadata_20150506.xlsx') %>%
@@ -930,41 +938,11 @@ tibble(ShortName = extrap_covars_pts_org) %>%
 ```
 
 
-The original extrapolation model used the log of capacity estimates at each CHaMP site (fish / m) as the response, and various GAAs as covariates. The model was fit using the *svyglm* function in the *survey* [@survey2004] package with R software [@R-base], accounting for the various survey design weights within each CHaMP watershed. We then used that model to predict capacity at every master sample point that was not a CHaMP site. To roll up capacity estimates to larger spatial scales, the average predicted capacity of master sample points along a stream was multiplied by the length of that stream, and then combinations of streams could be added together to generate overall capacity estimates for a watershed. 
+The original extrapolation model used the log of capacity estimates at each CHaMP site (fish / m) as the response, and selected GAAs as covariates. The model was fit using the *svyglm* function in the *survey* [@survey2004] package with R software [@R-base], accounting for the various survey design weights within each CHaMP watershed. We then used that model to predict capacity at every master sample point that was not a CHaMP site. In other words, we fit a linear regression to establish associations between estimated habitat capacity, from QRF, at CHaMP sites and globally available attributes from those sites and then used those associations at locations where CHaMP habitat data was not available to predict capacity at those master sample points. 
 
-```{r pts-covars, eval = F}
-coef_pts = mod_pts %>%
-  select(-model) %>%
-  unnest(cols = tidy_summ) %>%
-  select(Species:estimate, p.value) %>%
-  pivot_wider(names_from = "version",
-              values_from = c("estimate", 
-                              "p.value")) %>%
-  filter(!is.na(estimate_mod_champ),
-         !is.na(estimate_mod_no_champ))
+The design weights were based on the particular stratification used in each CHaMP watershed to select monitoring sites. The most common stratification used three categories of valley segment type (source, transport and depositional) and selected a fixed number of sites from each strata. Because the strata are not equally distributed across the watershed, the design weights account for that unequal distribution. There are potential consequences to ignoring those weights when analyzing data from these sites [@Nahorniak2015]. 
 
-sig_cutoff = 0.05
-
-coef_pts %>%
-  mutate_at(vars(starts_with("estimate")),
-            list(round),
-            digits = 3) %>%
-  mutate(estimate_mod_champ = cell_spec(estimate_mod_champ,
-                                        format = "html",
-                                        bold = if_else(p.value_mod_champ < sig_cutoff, T, F)),
-         estimate_mod_no_champ = cell_spec(estimate_mod_no_champ,
-                                           format = "html",
-                                           bold = if_else(p.value_mod_no_champ < sig_cutoff, T, F))) %>%
-  select(Species,
-         Term = term,
-         CHaMP_model = estimate_mod_champ,
-         nonCHaMP_model = estimate_mod_no_champ) %>%
-  kable(caption = 'Covariates used in master sample point extrapolation models (including CHaMP watershed as a covariate, or not). Those deemed statistically significant are in bold.',
-        # digits = 3,
-        escape = F,
-        booktabs = T) %>%
-  kable_styling()
-```
+To roll up capacity estimates to larger spatial scales, the average predicted capacity of master sample points along a stream was multiplied by the length of that stream, and then combinations of streams could be added together to generate overall capacity estimates for a watershed. 
 
 ## Line Network
 
@@ -986,28 +964,11 @@ tibble(ShortName = extrap_covars_rch) %>%
 ```
 
 
-We determined which reach was closest to each CHaMP site, and used the predicted QRF capacity density of those CHaMP reaches as the response with the attributes attached to each 200m reach as covariates. We also took this opportunity to move to a random forest modeling framework. This accommodates possible non-linear or saturating effects of some of these covariates on capacity predictions, and prevents the extrapolation model from predicting capacity values well above or well below the range of predictions at CHaMP sites. 
+We determined which reach was closest to each CHaMP site, and used the predicted QRF capacity density of those CHaMP reaches as the response with the attributes attached to each 200m reach as covariates (Table \@ref(tab:covars-rch-tab)). We also took this opportunity to move to a random forest modeling framework. This accommodates possible non-linear or saturating effects of some of these covariates on capacity predictions, and prevents the extrapolation model from predicting capacity values well above or well below the range of predictions at CHaMP sites. 
 
-# Range of Covariates
+## Range of Covariates
 
-We examined the range of the covariates used in each method, and compared it to the range of values found at CHaMP sites or reaches. This exercise provides some context about how representative the suite of CHaMP sites are compared to the rest of the Columbia River Basin. 
-
-```{r pts-gaa-fig, fig.cap = "Boxplots of GAA values at CHaMP sites and non-CHaMP master sample points. Horizontal lines represent range of values at CHaMP sites."}
-champ_range_pts_p
-```
-
-```{r huc6-pts-fig, fig.cap = "Boxplots of GAA values at CHaMP sites and non-CHaMP master sample points, colored by HUC6. Horizontal lines represent range of values at CHaMP sites (dashed) and the 25th and 75th quantiles of the CHamP sites (solid)."}
-huc6_pts_p
-```
-
-```{r rch-gaa-fig, fig.cap = "Boxplots of GAA values at CHaMP reaches and non-CHaMP 200 m reaches. Horizontal lines represent range of values at CHaMP sites."}
-champ_range_rch_p
-```
-
-```{r huc6-rch-fig, fig.cap = "Boxplots of GAA values at CHaMP reaches and non-CHaMP 200 m reaches, colored by HUC6.  Horizontal lines represent range of values at CHaMP sites (dashed) and the 25th and 75th quantiles of the CHamP sites (solid)."}
-huc6_rch_p
-```
-
+We examined the range of the covariates used in each method, for wadeable streams, and compared it to the range of values found at CHaMP sites or reaches. This exercise provides some context about how representative the suite of CHaMP sites are compared to the rest of the Columbia River Basin. These figures are found at the end of this document.
 
 # Capacity Comparisons
 
@@ -1074,13 +1035,63 @@ ggarrange(plotlist = list(lem_pts, lem_rch),
 
 ```
 
+```{r lem-map-zoom, fig.height = 4, fig.cap='Plots of Chinook parr capacity in an approximately 8km stretch of the Lemhi, using the master sample points method (A) and the 200 m reach method (B). The NHDPlus layer has been added in (A).'}
+
+x_center = -1382900
+y_center = 2579748
+zoom_amt = 3000
+
+lem_rch_zm = lem_rch +
+  coord_sf(xlim = x_center + c(-1, 1) * zoom_amt,
+           ylim = y_center + c(-1, 1) * zoom_amt) +
+  theme(axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  ggspatial::annotation_scale()
+
+# get the flowlines for the zoomed in reach
+# to add to the points plot
+bbox = c(x_center + c(-1, 1) * zoom_amt,
+         y_center + c(-1, 1) * zoom_amt)[c(1,3,2,4)]
+
+flow_lines = st_polygon(list(matrix(c(bbox[c(1,2)],
+                                      bbox[c(1,4)],
+                                      bbox[c(3,4)],
+                                      bbox[c(3,2)],
+                                      bbox[c(1,2)]),
+                                    ncol = 2,
+                                    byrow = T))) %>%
+  st_bbox() %>%
+  st_as_sfc() %>%
+  st_as_sf(crs = st_crs(rch_200_cap)$input) %>%
+  get_flowlines(wtsd_polygon = .)
+
+lem_pts_zm = lem_pts +
+  geom_sf(data = flow_lines,
+          color = 'blue') +
+  geom_sf(size = 5) +
+  coord_sf(xlim = x_center + c(-1, 1) * zoom_amt,
+           ylim = y_center + c(-1, 1) * zoom_amt) +
+  theme(axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  ggspatial::annotation_scale()
+
+  
+ggarrange(plotlist = list(lem_pts_zm, lem_rch_zm),
+          nrow = 1,
+          labels = 'AUTO',
+          common.legend = T,
+          legend = 'bottom')
+
+
+```
+
 # Discussion
 
 Extrapolations of QRF predictions are useful for higher-level spatial analyses or comparisons, such as at the watershed level. Examining predictions at individual master sample points or 200m reaches should be discouraged. For that scale, detailed habitat data should be collected, by using a protocol like DASH, and direct estimates of capacity can be made using a QRF model. On the other hand, extrapolation summaries of capacity at the watershed scale, for various species and life-stages, can be useful in broad prioritization discussions, to determine what life-stages and watersheds to target for rehabilitation.
 
-For most of the GAAs, the range of values represented at CHaMP sites or reaches overlapped with the range of values in other places, with a few exceptions. The most notable is modeled precipitation (Precip) in the Clearwater basin (Figure \@ref(fig:huc6-pts-fig). We did not use Precip as a covariate in the master sample points extrapolation model, but it does indicate that something about the conditions in the Clearwater may be different from other places with the interior Columbia River Basin, and therefore extrapolations to that area should be scrutinized carefully.
+For most of the GAAs, the range of values represented at CHaMP sites or reaches overlapped with the range of values in other places, with a few exceptions. The most notable is modeled precipitation (Precip) in the Clearwater basin (Figure \@ref(fig:huc6-pts-fig). We did not use Precip as a covariate in the master sample points extrapolation model, but it does indicate that something about the conditions in the Clearwater may be different from other places with the interior Columbia River Basin, and therefore extrapolations to that area should be scrutinized carefully. The 2nd PCA of the natural classification (NatPrin2) also shows some deviation from the CHaMP dataset in the Willamette, Lower Columbia and Salmon watersheds. It could be worth investigating what part of that PCA (or combination of parts) are driving that deviation. 
 
-For both species, across all three QRF models, the two extrapolation models resulted in estimates of total capacity at the population scale that are very highly correlated. The linear network estimates were often greater than the master sample point estimates, to a greater or lesser degree, but not always.
+For both species, across all three QRF models, the two extrapolation models resulted in estimates of total capacity at the population scale that are very highly correlated (Table \@ref(tab:corr-tab)). The linear network estimates were often greater than the master sample point estimates, to a greater or lesser degree, but not always (Figure \@ref(fig:comp-xy)).
 
 Changing the modeling framework from linear regression to a random forest has several benefits. Primarily, it provides a method to constrain extrapolation predictions naturally, even when the extrapolation covariates are beyond the range found at CHaMP sites. In addition, random forests accommodate potential non-linear associations between capacity predictions and GAAs while handling correlations among GAAs. The sample size of CHaMP sites with QRF predictions of capacity is sufficient to fit a random forest model, so we have no concerns about the "data-hungry" nature of this framework for this situation.
 
@@ -1089,3 +1100,25 @@ Although the master sample point method has been used for several years, there i
 Therefore, we conclude that the extrapolation to a linear network method presented here is superior to the master sample point method, and should be adopted moving forward for examining QRF outputs at large spatial scales. 
 
 # References
+<!-- The following line ensures the references appear here for the MS Word or HTML output files, rather than right at the end of the document (this will not work for PDF files):  -->
+<div id="refs"></div>
+
+\newpage
+
+# Covariate Range Figures
+
+```{r pts-gaa-fig, fig.cap = "Boxplots of GAA values at CHaMP sites and non-CHaMP master sample points. Horizontal lines represent range of values at CHaMP sites."}
+champ_range_pts_p
+```
+
+```{r huc6-pts-fig, fig.cap = "Boxplots of GAA values at CHaMP sites and non-CHaMP master sample points, colored by HUC6. Horizontal lines represent range of values at CHaMP sites (dashed) and the 25th and 75th quantiles of the CHamP sites (solid)."}
+huc6_pts_p
+```
+
+```{r rch-gaa-fig, fig.cap = "Boxplots of GAA values at CHaMP reaches and non-CHaMP 200 m reaches. Horizontal lines represent range of values at CHaMP sites."}
+champ_range_rch_p
+```
+
+```{r huc6-rch-fig, fig.cap = "Boxplots of GAA values at CHaMP reaches and non-CHaMP 200 m reaches, colored by HUC6.  Horizontal lines represent range of values at CHaMP sites (dashed) and the 25th and 75th quantiles of the CHamP sites (solid)."}
+huc6_rch_p
+```
