@@ -20,7 +20,7 @@ theme_set(theme_bw())
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[2]
+               'redds')[1]
 
 load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
 data("rch_200")
@@ -43,15 +43,16 @@ ups_cap = rch_200_cap %>%
 ups_cap = rch_200_cap %>%
   filter(HUC6_name == 'Salmon',
          (grepl("Lemhi", chnk_NWR_NAME) & Watershed == "Lemhi") |
+           grepl("North Fork Salmon River", chnk_NWR_NAME) |
            (grepl("Pahsimeroi", chnk_NWR_NAME)) |
            (grepl("above Redfish Lake", chnk_NWR_NAME)))
 
 ups_cap %>%
   ggplot() +
-  # geom_sf(aes(fill = chnk_NWR_NAME,
-  #             color = chnk_NWR_NAME)) +
-  geom_sf(aes(fill = as.factor(Watershed),
-              color = as.factor(Watershed))) +
+  geom_sf(aes(fill = chnk_NWR_NAME,
+              color = chnk_NWR_NAME)) +
+  # geom_sf(aes(fill = as.factor(Watershed),
+  #             color = as.factor(Watershed))) +
   theme_bw()
 
 ups_cap %>%
