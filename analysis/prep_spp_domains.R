@@ -297,7 +297,7 @@ chnk_dom = spr_chnk %>%
   mutate_at(vars(Species, Run, UseType),
             list(fct_drop)) %>%
   select(-geom)
-  
+
 # add species range to 200 m reaches
 rch_200 %<>%
   full_join(chnk_dom %>%
@@ -334,6 +334,24 @@ use_data(rch_200,
          version = 3,
          overwrite = T)
 
+# save as a geopackage
+# try splitting it up and appending each one subsequently, to help speed it up.
+rch_200 %>%
+  mutate(across(HUC6_name,
+            fct_explicit_na)) %>%
+  janitor::tabyl(HUC6_name) %>%
+  janitor::adorn_totals()
+
+rch_200_split = rch_200 %>%
+  group_split(HUC6_name)
+for(i in 1:length(rch_200_split)) {
+  cat(paste("Working on group", i, "out of", length(rch_200_split), "with", nrow(rch_200_split[[i]]), " rows\n"))
+  
+  st_write(rch_200_split[[i]],
+           dsn = 'data/prepped/200m_reaches/crb_200m_reaches.gpkg',
+           driver = 'GPKG',
+           append = if_else(i == 1, F, T))
+}
 
 #----------------------------------------------------------------
 # pull out species domains and join to population polygons
@@ -559,13 +577,13 @@ uppSalmChnk_tab %>%
               select(UniqueID, Basin)) %>%
   xtabs(~ Basin + chnk, .) %>%
   prop.table(margin = 1) %>% round(2)
-  # addmargins()
+# addmargins()
 
 table(uppSalm_StmNt$UniqueID %in% uppSalmChnk_tab$UniqueID)
 
 rch_200 %>%
   inner_join(uppSalmChnk_tab %>%
-  select(UniqueID)) %>%
+               select(UniqueID)) %>%
   left_join(uppSalm_StmNt %>%
               st_drop_geometry() %>%
               select(UniqueID, Basin)) %>%
@@ -591,10 +609,10 @@ p3 = uppSalm_StmNt %>%
   facet_wrap(~ version)
 
 p12 = ggpubr::ggarrange(plotlist = list(p1, p2),
-                  nrow = 1, 
-                  ncol = 2,
-                  common.legend = T,
-                  legend = 'bottom')
+                        nrow = 1, 
+                        ncol = 2,
+                        common.legend = T,
+                        legend = 'bottom')
 
 ggpubr::ggarrange(plotlist = list(p12, p3),
                   nrow = 2, 
@@ -611,7 +629,7 @@ rch_200_v2 = rch_200 %>%
                       select(UniqueID) %>%
                       mutate(chnk = T)) %>%
           select(one_of(names(rch_200))))
-  
+
 p4 = rch_200 %>%
   filter(chnk_MPG == 'Upper Salmon River') %>%
   filter(chnk) %>%
@@ -662,7 +680,7 @@ uppSalm_StmNt_sthd = rch_200 %>%
 
 p1 = sthd_domain %>%
   filter(MPG == 'Salmon River') %>% #,
-         # StreamName != 'Salmon River') %>%
+  # StreamName != 'Salmon River') %>%
   mutate(Basin = str_remove(NWR_NAME, 'Steelhead \\(Snake River Basin DPS\\) \\- ')) %>%
   filter(Basin %in% unique(uppSalmSthd$Basin)) %>%
   ggplot(aes(color = Basin)) +
@@ -789,7 +807,7 @@ ugrChnk_tab = rch_200 %>%
 ugrChnk_tab %>%
   filter(!chnk) %>%
   xtabs(~ chnk_use, .)
-  select(UniqueID) %>%
+select(UniqueID) %>%
   inner_join(rch_200) %>%
   as.data.frame() %>%
   head()
