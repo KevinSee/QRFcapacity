@@ -353,6 +353,34 @@ for(i in 1:length(rch_200_split)) {
            append = if_else(i == 1, F, T))
 }
 
+# save a smaller version, only containing watersheds for Richie to compare with other spp domain files
+data(rch_200)
+
+# upper Salmon
+rch_200_upsalm = rch_200 %>%
+  filter(chnk_MPG == 'Upper Salmon River')
+
+# Grande Ronde
+rch_200_gr = rch_200 %>%
+  filter(grepl('Ronde', chnk_MPG))
+
+# John Day
+rch_200_jd = rch_200 %>%
+  filter(grepl('John Day', sthd_NWR_NAME))
+
+rch_200_fix_list = list(rch_200_upsalm,
+                        rch_200_gr,
+                        rch_200_jd)
+for(i in 1:length(rch_200_fix_list)) {
+  cat(paste("Working on group", i, "out of", length(rch_200_fix_list), "with", nrow(rch_200_fix_list[[i]]), " rows\n"))
+  
+  st_write(rch_200_fix_list[[i]],
+           dsn = 'data/prepped/200m_reaches/crb_200m_reaches_domain_fix.gpkg',
+           driver = 'GPKG',
+           append = if_else(i == 1, F, T))
+}
+
+
 #----------------------------------------------------------------
 # pull out species domains and join to population polygons
 chnk_domain = rch_200 %>%
@@ -442,7 +470,8 @@ sthd_domain = rch_200 %>%
 # upper Salmon extents, based on BoR designations
 #-----------------------------------------------------------------
 # Chinook
-uppSalmChnk = st_read(paste0(nas_prefix, 'data/qrf/domain/UP_Salmon_ChinookExtents_All.shp')) %>%
+uppSalmChnk = st_read('data/raw/domain/UP_Salmon_ChinookExtents_All.shp') %>%
+# uppSalmChnk = st_read(paste0(nas_prefix, 'data/qrf/domains/UP_Salmon_ChinookExtents_All.shp')) %>%
   st_transform(myCRS) %>%
   st_zm() %>%
   # all NAs for Basin are in North Fork Salmon
@@ -472,7 +501,7 @@ uppSalmChnk_poly %>%
 
 uppSalm_StmNt = rch_200 %>%
   filter(chnk_MPG == 'Upper Salmon River') %>%
-  filter(HUC8_code %in% unique(uppSalmChnk$HUC8_code)) %>%
+  # filter(HUC8_code %in% unique(uppSalmChnk$HUC8_code)) %>%
   mutate(Basin = str_remove(chnk_NWR_NAME, 'Chinook Salmon \\(Snake River Spring/Summer-run ESU\\) \\- ')) %>%
   filter(Basin %in% unique(uppSalmChnk$Basin),
          (Basin == 'Salmon River Upper Mainstem above Redfish Lake' | is.na(GNIS_Name) | GNIS_Name != 'Salmon River'),
@@ -486,7 +515,7 @@ uppSalm_StmNt = rch_200 %>%
                                                                  'Boulder Creek')))
 
 uppSalmChnk_poly_v2 = uppSalm_StmNt %>%
-  filter(chnk) %>%
+  # filter(chnk) %>%
   group_by(Basin) %>%
   summarise(geometry = st_combine(geometry),
             geometry = st_convex_hull(geometry)) %>%
@@ -661,7 +690,8 @@ ggpubr::ggarrange(plotlist = list(p4, p5),
 
 
 # Steelhead
-uppSalmSthd = st_read(paste0(nas_prefix, 'data/qrf/domain/UPsalmon_SteelheadExtent_All.shp')) %>%
+uppSalmSthd = st_read('data/raw/domain/UPsalmon_SteelheadExtent_All.shp') %>%
+# uppSalmSthd = st_read(paste0(nas_prefix, 'data/qrf/domain/UPsalmon_SteelheadExtent_All.shp')) %>%
   st_transform(myCRS) %>%
   st_zm() %>%
   # mutate(StreamName = GNIS_Name) %>%
