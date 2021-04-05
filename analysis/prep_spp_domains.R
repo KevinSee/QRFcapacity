@@ -329,30 +329,7 @@ rch_200 %>%
 rch_200_and = rch_200 %>%
   filter((chnk | sthd))
 
-# make available like a package, by calling "data()"
-use_data(rch_200,
-         version = 3,
-         overwrite = T)
-
-# save as a geopackage
-# try splitting it up and appending each one subsequently, to help speed it up.
-rch_200 %>%
-  mutate(across(HUC6_name,
-            fct_explicit_na)) %>%
-  janitor::tabyl(HUC6_name) %>%
-  janitor::adorn_totals()
-
-rch_200_split = rch_200 %>%
-  group_split(HUC6_name)
-for(i in 1:length(rch_200_split)) {
-  cat(paste("Working on group", i, "out of", length(rch_200_split), "with", nrow(rch_200_split[[i]]), " rows\n"))
-  
-  st_write(rch_200_split[[i]],
-           dsn = 'data/prepped/200m_reaches/crb_200m_reaches.gpkg',
-           driver = 'GPKG',
-           append = if_else(i == 1, F, T))
-}
-
+#----------------------------------------------------------------
 # save a smaller version, only containing watersheds for Richie to compare with other spp domain files
 data(rch_200)
 
@@ -381,6 +358,57 @@ for(i in 1:length(rch_200_fix_list)) {
 }
 
 
+#----------------------------------------------------------------
+# read back in Richie's fixes
+rch_fix = st_read('data/prepped/200m_reaches/crb_200m_reaches_domain_edit.shp')
+
+rch_200 %<>%
+  left_join(rch_fix %>%
+              select(UniqueID,
+                     chnk_new = chnk,
+                     sthd_new = sthd) %>%
+              mutate(across(c(chnk_new,
+                              sthd_new),
+                            as.logical)) %>%
+              st_drop_geometry() %>%
+              as_tibble()) %>%
+  mutate(chnk = if_else(!is.na(chnk_new),
+                        chnk_new,
+                        chnk),
+         sthd = if_else(!is.na(sthd_new),
+                        sthd_new,
+                        sthd)) %>%
+  select(-chnk_new,
+         -sthd_new)
+
+
+#----------------------------------------------------------------
+# make available like a package, by calling "data()"
+usethis::use_data(rch_200,
+                  version = 3,
+                  overwrite = T)
+
+# save as a geopackage
+# try splitting it up and appending each one subsequently, to help speed it up.
+rch_200 %>%
+  mutate(across(HUC6_name,
+            fct_explicit_na)) %>%
+  janitor::tabyl(HUC6_name) %>%
+  janitor::adorn_totals()
+
+rch_200_split = rch_200 %>%
+  group_split(HUC6_name)
+for(i in 1:length(rch_200_split)) {
+  cat(paste("Working on group", i, "out of", length(rch_200_split), "with", nrow(rch_200_split[[i]]), " rows\n"))
+  
+  st_write(rch_200_split[[i]],
+           dsn = 'data/prepped/200m_reaches/crb_200m_reaches.gpkg',
+           driver = 'GPKG',
+           append = if_else(i == 1, F, T))
+}
+
+
+#----------------------------------------------------------------
 #----------------------------------------------------------------
 # pull out species domains and join to population polygons
 chnk_domain = rch_200 %>%
