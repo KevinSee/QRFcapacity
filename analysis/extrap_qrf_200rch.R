@@ -1441,36 +1441,45 @@ save(extrap_covars,
 
 #---------------------------
 # create a geopackage from random forest extrapolation
-load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
 data("rch_200")
-
-rch_200_cap = rch_200 %>%
-  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
-         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
-         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
-  left_join(all_preds %>%
-              select(-HUC8_code)) %>%
-  filter(reach_leng < 500)
-
-rm(mod_data_weights, model_rf_df, extrap_covars)
-rm(rch_200, all_preds)
-
-# try splitting it up and appending each one subsequently, to help speed it up.
-rch_200_cap %>%
-  mutate_at(vars(HUC6_name),
-            list(fct_explicit_na)) %>%
-  tabyl(HUC6_name) %>%
-  adorn_totals()
-
-rch_200_cap_split = rch_200_cap %>%
-  group_split(HUC6_name)
-for(i in 1:length(rch_200_cap_split)) {
-  cat(paste("Working on group", i, "out of", length(rch_200_cap_split), "with", nrow(rch_200_cap_split[[i]]), " rows\n"))
+for(mod_choice in c('juv_summer',
+                    'juv_summer_dash',
+                    'redds',
+                    'juv_winter')) {
   
-  st_write(rch_200_cap_split[[i]],
-           dsn = paste0('output/gpkg/Rch_Cap_RF_', mod_choice, '.gpkg'),
-           driver = 'GPKG',
-           append = if_else(i == 1, F, T))
+  load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
+  
+  
+  rch_200_cap = rch_200 %>%
+    select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+           chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
+           sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
+    left_join(all_preds %>%
+                select(-chnk, -sthd) %>%
+                select(-HUC8_code)) %>%
+    filter(reach_leng < 500)
+  
+  rm(pred_hab_df, model_rf_df, extrap_covars, all_preds,
+     full_form)
+  # rm(rch_200)
+  
+  # # try splitting it up and appending each one subsequently, to help speed it up.
+  # rch_200_cap %>%
+  #   mutate_at(vars(HUC6_name),
+  #             list(fct_explicit_na)) %>%
+  #   tabyl(HUC6_name) %>%
+  #   adorn_totals()
+  
+  rch_200_cap_split = rch_200_cap %>%
+    group_split(HUC6_name)
+  for(i in 1:length(rch_200_cap_split)) {
+    cat(paste("Working on group", i, "out of", length(rch_200_cap_split), "with", nrow(rch_200_cap_split[[i]]), " rows\n"))
+    
+    st_write(rch_200_cap_split[[i]],
+             dsn = paste0('output/gpkg/Rch_Cap_RF_', mod_choice, '.gpkg'),
+             driver = 'GPKG',
+             append = if_else(i == 1, F, T))
+  }
 }
 
 
