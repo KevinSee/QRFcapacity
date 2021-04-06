@@ -59,7 +59,7 @@ calc_watershed_cap = function(wtsd_polygon,
       mutate(id = 1:n())
     
     # clip capacity points to watershed polygon
-    wtsd_pts = st_intersection(capacity_pts,
+    wtsd_pts = st_intersection(capacity_sf,
                                wtsd_polygon)
     
     if(nrow(wtsd_pts) == 0) {
