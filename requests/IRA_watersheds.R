@@ -21,7 +21,7 @@ theme_set(theme_bw())
 mod_choice = c('juv_summer',
                'juv_summer_dash',
                'redds',
-               "juv_winter")[1]
+               "juv_winter")[4]
 
 # load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
 # data("rch_200")
@@ -29,12 +29,25 @@ mod_choice = c('juv_summer',
 rch_cap = st_read(paste0("output/gpkg/Rch_Cap_RF_", mod_choice,
                          ".gpkg"))
 
+if(mod_choice == "juv_summer") {
+  rch_pts = st_read("output/gpkg/Sum_Juv_Capacity.gpkg") %>%
+    st_transform(st_crs(rch_cap))
+} else if(mod_choice == "juv_summer_dash") {
+  rch_pts = st_read("output/gpkg/Sum_Juv_Capacity_DASH.gpkg") %>%
+    st_transform(st_crs(rch_cap))
+} else if(mod_choice == "redds") {
+  rch_pts = st_read("output/gpkg/Redds_Capacity.gpkg") %>%
+    st_transform(st_crs(rch_cap))
+} else if(mod_choice == "juv_winter") {
+  rch_pts = st_read("output/gpkg/Win_Juv_Capacity.gpkg") %>%
+    st_transform(st_crs(rch_cap))
+}
 
 #-----------------------------------------------------------------
 # pull out areas in the IRA report
-rch_cap %>%
-  filter(chnk_MPG == "Upper Salmon River") %>%
-  xtabs(~ chnk_NWR_NAME, .)
+# rch_cap %>%
+#   filter(chnk_MPG == "Upper Salmon River") %>%
+#   xtabs(~ chnk_NWR_NAME, .)
 
 ira_list = list("East Fork Salmon" = rch_cap %>%
                   filter(chnk_NWR_NAME == "Chinook Salmon (Snake River Spring/Summer-run ESU) - East Fork Salmon River",
@@ -74,6 +87,20 @@ ira_list = list("East Fork Salmon" = rch_cap %>%
                   filter(chnk_NWR_NAME == "Chinook Salmon (Snake River Spring/Summer-run ESU) - Salmon River Upper Mainstem above Redfish Lake",
                          chnk))
 
+wtsd_poly_list = ira_list %>%
+  map(.f = function(x) {
+    x %>%
+      st_union() %>%
+      st_convex_hull()
+  })
+
+ira_pts = wtsd_poly_list %>%
+  map(.f = function(x) {
+    wtsd_pts = st_intersection(rch_pts, x) %>%
+      filter(chnk == "Yes")
+  })
+
+
 ira_plots = ira_list %>%
   map(.f = function(x) {
     plot_title = x %>% 
@@ -95,21 +122,108 @@ ggpubr::ggarrange(plotlist = ira_plots,
                   common.legend = T,
                   legend = 'right')
 
-i = 2
-ira_list[[i]] %>%
-  ggplot() +
-  geom_sf(aes(color = chnk_per_m2)) +
-  # geom_sf(aes(color = GNIS_Name)) +
+names(ira_list)
+i = 6
+ggplot() +
+  geom_sf(data = ira_list[[i]],
+          aes(color = chnk_per_m2)) +
+  geom_sf(data = ira_pts[[i]],
+          aes(color = chnk_per_m2)) +
   scale_color_viridis_c(direction = -1) +
   theme(axis.text = element_blank(),
         axis.ticks = element_blank())
 
-wtsd_poly = ira_list[[i]] %>%
-  st_union() %>%
-  st_convex_hull()
-
-calc_watershed_cap(wtsd_poly,
+# calculate total capacity by stream
+calc_watershed_cap(wtsd_poly_list[[i]],
                    ira_list[[i]],
                    by_stream = T) %>%
   mutate(across(tot_length,
-                ~ . / 1000))
+                ~ . / 1000)) %>%
+  mutate(tot_cap_cv = tot_cap_se / tot_cap,
+         cap_per_km = tot_cap / tot_length)
+
+data("chnk_domain")
+calc_watershed_cap(wtsd_polygon = wtsd_poly_list[[i]],
+                   capacity_sf = ira_pts[[i]],
+                   spp_range = chnk_domain,
+                   by_stream = T) %>%
+  mutate(across(tot_length,
+                ~ . / 1000)) %>%
+  select(StreamName, n_pts:tot_cap_se) %>%
+  mutate(tot_cap_cv = tot_cap_se / tot_cap,
+         cap_per_km = tot_cap / tot_length)
+
+#-----------------------------------------------------------------
+# calculate total capacity based on points and reaches
+cap_comp = tibble(watershed = names(ira_list)) %>%
+  add_column(rchs = ira_list,
+             pts = ira_pts,
+             wtsd_poly = wtsd_poly_list) %>%
+  mutate(cap_rch = map2(rchs, wtsd_poly,
+                        .f = function(x, y) {
+                          calc_watershed_cap(y, x)
+                        }),
+         cap_pts = map2(pts, wtsd_poly,
+                        .f = function(x, y) {
+                          calc_watershed_cap(y, x,
+                                             spp_range = chnk_domain)
+                        })) %>%
+  pivot_longer(cols = starts_with("cap"),
+               names_to = "source",
+               values_to = "cap_df") %>%
+  unnest(cols = cap_df)
+
+# make a few plots
+cap_comp %>%
+  mutate(source = str_remove(source, "^cap_")) %>%
+  select(-area,
+         -n_rchs, -n_pts) %>%
+  pivot_wider(names_from = "source",
+              values_from = starts_with("tot")) %>%
+  ggplot(aes(x = tot_cap_pts,
+             y = tot_cap_rch,
+             color = watershed)) +
+  geom_abline(linetype = 2) +
+  geom_errorbar(aes(ymin = tot_cap_rch + tot_cap_se_rch * qnorm(0.025),
+                    ymax = tot_cap_rch + tot_cap_se_rch * qnorm(0.975)),
+                width = 0) +
+  geom_errorbarh(aes(xmin = tot_cap_pts + tot_cap_se_pts * qnorm(0.025),
+                     xmax = tot_cap_pts + tot_cap_se_pts * qnorm(0.975)),
+                 height = 0) +
+  geom_point() +
+  labs(x = "Master Sample Points",
+       y = "200m Reaches",
+       color = "Watershed",
+       title = "Total Watershed Capacity")
+
+cap_comp %>%
+  mutate(source = str_remove(source, "^cap_")) %>%
+  select(-area,
+         -n_rchs, -n_pts) %>%
+  pivot_wider(names_from = "source",
+              values_from = starts_with("tot")) %>%
+  ggplot(aes(x = tot_length_pts,
+             y = tot_length_rch,
+             color = watershed)) +
+  geom_abline(linetype = 2) +
+  geom_point(size = 4) +
+  labs(x = "Master Sample Points",
+       y = "200m Reaches",
+       color = "Watershed",
+       title = "Total Stream Length")
+
+cap_comp %>%
+  mutate(source = str_remove(source, "^cap_")) %>%
+  select(-area,
+         -n_rchs, -n_pts) %>%
+  pivot_wider(names_from = "source",
+              values_from = starts_with("tot")) %>%
+  ggplot(aes(x = tot_cap_pts / tot_length_pts,
+             y = tot_cap_rch / tot_length_rch,
+             color = watershed)) +
+  geom_abline(linetype = 2) +
+  geom_point(size = 4) +
+  labs(x = "Master Sample Points",
+       y = "200m Reaches",
+       color = "Watershed",
+       title = "Avg Capacity / M")
