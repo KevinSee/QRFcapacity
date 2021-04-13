@@ -44,7 +44,8 @@ calc_watershed_cap = function(wtsd_polygon,
 
     # clip stream layer to watershed polygon
     wtsd_strm = st_intersection(spp_range,
-                                wtsd_polygon)
+                                wtsd_polygon) %>%
+      st_cast("MULTILINESTRING")
     
     if(nrow(wtsd_strm) == 0) {
       print('No stream within polygon')
@@ -96,25 +97,34 @@ calc_watershed_cap = function(wtsd_polygon,
     strm_length = wtsd_strm %>%
       mutate(lngth = st_length(.)) %>%
       group_by(StreamName) %>%
-      summarise(tot_length = sum(lngth)) %>%
+      summarise(tot_length = sum(lngth),
+                .groups = "drop") %>%
       mutate_at(vars(tot_length),
                 list(as.numeric)) %>%
-      as_tibble() %>%
-      select(-geometry)
+      st_drop_geometry() %>%
+      as_tibble()
     
     # get average capacity by stream
     strm_cap = cap_pts %>%
       as_tibble() %>%
       group_by(StreamName) %>%
-      summarise(n_pts = n_distinct(Site)) %>%
+      summarise(n_pts = n_distinct(Site),
+                .groups = "drop") %>%
       full_join(cap_pts %>%
                   as_tibble() %>%
+                  select(StreamName,
+                         cap_per_m = one_of(capacity_name),
+                         cap_per_m_se = one_of(capacity_se_name)) %>%
                   group_by(StreamName) %>%
-                  summarise_at(vars(cap_per_m = one_of(capacity_name),
-                                    cap_per_m_se = one_of(capacity_se_name)),
-                               list(mean),
-                               na.rm = T)) %>%
+                  summarize(across(c(cap_per_m,
+                                     cap_per_m_se),
+                                   mean,
+                                   na.rm = T),
+                            .groups = "drop")) %>%
       full_join(strm_length) %>%
+      mutate(across(n_pts,
+                    replace_na,
+                    0)) %>%
       mutate(tot_cap = cap_per_m * tot_length,
              tot_cap_se = cap_per_m_se * tot_length)
     
