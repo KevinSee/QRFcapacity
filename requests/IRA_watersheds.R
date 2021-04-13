@@ -21,7 +21,7 @@ theme_set(theme_bw())
 mod_choice = c('juv_summer',
                'juv_summer_dash',
                'redds',
-               "juv_winter")[4]
+               "juv_winter")[1]
 
 # load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
 # data("rch_200")
@@ -69,7 +69,8 @@ ira_list = list("East Fork Salmon" = rch_cap %>%
                          chnk),
                 "Lemhi" = rch_cap %>%
                   filter(chnk_NWR_NAME == "Chinook Salmon (Snake River Spring/Summer-run ESU) - Lemhi River",
-                         chnk),
+                         chnk,
+                         HUC8_code == "17060204"),
                 "Pahsimeroi" = rch_cap %>%
                   filter(chnk_NWR_NAME == "Chinook Salmon (Snake River Spring/Summer-run ESU) - Pahsimeroi River",
                          chnk),
@@ -96,10 +97,25 @@ wtsd_poly_list = ira_list %>%
 
 ira_pts = wtsd_poly_list %>%
   map(.f = function(x) {
-    wtsd_pts = st_intersection(rch_pts, x) %>%
-      filter(chnk == "Yes")
+    st_intersection(rch_pts, x)# %>%
+      # filter(chnk == "Yes")
   })
 
+# get Chinook range from 200m reaches
+chnk_wtsd_range = ira_list %>%
+  map(.f = function(x) {
+    x %>%
+      mutate(Species = "Chinook Salmon",
+             SciName = "Oncorhynchus tshawytscha") %>%
+      select(StreamName = GNIS_Name,
+             Species, SciName,
+             UseType = chnk_use,
+             ESU_DPS = chnk_ESU_DPS,
+             MPG = chnk_MPG,
+             NWR_POPID = chnk_NWR_POPID,
+             NWR_NAME = chnk_NWR_NAME)
+  })
+chnk_domain = do.call(rbind, chnk_wtsd_range)
 
 ira_plots = ira_list %>%
   map(.f = function(x) {
@@ -123,8 +139,9 @@ ggpubr::ggarrange(plotlist = ira_plots,
                   legend = 'right')
 
 names(ira_list)
-i = 6
+i = 5
 ggplot() +
+  geom_sf(data = wtsd_poly_list[[i]]) +
   geom_sf(data = ira_list[[i]],
           aes(color = chnk_per_m2)) +
   geom_sf(data = ira_pts[[i]],
@@ -134,15 +151,16 @@ ggplot() +
         axis.ticks = element_blank())
 
 # calculate total capacity by stream
+# using 200 m reaches
 calc_watershed_cap(wtsd_poly_list[[i]],
                    ira_list[[i]],
                    by_stream = T) %>%
   mutate(across(tot_length,
                 ~ . / 1000)) %>%
   mutate(tot_cap_cv = tot_cap_se / tot_cap,
-         cap_per_km = tot_cap / tot_length)
+         cap_per_km   = tot_cap / tot_length)
 
-data("chnk_domain")
+# using master sample points
 calc_watershed_cap(wtsd_polygon = wtsd_poly_list[[i]],
                    capacity_sf = ira_pts[[i]],
                    spp_range = chnk_domain,
@@ -152,6 +170,18 @@ calc_watershed_cap(wtsd_polygon = wtsd_poly_list[[i]],
   select(StreamName, n_pts:tot_cap_se) %>%
   mutate(tot_cap_cv = tot_cap_se / tot_cap,
          cap_per_km = tot_cap / tot_length)
+
+ggplot() +
+  geom_sf(data = chnk_wtsd_range[[i]] %>%
+            mutate(across(StreamName,
+                          fct_drop)),
+          aes(color = StreamName)) #+
+  # geom_sf(data = ira_list[[i]] %>%
+  #           rename(StreamName = GNIS_Name) %>%
+  #           mutate(across(StreamName,
+  #                         fct_drop)),
+  #         aes(color = StreamName))
+
 
 #-----------------------------------------------------------------
 # calculate total capacity based on points and reaches
