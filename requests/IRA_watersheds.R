@@ -257,3 +257,20 @@ cap_comp %>%
        y = "200m Reaches",
        color = "Watershed",
        title = "Avg Capacity / M")
+
+cap_comp %>%
+  mutate(source = str_remove(source, "^cap_")) %>%
+  select(-area,
+         -n_rchs, -n_pts) %>%
+  pivot_wider(names_from = "source",
+              values_from = starts_with("tot")) %>%
+  mutate(diff = tot_cap_rch - tot_cap_pts,
+         rel_diff = diff / tot_cap_pts) %>%
+  ggplot(aes(y = watershed,
+             x = rel_diff,
+             fill = watershed)) +
+  geom_col() +
+  labs(y = "Watershed",
+       fill = "Watershed",
+       x = "Relative Difference")
+  
