@@ -67,6 +67,7 @@ library(kableExtra)
 # load needed packages
 library(QRFcapacity)
 library(tidyverse)
+library(magrittr)
 library(sf)
 library(janitor)
 library(ggpubr)
@@ -89,8 +90,9 @@ knitr::write_bib(c("base",
 ```
 
 ```{r ira-boundaries}
+# Chinook
 data("rch_200")
-ira_list = list("East Fork Salmon" = rch_200 %>%
+ira_chnk_list = list("East Fork Salmon" = rch_200 %>%
                   filter(chnk_NWR_NAME == "Chinook Salmon (Snake River Spring/Summer-run ESU) - East Fork Salmon River",
                          chnk),
                 "Valley Creek" = rch_200 %>%
@@ -129,7 +131,7 @@ ira_list = list("East Fork Salmon" = rch_200 %>%
                   filter(chnk_NWR_NAME == "Chinook Salmon (Snake River Spring/Summer-run ESU) - Salmon River Upper Mainstem above Redfish Lake",
                          chnk))
 
-wtsd_poly_list = ira_list %>%
+wtsd_chnk_poly = ira_chnk_list %>%
   map(.f = function(x) {
     x %>%
       st_union() %>%
@@ -137,7 +139,7 @@ wtsd_poly_list = ira_list %>%
   })
 
 # get Chinook range from 200m reaches
-chnk_wtsd_range = ira_list %>%
+chnk_wtsd_range = ira_chnk_list %>%
   map(.f = function(x) {
     x %>%
       mutate(Species = "Chinook Salmon",
@@ -152,9 +154,76 @@ chnk_wtsd_range = ira_list %>%
   })
 chnk_domain = do.call(rbind, chnk_wtsd_range)
 
+# Steelhead
+ira_sthd_list = list("East Fork Salmon" = rch_200 %>%
+                  filter(sthd_NWR_NAME == "Steelhead (Snake River Basin DPS) - East Fork Salmon River",
+                         sthd),
+                "Valley Creek" = rch_200 %>%
+                  filter(chnk_NWR_NAME == "Chinook Salmon (Snake River Spring/Summer-run ESU) - Valley Creek",
+                         sthd),
+                "Yankee Fork" = rch_200 %>%
+                  filter(chnk_NWR_NAME == "Chinook Salmon (Snake River Spring/Summer-run ESU) - Yankee Fork",
+                         sthd),
+                "North Fork Salmon" = rch_200 %>%
+                  filter(sthd_NWR_NAME == "Steelhead (Snake River Basin DPS) - North Fork Salmon River",
+                         GNIS_Name %in% c("Dahlonega Creek",
+                                          "Hughes Creek",
+                                          # "Moose Creek",
+                                          "North Fork Salmon River",
+                                          "Sheep Creek",
+                                          "Twin Creek"),
+                         sthd),
+                "Lemhi" = rch_200 %>%
+                  filter(sthd_NWR_NAME == "Steelhead (Snake River Basin DPS) - Lemhi River",
+                         sthd,
+                         HUC8_code == "17060204"),
+                "Pahsimeroi" = rch_200 %>%
+                  filter(sthd_NWR_NAME == "Steelhead (Snake River Basin DPS) - Pahsimeroi River",
+                         GNIS_Name %in% c("Sulphur Creek",
+                                           "Pahsimeroi River", 
+                                           "Patterson Creek"),
+                         sthd),
+                "Panther Creek" = rch_200 %>%
+                  filter(sthd_NWR_NAME == "Steelhead (Snake River Basin DPS) - Panther Creek",
+                         GNIS_Name %in% c("Big Deer Creek",
+                                          "Blackbird Creek",
+                                          "Clear Creek",
+                                          "Moyer Creek",
+                                          "Musgrove Creek",
+                                          "Napias Creek",
+                                          "Panther Creek"),
+                         sthd),
+                "Upper Salmon" = rch_200 %>%
+                  filter(chnk_NWR_NAME == "Chinook Salmon (Snake River Spring/Summer-run ESU) - Salmon River Upper Mainstem above Redfish Lake",
+                         sthd))
+
+wtsd_sthd_poly = ira_sthd_list %>%
+  map(.f = function(x) {
+    x %>%
+      st_union() %>%
+      st_convex_hull()
+  })
+
+# get steelhead range from 200m reaches
+sthd_wtsd_range = ira_sthd_list %>%
+  map(.f = function(x) {
+    x %>%
+      mutate(Species = "steelhead",
+             SciName = "Oncorhynchus mykiss") %>%
+      select(StreamName = GNIS_Name,
+             Species, SciName,
+             UseType = sthd_use,
+             ESU_DPS = sthd_ESU_DPS,
+             MPG = sthd_MPG,
+             NWR_POPID = sthd_NWR_POPID,
+             NWR_NAME = sthd_NWR_NAME)
+  })
+sthd_domain = do.call(rbind, sthd_wtsd_range)
+
 ```
 
-```{r}
+
+```{r upper-lemhi-bndry}
 library(nhdplusTools)
 
 hayden_comid = tibble(site = "Hayden Confluence",
@@ -173,9 +242,7 @@ upper_lem$basin = upper_lem$basin %>%
 
 ```
 
-
-
-```{r reach-cap-all-models}
+```{r get-cap-all-models}
 cap_df = c('juv_summer',
            # 'juv_summer_dash',
            'redds',
@@ -188,12 +255,10 @@ cap_df = c('juv_summer',
                                     ".gpkg"),
                              quiet = T)
            
-           
-           
-           ira_rch = ira_list %>%
+           ira_chnk_rch = ira_chnk_list %>%
              map_df(.id = "watershed",
                     .f = function(x) {
-                      tibble(rch = list(x %>%
+                      tibble(chnk_rch = list(x %>%
                                           inner_join(rch_cap %>%
                                                        select(-c(GNIS_Name:Watershed)) %>%
                                                        st_drop_geometry() %>%
@@ -201,6 +266,16 @@ cap_df = c('juv_summer',
                                                      by = "UniqueID")))
                     })
            
+           ira_sthd_rch = ira_sthd_list %>%
+             map_df(.id = "watershed",
+                    .f = function(x) {
+                      tibble(sthd_rch = list(x %>%
+                                          inner_join(rch_cap %>%
+                                                       select(-c(GNIS_Name:Watershed)) %>%
+                                                       st_drop_geometry() %>%
+                                                       as_tibble(),
+                                                     by = "UniqueID")))
+                    })
            
            
            if(x == "juv_summer") {
@@ -221,61 +296,91 @@ cap_df = c('juv_summer',
                st_transform(st_crs(rch_cap))
            }
            
-           ira_pts = wtsd_poly_list %>%
+           ira_chnk_pts = wtsd_chnk_poly %>%
              map_df(.id = "watershed",
                     .f = function(x) {
-                      tibble(pts = list(st_intersection(rch_pts, x)))
+                      tibble(chnk_pts = list(st_intersection(rch_pts, x)))
+                    })
+           
+           ira_sthd_pts = wtsd_sthd_poly %>%
+             map_df(.id = "watershed",
+                    .f = function(x) {
+                      tibble(sthd_pts = list(st_intersection(rch_pts, x)))
                     })
              
-           tibble(qrf_est = list(ira_rch %>%
-                                   full_join(ira_pts,
-                                             by = "watershed"))) %>%
+           ira_chnk_rch %>%
+             full_join(ira_sthd_rch,
+                       by = "watershed") %>%
+             full_join(ira_chnk_pts,
+                       by = "watershed") %>%
+             full_join(ira_sthd_pts,
+                       by = "watershed") %>%
              return()
          }) %>%
-  unnest(cols = qrf_est) %>%
-  left_join(wtsd_poly_list %>% 
+  left_join(wtsd_chnk_poly %>% 
               map_df(.id = "watershed",
                      .f = function(x) {
-                       tibble(wtsh_poly = list(x))
+                       tibble(wtsd_chnk_poly = list(x))
+                     }),
+            by = "watershed") %>%
+  left_join(wtsd_sthd_poly %>% 
+              map_df(.id = "watershed",
+                     .f = function(x) {
+                       tibble(wtsd_sthd_poly = list(x))
                      }),
             by = "watershed")
 
+cap_df %<>%
+  pivot_longer(cols = -(lifestage:watershed),
+               names_to = "name",
+               values_to = "value") %>%
+  mutate(Species = if_else(grepl('chnk', name), "Chinook",
+                           if_else(grepl('sthd', name), "Steelhead",
+                                   NA_character_))) %>%
+  mutate(name = str_remove(name, "chnk_"),
+         name = str_remove(name, "sthd_")) %>%
+  pivot_wider(names_from = "name",
+              values_from = "value") %>%
+  left_join(tibble(Species = c("Chinook", "Steelhead"),
+                   spp_domain = list(chnk_domain,
+                                     sthd_domain)),
+            by = "Species")
+
 ```
 
-```{r current-capacity-pts}
-cap_pts = cap_df %>%
-  mutate(chnk_cap_pts = map2(pts,
-                                 wtsh_poly,
-                                 .f = function(x, y) {
-                                   calc_watershed_cap(wtsd_polygon = y,
-                                                      capacity_sf = x,
-                                                      spp_range = chnk_domain,
-                                                      by_stream = F)
-                                 })) %>%
-  unnest(chnk_cap_pts) %>%
+```{r current-capacity-est}
+cap_est = cap_df %>%
+  nest(inputs = rch:spp_domain) %>%
+  mutate(cap_rch = map(inputs,
+                       .f = function(y) {
+                         calc_watershed_cap(wtsd_polygon = y$wtsd_poly[[1]],
+                                            capacity_sf = y$rch[[1]],
+                                            spp_range = y$spp_domain[[1]],
+                                            by_stream = F) %>%
+                           rename(n = n_rchs)
+                       })) %>%
+  mutate(cap_pts = map(inputs,
+                       .f = function(y) {
+                         calc_watershed_cap(wtsd_polygon = y$wtsd_poly[[1]],
+                                            capacity_sf = y$pts[[1]],
+                                            spp_range = y$spp_domain[[1]],
+                                            by_stream = F) %>%
+                           select(-area) %>%
+                           rename(n = n_pts)
+                       })) %>%
+  pivot_longer(cols = c(cap_rch,
+                        cap_pts),
+               names_to = "source",
+               values_to = "cap") %>%
+  mutate(source = recode(source,
+                         "cap_rch" = "Reaches",
+                         "cap_pts" = "Points")) %>%
+  unnest(cols = cap) %>%
   mutate(across(tot_length,
                 ~ . / 1000))
-
-cap_rch = cap_df %>%
-  mutate(chnk_cap_rch = map2(rch,
-                             wtsh_poly,
-                             .f = function(x, y) {
-                               calc_watershed_cap(wtsd_polygon = y,
-                                                  capacity_sf = x,
-                                                  spp_range = chnk_domain,
-                                                  by_stream = F)
-                             })) %>%
-  unnest(chnk_cap_rch) %>%
-  mutate(across(tot_length,
-                ~ . / 1000))
-
-cap_comp_df = cap_pts %>%
-  mutate(source = "Points") %>%
-  rename(n = n_pts) %>%
-  bind_rows(cap_rch %>%
-              mutate(source = "Reaches") %>%
-              rename(n = n_rchs)) %>%
-  select(-rch, -pts, -wtsh_poly)
+  
+cap_comp_df = cap_est %>%
+  select(-inputs)
 ```
 
 ```{r recovery-goals}
@@ -325,6 +430,39 @@ rec_goals = tibble(Watershed = c("Upper Salmon",
                            2000,
                            500,
                            750)) %>%
+  bind_rows(tibble(Watershed = c("Upper Salmon",
+                                 "Valley Creek",
+                                 "Yankee Fork",
+                                 "East Fork Salmon",
+                                 "Pahsimeroi",
+                                 "Lemhi",
+                                 "North Fork Salmon",
+                                 "Panther Creek"),
+                   Species = c("Steelhead"),
+                   Mean = c(92,
+                            193,
+                            95,
+                            30,
+                            1156,
+                            337,
+                            252,
+                            449),
+                   Max = c(154,
+                           278,
+                           213,
+                           54,
+                           1614,
+                           417,
+                           349,
+                           650),
+                   MAT = c(483,
+                           247,
+                           270,
+                           1000,
+                           1000,
+                           1000,
+                           500,
+                           500))) %>%
   mutate(`MAT+25%` = MAT * 1.25) %>%
   pivot_longer(cols = -c(Watershed:Species),
                names_to = "Scenario",
@@ -338,7 +476,8 @@ rec_goals = tibble(Watershed = c("Upper Salmon",
                                          "Parr:Presmolt" = "parr_to_presmolt")) %>%
                pivot_wider(id_cols = "Species",
                            names_from = "Parameter",
-                           values_from = "Value")) %>%
+                           values_from = "Value"),
+             by = "Species") %>%
   mutate(Redds = Escapement * prop_fem * redd_per_fem,
          Eggs = Redds * fecud,
          Parr = Eggs * egg_to_parr,
@@ -355,8 +494,7 @@ rec_goals = tibble(Watershed = c("Upper Salmon",
 comp_df = cap_comp_df %>%
   rename(Lifestage = lifestage,
          Watershed = watershed) %>%
-  mutate(Species = "Chinook",
-         Lifestage = recode(Lifestage,
+  mutate(Lifestage = recode(Lifestage,
                             "juv_summer" = "Parr",
                             "redds" = "Redds",
                             "juv_winter" = "Presmolts")) %>%
@@ -375,7 +513,7 @@ comp_df = cap_comp_df %>%
                                        "Presmolts"))) %>%
   arrange(Watershed, Lifestage) %>%
   filter(!is.na(Lifestage)) %>%
-  pivot_longer(cols = Mean:QRF_cap_Reaches,
+  pivot_longer(cols = Mean:QRF_cap_Points,
                names_to = "scenario",
                values_to = "value") %>%
   mutate(scenario = factor(scenario,
@@ -388,7 +526,7 @@ comp_df = cap_comp_df %>%
          scenario = fct_rev(scenario))
 
 bar_list_p = comp_df %>%
-  split(list(.$Lifestage)) %>%
+  split(list(.$Species, .$Lifestage)) %>%
   map(.f = function(df) {
     df %>%
       ggplot(aes(y = scenario,
@@ -419,7 +557,7 @@ bar_list_p = comp_df %>%
 
 When the IRA report came out, our QRF model included an extrapolation model based on GRTS master sample points. Since then, we have updated the extrapolation model to one that is based on a linear network of 200m reaches. This linear network is also based on an updated NHDPlus network, which often increases the length of various streams as the updated version has finer resolution. 
 
-To examine the impact of this change in extrapolation models, we re-compiled capacity estimates at the watershed scale for all IRA watersheds, across 3 lifestages. Currently this has been done for Chinook. We computed capacity using the master sample points, and also using the 200m reaches. 
+To examine the impact of this change in extrapolation models, we re-compiled capacity estimates at the watershed scale for all IRA watersheds, across 3 lifestages. Currently this has been done for Chinook. We computed capacity using the master sample points, and also using the 200m reaches. We used the updated NHDPlus network for both, so the total stream kilometers for each watershed is the same. For some small tributaries, there may not be a master sample point on that tributary within the range of that species. In such cases, we have no estimate of the carrying capacity of that tributary, so we set it to zero.
 
 # Methods
 
@@ -436,16 +574,28 @@ params %>%
 
 The contemporary mean and max of recent escapements (translated to other lifestages), as well as the recovery goal of mean abundance threshold (MAT) and a 25% buffer on top of that (MAT+25%) are shown in the plots below, together with estimates of current capacity from master sample points and reaches.
 
-```{r parr-fig, fig.cap = "Various scenarios of parr abundance including QRF capacity estimates."}
-bar_list_p$Parr
+```{r chnk-parr-fig, fig.cap = "Various scenarios of Chinook parr abundance including QRF capacity estimates."}
+bar_list_p$Chinook.Parr
 ```
 
-```{r winter-fig, fig.cap = "Various scenarios of presmolt over-winter abundance including QRF capacity estimates."}
-bar_list_p$Presmolts
+```{r chnk-winter-fig, fig.cap = "Various scenarios of Chinook presmolt over-winter abundance including QRF capacity estimates."}
+bar_list_p$Chinook.Presmolts
 ```
 
-```{r redd-fig, fig.cap = "Various scenarios of redd abundance including QRF capacity estimates."}
-bar_list_p$Redds
+```{r chnk-redd-fig, fig.cap = "Various scenarios of Chinook redd abundance including QRF capacity estimates."}
+bar_list_p$Chinook.Redds
+```
+
+```{r sthd-parr-fig, fig.cap = "Various scenarios of steelhead parr abundance including QRF capacity estimates."}
+bar_list_p$Steelhead.Parr
+```
+
+```{r sthd-winter-fig, fig.cap = "Various scenarios of steelhead presmolt over-winter abundance including QRF capacity estimates."}
+bar_list_p$Steelhead.Presmolts
+```
+
+```{r sthd-redd-fig, fig.cap = "Various scenarios of steelhead redd abundance including QRF capacity estimates."}
+bar_list_p$Chinook.Redds
 ```
 
 ## Lemhi Specific
@@ -453,161 +603,143 @@ bar_list_p$Redds
 We broke down the Lemhi available capacity into the Upper and Lower Lemhi (defined by the confluence of Hayden Creek).
 
 ```{r}
-lem_strm_cap = cap_df %>%
+upper_lem_poly = upper_lem$basin
+lower_lem_poly = cap_est %>%
   filter(watershed == "Lemhi") %>%
-  mutate(chnk_cap_pts = map2(pts,
-                             wtsh_poly,
-                             .f = function(x, y) {
-                               calc_watershed_cap(wtsd_polygon = y,
-                                                  capacity_sf = x,
-                                                  spp_range = chnk_domain,
-                                                  by_stream = T)
-                             })) %>%
-  select(-(rch:wtsh_poly)) %>%
-  add_column(source = "Points", .before = 0) %>%
-  unnest(cols = chnk_cap_pts) %>%
-  rename(n = n_pts) %>%
-  bind_rows(cap_df %>%
-              filter(watershed == "Lemhi") %>%
-              mutate(chnk_cap_rch = map2(rch,
-                                         wtsh_poly,
-                                         .f = function(x, y) {
-                                           calc_watershed_cap(wtsd_polygon = y,
-                                                              capacity_sf = x,
-                                                              spp_range = chnk_domain,
-                                                              by_stream = T)
-                                         })) %>%
-              select(-(rch:wtsh_poly)) %>%
-              add_column(source = "Reaches", .before = 0) %>%
-              unnest(cols = chnk_cap_rch) %>%
-              rename(n = n_rchs)) %>%
-  mutate(across(n,
-                replace_na,
-                0))
+  slice(1) %>%
+  pull(inputs) %>%
+  map("wtsd_poly") %>%
+  extract2(1) %>%
+  extract2(1) %>%
+  st_difference(upper_lem_poly)
 
-upp_lem_cap = cap_df %>%
+lem_cap = cap_est %>%
   filter(watershed == "Lemhi") %>%
-  mutate(chnk_cap_pts = map(pts,
-                            .f = function(x) {
-                              calc_watershed_cap(wtsd_polygon = upper_lem$basin,
-                                                 capacity_sf = x,
-                                                 spp_range = chnk_domain,
-                                                 by_stream = T)
-                            })) %>%
-  select(-(rch:wtsh_poly)) %>%
-  add_column(source = "Points", .before = 0) %>%
-  unnest(cols = chnk_cap_pts) %>%
-  rename(n = n_pts) %>%
-  bind_rows(cap_df %>%
-              filter(watershed == "Lemhi") %>%
-              mutate(chnk_cap_rch = map(rch,
-                                        .f = function(x) {
-                                          calc_watershed_cap(wtsd_polygon = upper_lem$basin,
-                                                             capacity_sf = x,
-                                                             spp_range = chnk_domain,
-                                                             by_stream = T)
-                                        })) %>%
-              select(-(rch:wtsh_poly)) %>%
-              add_column(source = "Reaches", .before = 0) %>%
-              unnest(cols = chnk_cap_rch) %>%
-              rename(n = n_rchs)) %>%
-  mutate(across(n,
-                replace_na,
-                0)) %>%
-  mutate(watershed = "Upper_Lemhi")
+  select(lifestage:source) %>%
+  mutate(upp_lem_cap = map(inputs,
+                           .f = function(y) {
+                             calc_watershed_cap(wtsd_polygon = upper_lem_poly,
+                                                capacity_sf = y$rch[[1]],
+                                                spp_range = y$spp_domain[[1]],
+                                                by_stream = F) %>%
+                               rename(n = n_rchs)
+                           })) %>%
+  mutate(low_lem_cap = map(inputs,
+                           .f = function(y) {
+                             calc_watershed_cap(wtsd_polygon = lower_lem_poly,
+                                                capacity_sf = y$rch[[1]],
+                                                spp_range = y$spp_domain[[1]],
+                                                by_stream = F) %>%
+                               rename(n = n_rchs)
+                           })) %>%
+  pivot_longer(cols = ends_with("lem_cap"),
+               names_to = "area",
+               values_to = "cap") %>%
+  unnest(cols = cap) %>%
+  mutate(area = recode(area,
+                       "upp_lem_cap" = "Upper Lemhi",
+                       "low_lem_cap" = "Lower Lemhi")) %>%
+  select(-inputs) %>%
+  mutate(across(tot_length,
+                ~. / 1000))
 
-
-lem_bar_p = comp_df %>%
-  filter(Watershed == "Lemhi") %>%
-  filter(!grepl("QRF", scenario)) %>%
-  bind_rows(lem_strm_cap %>%
-              filter(StreamName == "Total") %>%
-              bind_rows(upp_lem_cap %>%
-                          filter(StreamName == "Total")) %>%
-              select(-area, -starts_with("cap_per_m")) %>%
-              pivot_longer(cols = n:tot_cap_se) %>%
-              pivot_wider(names_from = "watershed",
-                          values_from = "value") %>%
-              mutate(Lower_Lemhi = Lemhi - Upper_Lemhi) %>%
-              select(-Lemhi) %>%
-              filter(name == "tot_cap") %>%
-              pivot_longer(cols = ends_with("Lemhi"),
-                           names_to = "Watershed",
-                           values_to = "value") %>%
-              unite(scenario, Watershed, source) %>%
-              # mutate(scenario = paste0("QRF_cap_", source)) %>%
-              rename(Lifestage = lifestage) %>%
-              mutate(Watershed = "Lemhi") %>%
-              select(any_of(names(comp_df))) %>%
-              mutate(Species = "Chinook",
-                     Lifestage = recode(Lifestage,
-                                        "juv_summer" = "Parr",
-                                        "redds" = "Redds",
-                                        "juv_winter" = "Presmolts"))) %>%
+lem_comp_df = lem_cap %>%
+  rename(Watershed = watershed,
+         Lifestage = lifestage) %>%
+  mutate(Lifestage = recode(Lifestage,
+                            "juv_summer" = "Parr",
+                            "redds" = "Redds",
+                            "juv_winter" = "Presmolts")) %>%
+  mutate(Scenario = paste0("QRF_cap_", source)) %>%
+  select(Lifestage:area,
+         Scenario,
+         Abundance = tot_cap) %>%
+  filter(source == "Points") %>%
+  bind_rows(rec_goals %>% 
+              filter(Watershed == "Lemhi",
+                     Lifestage %in% c("Parr", "Redds", "Presmolts"))) %>%
   mutate(Lifestage = factor(Lifestage,
                             levels = c("Redds",
                                        "Parr",
                                        "Presmolts")),
-         scenario = factor(scenario,
-                           levels = c("Lower_Lemhi_Reaches",
-                                      "Upper_Lemhi_Reaches",
-                                      "Lower_Lemhi_Points",
-                                      "Upper_Lemhi_Points",
+         Scenario = factor(Scenario,
+                           levels = c("QRF_cap_Points",
                                       "Mean",
                                       "Max",
                                       "MAT",
                                       "MAT+25%"))) %>%
-  mutate(type = scenario,
-         type = str_remove(type, "Lower_Lemhi_"),
-         type = str_remove(type, "Upper_Lemhi_"),
-         location = scenario,
-         location = str_remove(location, "_Reaches"), 
-         location = str_remove(location, "_Points")) %>%
-  mutate(location = factor(location,
-                           levels = c("Upper_Lemhi",
-                                      "Lower_Lemhi",
-                                      "Mean",
-                                      "Max",
-                                      "MAT",
-                                      "MAT+25%")),
-         type = factor(type,
-                       levels = rev(c("Reaches",
-                                      "Points",
-                                      "Mean",
-                                      "Max",
-                                      "MAT",
-                                      "MAT+25%")))) %>%
-  arrange(Lifestage, Watershed, scenario) %>%
-  split(list(.$Lifestage)) %>%
+  mutate(area = if_else(is.na(area), as.character(Scenario), area)) %>%
+  filter(Scenario %in% c("QRF_cap_Points",
+                         "MAT+25%")) %>%
+  mutate(Scenario = fct_expand(Scenario, "Available Capacity (QRF)"),
+         Scenario = fct_recode(Scenario,
+                               "Available Capacity (QRF)" = "QRF_cap_Points"),
+         Scenario = fct_rev(Scenario)) %>%
+  mutate(area = factor(area,
+                       levels = c("MAT+25%",
+                                  "Upper Lemhi",
+                                  "Lower Lemhi"))) %>%
+  arrange(Species, Lifestage, area, Scenario)
+
+lem_bar_p = lem_comp_df %>%
+  split(list(.$Species, .$Lifestage)) %>%
   map(.f = function(df) {
     df %>%
-      ggplot(aes(y = type,
-                 x = value,
-                 fill = location)) +
+      ggplot(aes(y = Scenario,
+                 x = Abundance,
+                 fill = area)) +
       geom_col(position = "stack") +
-      scale_fill_brewer(palette = "Paired",
-                        name = "Scenario") +
-      facet_wrap(~ Watershed,
-                 scales = "free_x") +
+      scale_fill_manual(values = c("Lower Lemhi" = "darkblue",
+                                   "Upper Lemhi" = "lightblue",
+                                   "MAT+25%" = "black"),
+                        breaks = c("MAT+25%", "Lower Lemhi", "Upper Lemhi"),
+                        name = NULL) +
+      # scale_fill_brewer(palette = "Paired",
+      #                   name = "Scenario") +
       theme(legend.position = "bottom",
             # axis.text.y = element_blank(),
             axis.title.y = element_blank(),
             axis.ticks.y = element_blank()) +
       labs(x = "Abundance",
-           title = unique(df$Lifestage))
+           title = paste(unique(df$Species), unique(df$Lifestage)))
   })
 
   
 ```
 
-```{r lem-parr-fig, fig.cap = "Various scenarios of parr abundance in the Lemhi, including QRF capacity estimates."}
-lem_bar_p$Parr
+```{r lem-parr-chnk-fig, fig.cap = "Overall recovery goal of Chinook parr in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+lem_bar_p$Chinook.Parr
 ```
 
-```{r lem-winter-fig, fig.cap = "Various scenarios of presmolt (overwinter) abundance in the Lemhi, including QRF capacity estimates."}
-lem_bar_p$Presmolts
+```{r lem-winter-chnk-fig, fig.cap = "Overall recovery goal of Chinook presmolts (overwintering) in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+lem_bar_p$Chinook.Presmolts
 ```
 
-```{r lem-redd-fig, fig.cap = "Various scenarios of redd abundance in the Lemhi, including QRF capacity estimates."}
-lem_bar_p$Redds
+```{r lem-redd-chnk-fig, fig.cap = "Overall recovery goal of Chinook redds in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+lem_bar_p$Chinook.Redds
 ```
+
+```{r lem-parr-sthd-fig, fig.cap = "Overall recovery goal of steelhead parr in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+lem_bar_p$Steelhead.Parr
+```
+
+```{r lem-winter-sthd-fig, fig.cap = "Overall recovery goal of steelhead presmolts (overwintering) in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+lem_bar_p$Steelhead.Presmolts
+```
+
+```{r lem-redd-sthd-fig, fig.cap = "Overall recovery goal of steelhead redds in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+lem_bar_p$Steelhead.Redds
+```
+
+```{r save-plots}
+map(names(lem_bar_p), function(.x) {
+  ggsave(
+    path = "figures/",
+    filename = paste0(.x, ".png"),
+    plot = lem_bar_p[[.x]],
+    width = 6.5,
+    height = 2
+  )
+})
+```
+
