@@ -574,6 +574,8 @@ params %>%
 
 The contemporary mean and max of recent escapements (translated to other lifestages), as well as the recovery goal of mean abundance threshold (MAT) and a 25% buffer on top of that (MAT+25%) are shown in the plots below, together with estimates of current capacity from master sample points and reaches.
 
+## Chinook
+
 ```{r chnk-parr-fig, fig.cap = "Various scenarios of Chinook parr abundance including QRF capacity estimates."}
 bar_list_p$Chinook.Parr
 ```
@@ -585,6 +587,8 @@ bar_list_p$Chinook.Presmolts
 ```{r chnk-redd-fig, fig.cap = "Various scenarios of Chinook redd abundance including QRF capacity estimates."}
 bar_list_p$Chinook.Redds
 ```
+
+## Steelhead
 
 ```{r sthd-parr-fig, fig.cap = "Various scenarios of steelhead parr abundance including QRF capacity estimates."}
 bar_list_p$Steelhead.Parr
@@ -671,9 +675,10 @@ lem_comp_df = lem_cap %>%
   mutate(area = if_else(is.na(area), as.character(Scenario), area)) %>%
   filter(Scenario %in% c("QRF_cap_Points",
                          "MAT+25%")) %>%
-  mutate(Scenario = fct_expand(Scenario, "Available Capacity (QRF)"),
+  mutate(Scenario = fct_expand(Scenario, "Available Capacity (QRF)", "Required Capacity\n(MAT +25%)"),
          Scenario = fct_recode(Scenario,
-                               "Available Capacity (QRF)" = "QRF_cap_Points"),
+                               "Available Capacity (QRF)" = "QRF_cap_Points",
+                               "Required Capacity\n(MAT +25%)" = "MAT+25%"),
          Scenario = fct_rev(Scenario)) %>%
   mutate(area = factor(area,
                        levels = c("MAT+25%",
@@ -700,6 +705,7 @@ lem_bar_p = lem_comp_df %>%
             # axis.text.y = element_blank(),
             axis.title.y = element_blank(),
             axis.ticks.y = element_blank()) +
+      scale_x_continuous(labels = function(x) format(x, scientific = F)) +
       labs(x = "Abundance",
            title = paste(unique(df$Species), unique(df$Lifestage)))
   })
@@ -707,32 +713,36 @@ lem_bar_p = lem_comp_df %>%
   
 ```
 
-```{r lem-parr-chnk-fig, fig.cap = "Overall recovery goal of Chinook parr in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+### Chinook
+
+```{r lem-parr-chnk-fig, fig.height = 2, fig.cap = "Overall recovery goal of Chinook parr in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
 lem_bar_p$Chinook.Parr
 ```
 
-```{r lem-winter-chnk-fig, fig.cap = "Overall recovery goal of Chinook presmolts (overwintering) in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+```{r lem-winter-chnk-fig, fig.height = 2, fig.cap = "Overall recovery goal of Chinook presmolts (overwintering) in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
 lem_bar_p$Chinook.Presmolts
 ```
 
-```{r lem-redd-chnk-fig, fig.cap = "Overall recovery goal of Chinook redds in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+```{r lem-redd-chnk-fig, fig.height = 2, fig.cap = "Overall recovery goal of Chinook redds in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
 lem_bar_p$Chinook.Redds
 ```
 
-```{r lem-parr-sthd-fig, fig.cap = "Overall recovery goal of steelhead parr in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+### Steelhead
+
+```{r lem-parr-sthd-fig, fig.height = 2, fig.cap = "Overall recovery goal of steelhead parr in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
 lem_bar_p$Steelhead.Parr
 ```
 
-```{r lem-winter-sthd-fig, fig.cap = "Overall recovery goal of steelhead presmolts (overwintering) in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+```{r lem-winter-sthd-fig, fig.height = 2, fig.cap = "Overall recovery goal of steelhead presmolts (overwintering) in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
 lem_bar_p$Steelhead.Presmolts
 ```
 
-```{r lem-redd-sthd-fig, fig.cap = "Overall recovery goal of steelhead redds in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
+```{r lem-redd-sthd-fig, fig.height = 2, fig.cap = "Overall recovery goal of steelhead redds in the Lemhi (MAT +25%) along with available capacity, colored by lower and upper Lemhi."}
 lem_bar_p$Steelhead.Redds
 ```
 
-```{r save-plots}
-map(names(lem_bar_p), function(.x) {
+```{r save-plots, eval = F}
+walk(names(lem_bar_p), function(.x) {
   ggsave(
     path = "figures/",
     filename = paste0(.x, ".png"),
