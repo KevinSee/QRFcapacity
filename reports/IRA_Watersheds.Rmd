@@ -876,8 +876,8 @@ walk(names(lem_bar_p), function(.x) {
 
 In general, we noted the following patterns in comparing QRF estimates of capacity using master sample points versus a linear network:
 
-* Chinook parr had greater capacity estimates with linear network
-* Chinook presmolts had smaller capacity estimates with linear network
+* Chinook parr usually had greater capacity estimates with linear network (with a couple exceptions)
+* Chinook presmolts had similar capacity estimates (some smaller, some larger)
 * Chinook redds had much smaller capacity estimates with linear network
 * Steelhead parr had similar or slightly greater capacity estimates with linear network
 * Steelhead presmolts had very similar capacity estimates
