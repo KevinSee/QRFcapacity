@@ -572,7 +572,7 @@ params %>%
 
 # Results
 
-The contemporary mean and max of recent escapements (translated to other lifestages), as well as the recovery goal of mean abundance threshold (MAT) and a 25% buffer on top of that (MAT+25%) are shown in the plots below, together with estimates of current capacity from master sample points and reaches.
+The contemporary mean and max of recent escapements (translated to other lifestages), as well as the recovery goal of mean abundance threshold (MAT) and a 25% buffer on top of that (MAT+25%) are shown in the plots below, together with estimates of current capacity from master sample points and reaches. Estimates for both methods are shown in Table \@ref(tab:chnk-cap-tab) for Chinook, and Table \@ref(tab:sthd-cap-tab) for steelhead.
 
 ## Chinook
 
@@ -588,6 +588,32 @@ bar_list_p$Chinook.Presmolts
 bar_list_p$Chinook.Redds
 ```
 
+```{r chnk-cap-tab}
+cap_comp_df %>%
+  filter(Species == "Chinook") %>%
+  rename(Lifestage = lifestage,
+         Watershed = watershed) %>%
+  mutate(Lifestage = recode(Lifestage,
+                            "juv_summer" = "Parr",
+                            "redds" = "Redds",
+                            "juv_winter" = "Presmolts")) %>%
+  mutate(Lifestage = factor(Lifestage,
+                            levels = c("Redds",
+                                       "Parr",
+                                       "Presmolts"))) %>%
+  mutate(tot_cap_cv = tot_cap_se / tot_cap,
+         Capacity = paste0(prettyNum(round(tot_cap), big.mark = ","), " (", round(tot_cap_cv, 2), ")")) %>%
+  select(Lifestage:source, tot_length, Capacity) %>%
+  rename(Length = tot_length) %>%
+  pivot_wider(names_from = "source",
+              values_from = c("Length", "Capacity"),
+              names_glue = "{source}_{.value}") %>%
+  kable(digits = 1,
+        caption = "Estimated capacities (CVs) for Chinook in various lifestages using the master sample points and linear network reaches for extrapolation. Total watershed length for each method is shown as well.") %>%
+  kable_styling(fixed_thead = T)
+```
+
+
 ## Steelhead
 
 ```{r sthd-parr-fig, fig.cap = "Various scenarios of steelhead parr abundance including QRF capacity estimates."}
@@ -599,7 +625,32 @@ bar_list_p$Steelhead.Presmolts
 ```
 
 ```{r sthd-redd-fig, fig.cap = "Various scenarios of steelhead redd abundance including QRF capacity estimates."}
-bar_list_p$Chinook.Redds
+bar_list_p$Steelhead.Redds
+```
+
+```{r sthd-cap-tab}
+cap_comp_df %>%
+  filter(Species == "Steelhead") %>%
+  rename(Lifestage = lifestage,
+         Watershed = watershed) %>%
+  mutate(Lifestage = recode(Lifestage,
+                            "juv_summer" = "Parr",
+                            "redds" = "Redds",
+                            "juv_winter" = "Presmolts")) %>%
+  mutate(Lifestage = factor(Lifestage,
+                            levels = c("Redds",
+                                       "Parr",
+                                       "Presmolts"))) %>%
+  mutate(tot_cap_cv = tot_cap_se / tot_cap,
+         Capacity = paste0(prettyNum(round(tot_cap), big.mark = ","), " (", round(tot_cap_cv, 2), ")")) %>%
+  select(Lifestage:source, tot_length, Capacity) %>%
+  rename(Length = tot_length) %>%
+  pivot_wider(names_from = "source",
+              values_from = c("Length", "Capacity"),
+              names_glue = "{source}_{.value}") %>%
+  kable(digits = 1,
+        caption = "Estimated capacities (CVs) for steelhead in various lifestages using the master sample points and linear network reaches for extrapolation. Total watershed length for each method is shown as well.") %>%
+  kable_styling(fixed_thead = T)
 ```
 
 ## Lemhi Specific
