@@ -351,18 +351,32 @@ cap_df %<>%
 ```{r current-capacity-est}
 cap_est = cap_df %>%
   nest(inputs = rch:spp_domain) %>%
-  mutate(cap_rch = map(inputs,
-                       .f = function(y) {
+  mutate(cap_rch = map2(inputs,
+                        Species,
+                       .f = function(y,z) {
                          calc_watershed_cap(wtsd_polygon = y$wtsd_poly[[1]],
                                             capacity_sf = y$rch[[1]],
-                                            spp_range = y$spp_domain[[1]],
+                                            capacity_name = if_else(z == "Chinook",
+                                                                    "chnk_per_m",
+                                                                    "sthd_per_m"),
+                                            capacity_se_name = if_else(z == "Chinook",
+                                                                       "chnk_per_m_se",
+                                                                       "sthd_per_m_se"),
+                                            # spp_range = y$spp_domain[[1]],
                                             by_stream = F) %>%
                            rename(n = n_rchs)
                        })) %>%
-  mutate(cap_pts = map(inputs,
-                       .f = function(y) {
+  mutate(cap_pts = map2(inputs,
+                        Species,
+                       .f = function(y,z) {
                          calc_watershed_cap(wtsd_polygon = y$wtsd_poly[[1]],
                                             capacity_sf = y$pts[[1]],
+                                            capacity_name = if_else(z == "Chinook",
+                                                                    "chnk_per_m",
+                                                                    "sthd_per_m"),
+                                            capacity_se_name = if_else(z == "Chinook",
+                                                                       "chnk_per_m_se",
+                                                                       "sthd_per_m_se"),
                                             spp_range = y$spp_domain[[1]],
                                             by_stream = F) %>%
                            select(-area) %>%
@@ -555,9 +569,9 @@ bar_list_p = comp_df %>%
 
 # Introduction
 
-When the IRA report came out, our QRF model included an extrapolation model based on GRTS master sample points. Since then, we have updated the extrapolation model to one that is based on a linear network of 200m reaches. This linear network is also based on an updated NHDPlus network, which often increases the length of various streams as the updated version has finer resolution. 
+When the IRA report came out, our QRF model included an extrapolation model based on GRTS master sample points [@See2021]. Since then, we have updated the extrapolation model to one that is based on a linear network of 200m reaches. This linear network is also based on an updated NHDPlus network, which often increases the length of various streams as the updated version has finer resolution. 
 
-To examine the impact of this change in extrapolation models, we re-compiled capacity estimates at the watershed scale for all IRA watersheds, across 3 lifestages. Currently this has been done for Chinook. We computed capacity using the master sample points, and also using the 200m reaches. We used the updated NHDPlus network for both, so the total stream kilometers for each watershed is the same. For some small tributaries, there may not be a master sample point on that tributary within the range of that species. In such cases, we have no estimate of the carrying capacity of that tributary, so we set it to zero.
+To examine the impact of this change in extrapolation models, we re-compiled capacity estimates at the watershed scale for all IRA watersheds, across 3 lifestages and both species. We computed capacity using the master sample points, and also using the 200m reaches. We used the updated NHDPlus network for both, so the total stream kilometers for each watershed is the same. For some small tributaries, there may not be a master sample point on that tributary within the range of that species. In such cases, we have no estimate of the carrying capacity of that tributary, so we set it to zero.
 
 # Methods
 
@@ -572,7 +586,62 @@ params %>%
 
 # Results
 
-The contemporary mean and max of recent escapements (translated to other lifestages), as well as the recovery goal of mean abundance threshold (MAT) and a 25% buffer on top of that (MAT+25%) are shown in the plots below, together with estimates of current capacity from master sample points and reaches. Estimates for both methods are shown in Table \@ref(tab:chnk-cap-tab) for Chinook, and Table \@ref(tab:sthd-cap-tab) for steelhead.
+Figure \@ref(fig:all-comp-fig) shows the comparison between estimates from points and reaches, along with the 95% confidence intervals, broken down by species and lifestage. These results are shown in Table \@ref(tab:chnk-cap-tab) for Chinook, and Table \@ref(tab:sthd-cap-tab) for steelhead.
+
+```{r all-comp-fig, fig.cap = "Scatterplots of master sample point estimates (x-axis) vs. linear network estimates (y-axis). The dashed line is the 1-1 line."}
+comp_p_list = cap_comp_df %>%
+  rename(Lifestage = lifestage,
+         Watershed = watershed,
+         Length = tot_length,
+         Capacity = tot_cap,
+         SE = tot_cap_se) %>%
+  mutate(Lifestage = recode(Lifestage,
+                            "juv_summer" = "Parr",
+                            "redds" = "Redds",
+                            "juv_winter" = "Presmolts")) %>%
+  mutate(Lifestage = factor(Lifestage,
+                            levels = c("Parr",
+                                       "Presmolts",
+                                       "Redds"))) %>%
+  select(-n) %>%
+  pivot_wider(names_from = "source",
+              values_from = c("Length", "Capacity", "SE"),
+              names_glue = "{source}_{.value}") %>%
+  split(list(.$Species, .$Lifestage)) %>%
+  map(.f = function(z) {
+    my_range = c(range(z$Reaches_Capacity),
+                 range(z$Points_Capacity))
+    z %>%
+      ggplot(aes(x = Points_Capacity,
+                 y = Reaches_Capacity,
+                 color = Watershed)) +
+      geom_abline(linetype = 2) +
+      geom_errorbar(aes(ymin = Reaches_Capacity + Reaches_SE * qnorm(0.025),
+                        ymax = Reaches_Capacity + Reaches_SE * qnorm(0.975)),
+                    width = 0) +
+      geom_errorbarh(aes(xmin = Points_Capacity + Points_SE * qnorm(0.025),
+                         xmax = Points_Capacity + Points_SE * qnorm(0.975)),
+                     height = 0) +
+      geom_point(size = 3) +
+      coord_cartesian(xlim = range(my_range),
+                      ylim = range(my_range)) +
+      # scale_x_continuous(limits = range(my_range)) +
+      # scale_y_continuous(limits = range(my_range)) +
+      labs(x = "Points",
+           y = "Reaches",
+           title = paste(unique(z$Species), unique(z$Lifestage), "Capacity"))
+  })
+
+comp_p = ggarrange(plotlist = comp_p_list,
+                   nrow = 3,
+                   ncol = 2,
+                   common.legend = T,
+                   legend = "bottom")
+
+comp_p
+```
+
+The contemporary mean and max of recent escapements (translated to other lifestages), as well as the recovery goal of mean abundance threshold (MAT) and a 25% buffer on top of that (MAT+25%) are shown in Figures \@ref(fig:chnk-parr-fig) - \@ref(fig:sthd-redd-fig), together with estimates of current capacity from master sample points and reaches. 
 
 ## Chinook
 
@@ -612,7 +681,6 @@ cap_comp_df %>%
         caption = "Estimated capacities (CVs) for Chinook in various lifestages using the master sample points and linear network reaches for extrapolation. Total watershed length for each method is shown as well.") %>%
   kable_styling(fixed_thead = T)
 ```
-
 
 ## Steelhead
 
@@ -804,3 +872,19 @@ walk(names(lem_bar_p), function(.x) {
 })
 ```
 
+# Discussion
+
+In general, we noted the following patterns in comparing QRF estimates of capacity using master sample points versus a linear network:
+
+* Chinook parr had greater capacity estimates with linear network
+* Chinook presmolts had smaller capacity estimates with linear network
+* Chinook redds had much smaller capacity estimates with linear network
+* Steelhead parr had similar or slightly greater capacity estimates with linear network
+* Steelhead presmolts had very similar capacity estimates
+* Steelhead redds had much smaller capacity estimates with linear network
+
+We do not believe there is anything inherently incorrect in either extrapolation method. Differences in estimates may arise due to differences in available covariates between master sample points and 200m reaches (and therefore differences in the extrapolation models), but also because the master sample point version must "smooth" across a linear network from a series of points (i.e. taking the average fish/m capacity from points on a stream, and multiplying ny the length of that stream), whereas the 200m reaches are already on a linear network, and we are making extrapolation estimates at every single reach. For this reason, we would recommend using the results from the 200m reach extrapolation going forward. 
+
+One of the goals of this exercise was to make as close to apple-to-apples comparisons between estimates based on master sample points and estimates based on 200m reaches on a linear network. It needs to be noted that there are a few streams in the upper Salmon area that are not included in the 200m reach linear network (e.g. Big Springs, Little Springs, Pratt Creek and Lee Creek in the Lemhi, Patterson Side Channels in the Pahsimeroi, Yellowbelly Creek in the Upper Salmon, etc.). Therefore, the estimates for the master sample points presented here may not match those in the IRA report exactly. But because of that, the lengths in Tables \@ref(tab:chnk-cap-tab) and \@ref(tab:sthd-cap-tab) are nearly identical, so any differences in capacity estimates here are not simply due to different species ranges being used; we tried to put them on a level playing field in that regard. This does mean that the linear network could be improved, especially in the Lemhi (and less so in the Pahsimeroi) to allow the 200m reach extrapolation to include those missing streams. That will involve generating not just shapefiles of the stream lines, but either calculating directly or finding a proxy for the various covariates that need to be attached to each reach for the extrapolation model.
+
+# References
