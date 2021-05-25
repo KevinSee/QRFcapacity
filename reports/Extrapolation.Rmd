@@ -5,7 +5,29 @@ author:
     affiliation: biomark
     email: kevin.see@merck.com
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
+always_allow_html: true
 output:
+  bookdown::word_document2: 
+    fig_caption: yes
+    fig_height: 7
+    fig_width: 6
+    toc: yes
+    number_sections: no
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+    - --lua-filter=templates/pagebreak.lua
+    reference_docx: "templates/ReportTemplate.docx"
+  bookdown::pdf_document2:
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks2.lua
+    - --lua-filter=templates/pagebreak.lua
+    fig_height: 7.5
+    fig_width: 6
+    number_sections: no
+    includes:
+      in_header: "templates/header_ABS.tex"
   bookdown::html_document2:
     theme: simplex
     toc: yes
@@ -18,27 +40,6 @@ output:
     - --lua-filter=templates/scholarly-metadata.lua
     - --lua-filter=templates/author-info-blocks.lua
     - --lua-filter=templates/pagebreak.lua
-  bookdown::pdf_document2:
-    pandoc_args:
-    - --lua-filter=templates/scholarly-metadata.lua
-    - --lua-filter=templates/author-info-blocks2.lua
-    - --lua-filter=templates/pagebreak.lua
-    fig_height: 7.5
-    fig_width: 6
-    number_sections: no
-    includes:
-      in_header: "templates/header_ABS.tex"
-  bookdown::word_document2: 
-    fig_caption: yes
-    fig_height: 7
-    fig_width: 6
-    toc: yes
-    number_sections: no
-    pandoc_args:
-    - --lua-filter=templates/scholarly-metadata.lua
-    - --lua-filter=templates/author-info-blocks.lua
-    - --lua-filter=templates/pagebreak.lua
-    reference_docx: "templates/ReportTemplate.docx"
 institute:
 - biomark: Biomark, Inc.
 csl: "templates/american-fisheries-society.csl"
@@ -58,14 +59,22 @@ knitr::opts_chunk$set(echo=FALSE,
                       message=FALSE)
 #options(tinytex.verbose = TRUE)
 options(knitr.kable.NA = '-')
-# options(knitr.table.format = "pandoc")
+
+
+# what kind of document is being created?
+doc.type <- knitr::opts_knit$get('rmarkdown.pandoc.to')
+# when knitting to Word, use this
+if(doc.type == 'docx') {
+  options(knitr.table.format = "pandoc")
+}
+
 
 library(kableExtra)
+
 ```
 
 ```{r}
 # load needed packages
-library(QRFcapacity)
 library(tidyverse)
 library(sf)
 library(janitor)
@@ -73,6 +82,7 @@ library(ggpubr)
 library(ggrepel)
 library(scales)
 library(ggspatial)
+library(QRFcapacity)
 
 # theme_set(theme_bw())
 theme_set(theme_pubr(base_size = 10))
