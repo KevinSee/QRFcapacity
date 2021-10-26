@@ -43,7 +43,6 @@ csl: "templates/american-fisheries-society.csl"
 ---
 
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
-# setwd('reports')
 # load knitr for markdown
 library(knitr)
 knitr::opts_chunk$set(echo=FALSE, 
@@ -67,6 +66,7 @@ library(ggpubr)
 library(ggrepel)
 library(scales)
 library(magrittr)
+library(here)
 
 theme_set(theme_bw())
 ```
@@ -79,18 +79,18 @@ From this dataset, we fit several spawner-recruit curves to each location, inclu
 
 ```{r trap-polygons}
 # read in trap polygons
-trap_poly = read_sf('../data/raw/spawn_rec/trap_regions.shp') %>%
+trap_poly = read_sf(here('data/raw/spawn_rec/trap_regions.shp')) %>%
   st_transform(crs = 5070) %>%
   select(-Id)
 
 # which QRF model to use?
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[2]
+               'redds')[1]
 ```
 
 ```{r cap-max, eval = F}
-load(paste0('../output/modelFits/qrf_', mod_choice, '.rda'))
+load(here(paste0('output/modelFits/qrf_', mod_choice, '.rda')))
 # define max capacity based on observed densities
 cap_max = qrf_mod_df %>%
   group_by(Species) %>%
@@ -98,7 +98,8 @@ cap_max = qrf_mod_df %>%
             quant98 = quantile(fish_dens, 0.98),
             quant99 = quantile(fish_dens, 0.99),
             quant995 = quantile(fish_dens, 0.995),
-            quant100 = quantile(fish_dens, 1)) %>%
+            quant100 = quantile(fish_dens, 1),
+            .groups = "drop") %>%
   filter(Species == 'Chinook') %>%
   pull(quant100)
 ```
@@ -106,7 +107,7 @@ cap_max = qrf_mod_df %>%
 
 ```{r rch-200m-cap, eval = F}
 # read in capacity estimates and create a shapefile
-load(paste0('../output/modelFits/extrap_200rch_', mod_choice, '.rda'))
+load(here(paste0('output/modelFits/extrap_200rch_', mod_choice, '.rda')))
 in_covar_range_df = model_svy_df$pred_all_rchs[[1]] %>%
   select(UniqueID, in_covar_range)
 rm(mod_data_weights, model_svy_df, extrap_covars)
@@ -166,9 +167,57 @@ qrf_caps = trap_poly %>%
                        'Lostine R.' = 'Lostine River'))
 ```
 
-```{r rch-200m-cap-rf, eval = T}
+```{r rch-200m-cap-rf-gpkg}
+load(here(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda')))
+in_covar_range_df = model_rf_df$pred_all_rchs[[1]] %>%
+  select(UniqueID, in_covar_range)
+rm(mod_data_weights, model_rf_df, extrap_covars)
+
+
+rch_200_cap = st_read(here("output/gpkg/StreamNetwork_Capacity_Chnk.gpkg")) %>%
+  st_transform(st_crs(trap_poly)) %>%
+  filter(spp_domain) %>%
+  left_join(in_covar_range_df) %>%
+  mutate(sum_juv_tot = sum_juv_per_m * reach_leng,
+         sum_juv_tot_se = sum_juv_per_m_se * reach_leng)
+
+qrf_caps = trap_poly %>%
+  st_join(rch_200_cap2) %>%
+  rename(chnk_ESU_DPS = ESU_DPS,
+         chnk_MPG = MPG,
+         chnk_NWR_NAME = NWR_NAME) %>%
+  mutate(across(c(chnk_ESU_DPS, chnk_MPG, chnk_NWR_NAME),
+                 fct_explicit_na)) %>%
+  group_by(chnk_ESU_DPS, chnk_MPG, trap_name) %>%
+  summarise(n_rch = n_distinct(UniqueID),
+            tot_lgth = sum(reach_leng, na.rm = T),
+            cap = sum(sum_juv_tot, na.rm = T),
+            cap_se = mean(sum_juv_per_m_se, na.rm = T) * tot_lgth,
+            # cap_se = sqrt(sum(sum_juv_tot_se^2)),
+            .groups = "drop") %>%
+  mutate(cap_cv = cap_se / cap) %>%
+  rename(Trap = trap_name) %>%
+  mutate(Trap = recode(Trap,
+                       'Minam R.' = 'Minam River',
+                       'Entiat R.' = 'Entiat River',
+                       'Crooked Fork Creek' = 'Crooked Fork',
+                       'Upper Grande Ronde R.' ='Upper Grande Ronde River',
+                       'Toucannon R.' = 'Tucannon River',
+                       'Pahsimeroi' = 'Pahsimeroi River',
+                       'Hood R.' = 'Hood River',
+                       'John Day Middle Fork' = 'Middle Fork John Day',
+                       'Upper Salmon River' = 'Upper Salmon River Chinook',
+                       'John Day Upper Mainstem' = 'Upper Mainstem John Day',
+                       'East Fork Salmon' = 'East Fork Salmon River',
+                       'Lostine R.' = 'Lostine River'))
+
+```
+
+
+
+```{r rch-200m-cap-rf, eval = F}
 # read in capacity estimates and create a shapefile
-load(paste0('../output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
+load(here(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda')))
 in_covar_range_df = model_rf_df$pred_all_rchs[[1]] %>%
   select(UniqueID, in_covar_range)
 rm(mod_data_weights, model_rf_df, extrap_covars)
@@ -231,7 +280,7 @@ qrf_caps = trap_poly %>%
 
 ```{r master-sample-pts-cap, eval = T}
 # read in capacity estimates and create a shapefile
-load(paste0('../output/modelFits/extrap_mastPts_', mod_choice, '.rda'))
+load(here(paste0('output/modelFits/extrap_mastPts_', mod_choice, '.rda')))
 
 data("gaa")
 data("chnk_domain")
@@ -345,12 +394,12 @@ all_p = ggpubr::ggarrange(plotlist = comp_df$fig,
                           ncol = 2,
                           nrow = 2)
 
-# ggsave('../output/figures/capacity_maps_all.pdf',
+# ggsave(here('output/figures/capacity_maps_all.pdf'),
 #        all_p,
 #        width = 8,
 #        height = 11)
 
-# pdf('../output/figures/capacity_maps_all.pdf',
+# pdf(here('output/figures/capacity_maps_all.pdf'),
 #        width = 8,
 #        height = 11)
 # for(i in 1:length(all_p)) print(all_p)
@@ -679,24 +728,29 @@ spawn_rec_params %<>%
 # pull out estimates of capacity
 cap_tbl = spawn_rec_params %>%
   select(Population, form, est, se, cv) %>%
-  arrange(Population, form)
+  arrange(Population, form) %>%
+  mutate(form = fct_relevel(form,
+                            "QRF",
+                            after = Inf))
 
 # make a few estimates NA (too big)
 cap_tbl %<>%
-  mutate_at(vars(est, se, cv),
-            list(~ if_else(Population %in% c('Entiat River',
+  mutate(across(c(est, se, cv),
+                ~ if_else(Population %in% c('Entiat River',
                                              'Marsh Creek',
                                              'Minam River',
                                              'Tucannon River') &
                              form == 'BevertonHolt',
-                           as.numeric(NA), .)))
-
+                           NA_real_, .)))
 
 # pull out fitted spawner recruit curves
 curve_fits = spawn_rec_params %>%
   select(Population, form, preds) %>%
   unnest(cols = "preds") %>%
-  arrange(Population, form)
+  arrange(Population, form) %>%
+  mutate(form = fct_relevel(form,
+                            "QRF",
+                            after = Inf))
 
 # define polygons for uncertainty shading
 plot_max = Inf
@@ -717,7 +771,10 @@ cap_poly = cap_tbl %>%
   summarise(coords = list(tibble(x = c(0, 0, Spawners_max, Spawners_max),
                                  y = c(lwrCI, uprCI, uprCI, lwrCI)))) %>%
   ungroup() %>%
-  unnest(cols = c(coords))
+  unnest(cols = c(coords)) %>%
+  mutate(form = fct_relevel(form,
+                            "QRF",
+                            after = Inf))
 
 # which watersheds to plot?
 keep_wtsds = qrf_caps %>%
@@ -734,6 +791,7 @@ keep_wtsds = qrf_caps %>%
 #                'Upper Grande Ronde River',
 #                'Upper Lemhi',
 #                'Upper Mainstem John Day')
+
 
 spawn_rec_comp_p = spawn_rec_params %>%
   # filter out a couple populations with super poor fits
@@ -833,6 +891,253 @@ sr_est_comp_p = cap_tbl %>%
   labs(y = 'Capacity Estimate',
        x = NULL)
 ```
+
+```{r presentation-figs, eval = F}
+# make some figures for presentations
+keep_wtsds = c('Catherine Creek',
+               'Chiwawa R.',
+               "Entiat River",
+               "Hayden Creek",
+               'Lostine River',
+               'Marsh Creek',
+               'Minam River',
+               "Pahsimeroi River",
+               'Upper Grande Ronde River',
+               # 'Upper Lemhi',
+               "Upper Mainstem John Day")
+
+spawn_rec_comp_p2 = spawn_rec_params %>%
+  # filter out a couple populations with super poor fits
+  filter(Population %in% keep_wtsds) %>%
+  select(Population, data) %>%
+  unnest(cols = "data") %>%
+  distinct() %>%
+  ggplot(aes(x = Spawners,
+             y = Parr)) +
+  # geom_polygon(data = cap_poly %>%
+  #                # filter out a couple populations with super poor fits
+  #                filter(Population %in% keep_wtsds),
+  #             aes(x = x,
+  #                 y = y,
+  #                 fill = form),
+  #             alpha = 0.2) +
+  geom_line(data = curve_fits %>%
+              # filter out a couple populations with super poor fits
+              filter(Population %in% keep_wtsds),
+            aes(color = form),
+            lwd = 1.5) +
+  geom_hline(data = cap_tbl %>%
+               # filter out a couple populations with super poor fits
+               filter(Population %in% keep_wtsds),
+             aes(yintercept = est,
+                 color = form),
+             linetype = 2) +
+  geom_point(aes(shape = Spawner_type),
+             size = 3) +
+  facet_wrap(~ Population,
+             # ncol = 3,
+             nrow = 2,
+             scales = 'free') +
+  scale_color_brewer(palette = 'Set1',
+                     breaks = c('QRF',
+                                'BevertonHolt',
+                                'Ricker',
+                                'Hockey'),
+                     labels = c('QRF', 
+                                'Beverton Holt',
+                                'Ricker',
+                                'Hockey Stick'),
+                     name = 'Model') +
+  scale_fill_brewer(palette = 'Set1',
+                    breaks = c('QRF',
+                               'BevertonHolt',
+                               'Ricker',
+                               'Hockey'),
+                    labels = c('QRF', 
+                               'Beverton Holt',
+                               'Ricker',
+                               'Hockey Stick'),
+                    name = 'Model') +
+  labs(shape = 'Spawner\nType') +
+  theme(legend.position = "bottom",
+        axis.text = element_text(size = 6))
+
+dodge_width = 0.5
+sr_est_comp_p2 = cap_tbl %>%
+  filter(Population %in% keep_wtsds) %>%
+  mutate(lwrCI = est + qnorm(0.025) * se,
+         lwrCI = if_else(lwrCI <= 0, 1, lwrCI),
+         uprCI = est + qnorm(0.975) * se,
+         uprCI = if_else(uprCI > 1.3e6, 1.3e6, uprCI)) %>%
+  mutate(type = if_else(form == 'QRF',
+                        'QRF', 'S-R')) %>%
+  ggplot(aes(x = Population,
+             y = est,
+             color = form,
+             group = form)) +
+  geom_errorbar(aes(ymin = lwrCI,
+                    ymax = uprCI),
+                position = position_dodge(width = dodge_width),
+                width = 0) +
+  geom_point(aes(shape = type),
+             fill = 'white',
+             size = 2,
+             position = position_dodge(width = dodge_width)) +
+  scale_shape_manual(values = c('QRF' = 19,
+                                'S-R' = 21),
+                     name = 'Type') + 
+  scale_color_brewer(palette = 'Set1',
+                     breaks = c('QRF',
+                                'BevertonHolt',
+                                'Ricker',
+                                'Hockey'),
+                     labels = c('QRF',
+                                'Beverton Holt',
+                                'Ricker',
+                                'Hockey Stick'),
+                     name = 'Model') +
+  # scale_y_continuous(trans = 'log') +
+  # theme(axis.text.x = element_text(angle = 90),
+  #       axis.text.y = element_blank()) +
+  theme(axis.text = element_blank(),
+        legend.position = "bottom") +
+  facet_wrap(~ Population,
+             nrow = 2,
+             scales = 'free') +
+  labs(y = 'Capacity Estimate',
+       x = NULL)
+
+
+ggsave(here("output/figures/spawn_rec_curves.pdf"),
+       spawn_rec_comp_p2,
+       width = 11.5,
+       height = 5)
+
+ggsave(here("output/figures/spawn_rec_comp.pdf"),
+       sr_est_comp_p2,
+       width = 11.5,
+       height = 5)
+
+
+```
+
+```{r chiwawa-plots, eval = F}
+
+sr_df = spawn_rec_params %>%
+  filter(Population == "Chiwawa R.") %>%
+  select(Population, data) %>%
+  unnest(cols = "data") %>%
+  distinct() %>%
+  mutate(across(Parr,
+                ~ . / 1e5))
+
+sr_curve = curve_fits %>%
+              mutate(across(Parr,
+                            ~ . / 1e5)) %>%
+              filter(Population == "Chiwawa R.") %>%
+  mutate(form = fct_relevel(form,
+                            "QRF",
+                            after = Inf))
+
+sr_cap = cap_tbl %>%
+  mutate(across(c(est, se),
+                ~ . / 1e5)) %>%
+  filter(Population == "Chiwawa R.") %>%
+  mutate(form = fct_relevel(form,
+                            "QRF",
+                            after = Inf))
+
+sr_poly = cap_poly %>%
+  mutate(across(c(y),
+                ~ . / 1e5)) %>%
+  filter(Population == "Chiwawa R.") %>%
+  mutate(form = fct_relevel(form,
+                            "QRF",
+                            after = Inf))
+
+chiw_p1 = sr_df %>%
+  ggplot(aes(x = Spawners,
+             y = Parr)) +
+  geom_point(size = 3) +
+  labs(y = "Parr (x 100,000)") +
+  scale_y_continuous(limits = c(0, 5))
+
+chiw_p2 = chiw_p1 +
+  geom_line(data = sr_curve %>%
+              filter(form != "QRF"),
+            aes(color = form),
+            lwd = 2) +
+  geom_hline(data = sr_cap %>%
+               filter(form != "QRF"),
+             aes(yintercept = est,
+                 color = form),
+             linetype = 2,
+             lwd = 1.5) +
+  scale_color_brewer(palette = 'Set1',
+                     breaks = c('QRF',
+                                'BevertonHolt',
+                                'Ricker',
+                                'Hockey'),
+                     labels = c('QRF', 
+                                'Beverton Holt',
+                                'Ricker',
+                                'Hockey Stick'),
+                     name = 'Model') +
+  theme(legend.position = "bottom")
+
+chiw_p3 = chiw_p1 +
+  geom_line(data = sr_curve,
+            aes(color = form),
+            lwd = 2) +
+  geom_hline(data = sr_cap,
+             aes(yintercept = est,
+                 color = form),
+             linetype = 2,
+             lwd = 1.5) +
+  scale_color_brewer(palette = 'Set1',
+                     breaks = c('QRF',
+                                'BevertonHolt',
+                                'Ricker',
+                                'Hockey'),
+                     labels = c('QRF', 
+                                'Beverton Holt',
+                                'Ricker',
+                                'Hockey Stick'),
+                     name = 'Model') +
+  theme(legend.position = "bottom")
+
+chiw_p4 = chiw_p3 +
+  geom_polygon(data = sr_poly,
+               aes(x = x,
+                   y = y,
+                   fill = form),
+               alpha = 0.2) +
+  scale_fill_brewer(palette = 'Set1',
+                    breaks = c('QRF',
+                               'BevertonHolt',
+                               'Ricker',
+                               'Hockey'),
+                    labels = c('QRF', 
+                               'Beverton Holt',
+                               'Ricker',
+                               'Hockey Stick'),
+                    name = 'Model')
+
+chiw_p_list = list(chiw_p1,
+                   chiw_p2,
+                   chiw_p3,
+                   chiw_p4)
+for(i in 1:length(chiw_p_list)) {
+  ggsave(here("output/figures",
+              paste0("Chiwawa_SR_p", i, ".pdf")),
+         chiw_p_list[[i]],
+         width = 7,
+         height = 6)
+}
+
+
+```
+
 
 ```{r, eval = F}
 cap_tbl_ci = cap_tbl %>%
