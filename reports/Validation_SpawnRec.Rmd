@@ -89,7 +89,7 @@ mod_choice = c('juv_summer',
                'redds')[1]
 ```
 
-```{r cap-max, eval = F}
+```{r cap-max, eval = T}
 load(here(paste0('output/modelFits/qrf_', mod_choice, '.rda')))
 # define max capacity based on observed densities
 cap_max = qrf_mod_df %>%
@@ -101,11 +101,11 @@ cap_max = qrf_mod_df %>%
             quant100 = quantile(fish_dens, 1),
             .groups = "drop") %>%
   filter(Species == 'Chinook') %>%
-  pull(quant100)
+  pull(quant99)
 ```
 
 
-```{r rch-200m-cap, eval = F}
+```{r rch-200m-cap, eval = T}
 # read in capacity estimates and create a shapefile
 load(here(paste0('output/modelFits/extrap_200rch_', mod_choice, '.rda')))
 in_covar_range_df = model_svy_df$pred_all_rchs[[1]] %>%
@@ -113,6 +113,13 @@ in_covar_range_df = model_svy_df$pred_all_rchs[[1]] %>%
 rm(mod_data_weights, model_svy_df, extrap_covars)
 
 data("rch_200")
+
+# shrink predictions over cap_max down to cap_max, make SE NA
+all_preds %<>%
+    mutate(chnk_per_m_se = if_else(chnk_per_m > cap_max,
+                                 as.numeric(NA), chnk_per_m_se),
+         chnk_per_m = if_else(chnk_per_m > cap_max,
+                              cap_max, chnk_per_m))
 
 rch_200_cap = rch_200 %>%
   filter(chnk) %>%
@@ -129,13 +136,6 @@ rch_200_cap = rch_200 %>%
 # rch_200_cap %>%
 #   st_drop_geometry() %>%
 #   xtabs(~ (chnk_per_m > cap_max) + in_covar_range, .)
-# 
-# rch_200_cap %<>%
-#   mutate(chnk_per_m_se = if_else(chnk_per_m > cap_max, 
-#                                  as.numeric(NA), chnk_per_m_se),
-#          chnk_per_m = if_else(chnk_per_m > cap_max, 
-#                               cap_max, chnk_per_m))
-
 
 rm(rch_200, all_preds)
 
@@ -167,7 +167,7 @@ qrf_caps = trap_poly %>%
                        'Lostine R.' = 'Lostine River'))
 ```
 
-```{r rch-200m-cap-rf-gpkg}
+```{r rch-200m-cap-rf-gpkg, eval = F}
 load(here(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda')))
 in_covar_range_df = model_rf_df$pred_all_rchs[[1]] %>%
   select(UniqueID, in_covar_range)
@@ -212,7 +212,6 @@ qrf_caps = trap_poly %>%
                        'Lostine R.' = 'Lostine River'))
 
 ```
-
 
 
 ```{r rch-200m-cap-rf, eval = F}
@@ -284,6 +283,15 @@ load(here(paste0('output/modelFits/extrap_mastPts_', mod_choice, '.rda')))
 
 data("gaa")
 data("chnk_domain")
+
+# shrink predictions over cap_max down to cap_max, make SE NA
+# all_preds %>%
+#   xtabs(~ chnk_per_m > cap_max, .)
+all_preds %<>%
+    mutate(chnk_per_m_se = if_else(chnk_per_m > cap_max,
+                                 as.numeric(NA), chnk_per_m_se),
+         chnk_per_m = if_else(chnk_per_m > cap_max,
+                              cap_max, chnk_per_m))
 
 capacity_pts = all_preds %>%
   left_join(gaa %>%

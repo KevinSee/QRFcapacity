@@ -22,84 +22,85 @@ theme_set(theme_bw())
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[2]
+               'redds',
+               'juv_winter')[3]
 
 load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
-#-----------------------------------------------------------------
-# prep some habitat data
-#-----------------------------------------------------------------
-# all the related habitat data
-if(mod_choice %in% c('juv_summer', 'redds')) {
-  data("champ_site_2011_17")
-  hab_data = champ_site_2011_17
-  
-  data("champ_site_2011_17_avg")
-  hab_avg = champ_site_2011_17_avg
-  
-  # add a metric showing "some" riparian canopy
-  hab_data %<>%
-    mutate(RipCovCanSome = 100 - RipCovCanNone)
-  
-  hab_avg %<>%
-    mutate(RipCovCanSome = 100 - RipCovCanNone)
-  
-}
-
-if(mod_choice == 'juv_summer_dash') {
-  data("champ_dash")
-  hab_data = champ_dash
-  
-  data("champ_dash_avg")
-  hab_avg = champ_dash_avg
-}
-
-# alter a few metrics
-hab_data %<>%
-  # scale some metrics by site length
-  mutate_at(vars(starts_with('LWVol'),
-                 ends_with('_Vol')),
-            list(~ . / Lgth_Wet * 100)) %>%
-  # add a metric showing "some" fish cover
-  mutate(FishCovSome = 100 - FishCovNone)
-
-hab_avg %<>%
-  # scale some metrics by site length
-  mutate_at(vars(starts_with('LWVol'),
-                 ends_with('_Vol')),
-            list(~ . / Lgth_Wet * 100)) %>%
-  # add a metric showing "some" fish cover
-  mutate(FishCovSome = 100 - FishCovNone)
-
-
-# add temperature metrics
-data("champ_temps")
-hab_avg %<>%
-  left_join(champ_temps %>%
-              as_tibble() %>%
-              select(Site, avg_aug_temp = S2_02_11) %>%
-              distinct())
-
-hab_data %<>%
-  left_join(hab_data %>%
-              select(VisitID, Year = VisitYear) %>%
-              distinct() %>%
-              left_join(champ_temps %>%
-                          as_tibble() %>%
-                          select(VisitID, avg_aug_temp = S2_02_11))) %>%
-  left_join(hab_data %>%
-              select(VisitID, Year = VisitYear) %>%
-              distinct() %>%
-              left_join(champ_temps %>%
-                          as_tibble() %>%
-                          select(Site:VisitID, S1_93_11:S36_2015) %>%
-                          gather(scenario, aug_temp, S1_93_11:S36_2015) %>%
-                          mutate(Year = str_sub(scenario, -4)) %>%
-                          mutate_at(vars(Year),
-                                    list(as.numeric)) %>%
-                          filter(!is.na(Year)) %>%
-                          select(Site:VisitID, Year, aug_temp))) %>%
-  select(-Year)
+# #-----------------------------------------------------------------
+# # prep some habitat data
+# #-----------------------------------------------------------------
+# # all the related habitat data
+# if(mod_choice %in% c('juv_summer', 'redds')) {
+#   data("champ_site_2011_17")
+#   hab_data = champ_site_2011_17
+#   
+#   data("champ_site_2011_17_avg")
+#   hab_avg = champ_site_2011_17_avg
+#   
+#   # add a metric showing "some" riparian canopy
+#   hab_data %<>%
+#     mutate(RipCovCanSome = 100 - RipCovCanNone)
+#   
+#   hab_avg %<>%
+#     mutate(RipCovCanSome = 100 - RipCovCanNone)
+#   
+# }
+# 
+# if(mod_choice == 'juv_summer_dash') {
+#   data("champ_dash")
+#   hab_data = champ_dash
+#   
+#   data("champ_dash_avg")
+#   hab_avg = champ_dash_avg
+# }
+# 
+# # alter a few metrics
+# hab_data %<>%
+#   # scale some metrics by site length
+#   mutate_at(vars(starts_with('LWVol'),
+#                  ends_with('_Vol')),
+#             list(~ . / Lgth_Wet * 100)) %>%
+#   # add a metric showing "some" fish cover
+#   mutate(FishCovSome = 100 - FishCovNone)
+# 
+# hab_avg %<>%
+#   # scale some metrics by site length
+#   mutate_at(vars(starts_with('LWVol'),
+#                  ends_with('_Vol')),
+#             list(~ . / Lgth_Wet * 100)) %>%
+#   # add a metric showing "some" fish cover
+#   mutate(FishCovSome = 100 - FishCovNone)
+# 
+# 
+# # add temperature metrics
+# data("champ_temps")
+# hab_avg %<>%
+#   left_join(champ_temps %>%
+#               as_tibble() %>%
+#               select(Site, avg_aug_temp = S2_02_11) %>%
+#               distinct())
+# 
+# hab_data %<>%
+#   left_join(hab_data %>%
+#               select(VisitID, Year = VisitYear) %>%
+#               distinct() %>%
+#               left_join(champ_temps %>%
+#                           as_tibble() %>%
+#                           select(VisitID, avg_aug_temp = S2_02_11))) %>%
+#   left_join(hab_data %>%
+#               select(VisitID, Year = VisitYear) %>%
+#               distinct() %>%
+#               left_join(champ_temps %>%
+#                           as_tibble() %>%
+#                           select(Site:VisitID, S1_93_11:S36_2015) %>%
+#                           gather(scenario, aug_temp, S1_93_11:S36_2015) %>%
+#                           mutate(Year = str_sub(scenario, -4)) %>%
+#                           mutate_at(vars(Year),
+#                                     list(as.numeric)) %>%
+#                           filter(!is.na(Year)) %>%
+#                           select(Site:VisitID, Year, aug_temp))) %>%
+#   select(-Year)
 
 #-----------------------------------------------------------------
 # predict capacity at all CHaMP sites
@@ -107,29 +108,119 @@ hab_data %<>%
 # what quantile is a proxy for capacity?
 pred_quant = 0.9
 
-hab_impute = hab_avg %>%
-  mutate_at(vars(Watershed, Channel_Type),
-            list(fct_drop)) %>%
-  impute_missing_data(data = .,
-                      covars = unique(sel_hab_mets$Metric),
-                      impute_vars = c('Watershed', 
-                                      'Elev_M', 
-                                      'Channel_Type', 
-                                      'CUMDRAINAG'),
-                      method = 'missForest') %>%
-  select(Site, Watershed, LON_DD, LAT_DD, VisitYear, Lgth_Wet, Area_Wet, one_of(unique(sel_hab_mets$Metric)))
+# for overwintering juveniles, predictions done on channel unit scale, then summed up for each CHaMP site.
+if(mod_choice == "juv_winter") {
+  # note that some Tier1 designations have to be imputed. Even if they're wrong, at least it will be some estimate of capacity, which seems better than 0, when summing at the CHaMP site scale
+  hab_impute = hab_avg %>%
+    filter(!is.na(Discharge)) %>%
+    mutate(across(c(Watershed,
+                    Channel_Type,
+                    Tier1),
+                  fct_drop)) %>%
+    mutate(across(Tier1,
+                  fct_recode,
+                  NULL = "(Missing)")) %>%
+    impute_missing_data(data = .,
+                        covars = unique(sel_hab_mets$Metric),
+                        impute_vars = c('Watershed', 
+                                        'Elev_M', 
+                                        'Channel_Type', 
+                                        'CUMDRAINAG'),
+                        # method = 'missForest') %>%
+                        # method = "Hmisc") %>%
+                        method = "randomForestSRC") %>%
+    select(Site, Watershed, LON_DD, LAT_DD, 
+           VisitID,
+           Lgth_Wet, Area_Wet, 
+           ChUnitNumber, AreaTotal, 
+           any_of(unique(sel_hab_mets$Metric)))
+  
+  pred_hab_sites = hab_impute %>%
+    filter(!is.na(AreaTotal)) %>%
+    # filter(Tier1 %in% levels(qrf_mod_df$Tier1))
+    mutate(chnk_per_m2 = predict(qrf_mods[['Chinook']],
+                                 newdata = select(., one_of(unique(sel_hab_mets$Metric))),
+                                 what = pred_quant),
+           chnk_per_m2 = exp(chnk_per_m2) - dens_offset,
+           chnk_tot = chnk_per_m2 * AreaTotal) %>%
+    mutate(sthd_per_m2 = predict(qrf_mods[['Steelhead']],
+                                 newdata = select(., one_of(unique(sel_hab_mets$Metric))),
+                                 what = pred_quant),
+           sthd_per_m2 = exp(sthd_per_m2) - dens_offset,
+           sthd_tot = sthd_per_m2 * AreaTotal) %>%
+    group_by(Site,
+             Watershed,
+             LON_DD,
+             LAT_DD,
+             VisitID,
+             Lgth_Wet,
+             Area_Wet) %>%
+    summarise(across(c(chnk_tot, sthd_tot),
+                     sum,
+                     na.rm = T),
+              .groups = "drop") %>%
+    mutate(chnk_per_m = chnk_tot / Lgth_Wet,
+           chnk_per_m2 = chnk_tot / Area_Wet,
+           sthd_per_m = sthd_tot / Lgth_Wet,
+           sthd_per_m2 = sthd_tot / Area_Wet)
+  
+} else {
+  hab_impute = hab_avg %>%
+    mutate_at(vars(Watershed, Channel_Type),
+              list(fct_drop)) %>%
+    impute_missing_data(data = .,
+                        covars = unique(sel_hab_mets$Metric),
+                        impute_vars = c('Watershed', 
+                                        'Elev_M', 
+                                        'Channel_Type', 
+                                        'CUMDRAINAG'),
+                        # method = 'missForest') %>%
+                        method = "randomForestSRC") %>%
+    select(Site, Watershed, LON_DD, LAT_DD, VisitYear, Lgth_Wet, Area_Wet, one_of(unique(sel_hab_mets$Metric)))
+  
+  pred_hab_sites = hab_impute %>%
+    mutate(chnk_per_m = predict(qrf_mods[['Chinook']],
+                                newdata = select(., one_of(unique(sel_hab_mets$Metric))),
+                                what = pred_quant),
+           chnk_per_m = exp(chnk_per_m) - dens_offset,
+           chnk_per_m2 = chnk_per_m * Lgth_Wet / Area_Wet) %>%
+    mutate(sthd_per_m = predict(qrf_mods[['Steelhead']],
+                                newdata = select(., one_of(unique(sel_hab_mets$Metric))),
+                                what = pred_quant),
+           sthd_per_m = exp(sthd_per_m) - dens_offset,
+           sthd_per_m2 = sthd_per_m * Lgth_Wet / Area_Wet)
+}
 
-pred_hab_sites = hab_impute %>%
-  mutate(chnk_per_m = predict(qrf_mods[['Chinook']],
-                              newdata = select(., one_of(unique(sel_hab_mets$Metric))),
-                              what = pred_quant),
-         chnk_per_m = exp(chnk_per_m) - dens_offset,
-         chnk_per_m2 = chnk_per_m * Lgth_Wet / Area_Wet) %>%
-  mutate(sthd_per_m = predict(qrf_mods[['Steelhead']],
-                              newdata = select(., one_of(unique(sel_hab_mets$Metric))),
-                              what = pred_quant),
-         sthd_per_m = exp(sthd_per_m) - dens_offset,
-         sthd_per_m2 = sthd_per_m * Lgth_Wet / Area_Wet)
+# 
+# #-----------------------------------------------------------------
+# # predict capacity at all CHaMP sites
+# #-----------------------------------------------------------------
+# # what quantile is a proxy for capacity?
+# pred_quant = 0.9
+# 
+# hab_impute = hab_avg %>%
+#   mutate_at(vars(Watershed, Channel_Type),
+#             list(fct_drop)) %>%
+#   impute_missing_data(data = .,
+#                       covars = unique(sel_hab_mets$Metric),
+#                       impute_vars = c('Watershed', 
+#                                       'Elev_M', 
+#                                       'Channel_Type', 
+#                                       'CUMDRAINAG'),
+#                       method = 'missForest') %>%
+#   select(Site, Watershed, LON_DD, LAT_DD, VisitYear, Lgth_Wet, Area_Wet, one_of(unique(sel_hab_mets$Metric)))
+# 
+# pred_hab_sites = hab_impute %>%
+#   mutate(chnk_per_m = predict(qrf_mods[['Chinook']],
+#                               newdata = select(., one_of(unique(sel_hab_mets$Metric))),
+#                               what = pred_quant),
+#          chnk_per_m = exp(chnk_per_m) - dens_offset,
+#          chnk_per_m2 = chnk_per_m * Lgth_Wet / Area_Wet) %>%
+#   mutate(sthd_per_m = predict(qrf_mods[['Steelhead']],
+#                               newdata = select(., one_of(unique(sel_hab_mets$Metric))),
+#                               what = pred_quant),
+#          sthd_per_m = exp(sthd_per_m) - dens_offset,
+#          sthd_per_m2 = sthd_per_m * Lgth_Wet / Area_Wet)
 
 # only use sites that are in the GAA master sample database
 # split by species, and filter by each species domain (based on what's in the GAAs)
@@ -535,6 +626,7 @@ model_svy_df = mod_data_weights %>%
   mutate(log_qrf_cap = log(qrf_cap)) %>%
   group_by(Species, response) %>%
   nest() %>%
+  ungroup() %>%
   mutate(design = map(data,
                       .f = function(x) {
                         svydesign(id = ~ 1,
@@ -568,8 +660,8 @@ model_svy_df %<>%
                               .f = function(x,y) {
                                 x %>%
                                   filter(Channel_Type %in% y$xlevels$Channel_Type) %>%
-                                  mutate_at(vars(Channel_Type),
-                                            list(fct_drop))
+                                  mutate(across(Channel_Type,
+                                                fct_drop))
                               }),
          # which reaches are in CHaMP watersheds?
          pred_champ_rchs = map2(pred_all_rchs,
@@ -577,8 +669,8 @@ model_svy_df %<>%
                                 .f = function(x,y) {
                                   x %>%
                                     filter(CHaMPsheds %in% y$xlevels$CHaMPsheds) %>%
-                                    mutate_at(vars(CHaMPsheds),
-                                              list(fct_drop))
+                                    mutate(across(CHaMPsheds,
+                                                  fct_drop))
                                 })) %>%
   mutate(pred_no_champ = map2(mod_no_champ,
                               pred_all_rchs,
@@ -767,9 +859,7 @@ site_cap2 = site_cap %>%
                    chnk_NWR_NAME = NWR_NAME,
                    chnk_use = UseType),
           join = st_is_within_distance,
-          dist = 200)
-
-%>%
+          dist = 200) %>%
   group_by(Site) %>%
   filter(!is.na(chnk_use)) %>%
   slice(1) %>%
@@ -807,3 +897,202 @@ st_write(site_cap,
          dsn = paste0('output/shapefiles/MastPts_Cap_', mod_choice, '.shp'),
          driver = 'ESRI Shapefile')
 
+
+#-----------------------------------------------------------------
+# fit various random forest models
+# to account for design weights, might need to create new dataset by resampling original data, with probabilities weighted by design weights - update: this may not be a good idea, I think it biases the out-of-bag error rates
+
+# extrapolation model formula
+full_form = as.formula(paste('log_qrf_cap ~ -1 + (', paste(extrap_covars, collapse = ' + '), ')'))
+
+model_rf_df = model_svy_df %>%
+  select(Species:data, 
+         pred_all_rchs,
+         pred_champ_rchs) %>%
+  mutate(pred_champ_rchs = map(pred_champ_rchs,
+                               .f = function(x) {
+                                 x %>%
+                                   mutate(across(CHaMPsheds,
+                                                 fct_drop))
+                               })) %>%
+  mutate(mod_no_champ = map(data,
+                            .f = function(x) {
+                              randomForest(update(full_form, qrf_cap ~ . - CHaMPsheds),
+                                           data = x,
+                                           ntree = 2000)
+                            }),
+         mod_champ = map(data,
+                         .f = function(x) {
+                           randomForest(update(full_form, qrf_cap ~.),
+                                        data = x,
+                                        ntree = 2000)
+                         })) %>%
+  # make predictions at all possible reaches, using both models
+  mutate(pred_no_champ = map2(mod_no_champ,
+                              pred_all_rchs,
+                              .f = function(x, y) {
+                                # this doesn't work because I run out of memory. So I can't get a SE on non-CHaMP predictions
+                                # preds = predict(x,
+                                #                 newdata = y,
+                                #                 predict.all = T)
+                                # 
+                                # y %>%
+                                #   select(Site) %>%
+                                #   bind_cols(tibble(pred_cap = preds$aggregate,
+                                #                    pred_se = preds$individual %>%
+                                #                      apply(1, sd)))
+                                
+                                # split into smaller datasets by HUC
+                                y %>%
+                                  group_by(HUC8NmNRCS) %>%
+                                  group_split() %>%
+                                  map_df(.f = function(z) {
+                                    preds = predict(x,
+                                                    newdata = z,
+                                                    predict.all = T)
+                                    
+                                    z %>%
+                                      select(Site) %>%
+                                      bind_cols(tibble(pred_cap = preds$aggregate,
+                                                       pred_se = preds$individual %>%
+                                                         apply(1, sd)))
+                                  })
+                                
+                                
+                                
+                                # # this version doesn't provide any standard errors
+                                # y %>%
+                                #   select(Site) %>%
+                                #   bind_cols(tibble(pred_cap = predict(x,
+                                #                                       newdata = y)))
+                                
+                              }),
+         pred_champ = map2(mod_champ,
+                           pred_champ_rchs,
+                           .f = function(x, y) {
+                             # preds = predict(x,
+                             #                 newdata = y,
+                             #                 predict.all = T)
+                             # 
+                             # y %>%
+                             #   select(UniqueID) %>%
+                             #   bind_cols(tibble(pred_cap = preds$aggregate,
+                             #                    pred_se = preds$individual %>%
+                             #                      apply(1, sd)))
+                             
+                             # split into smaller datasets by HUC
+                             y %>%
+                               group_by(HUC8NmNRCS) %>%
+                               group_split() %>%
+                               map_df(.f = function(z) {
+                                 preds = predict(x,
+                                                 newdata = z,
+                                                 predict.all = T)
+                                 
+                                 z %>%
+                                   select(Site) %>%
+                                   bind_cols(tibble(pred_cap = preds$aggregate,
+                                                    pred_se = preds$individual %>%
+                                                      apply(1, sd)))
+                               })
+                             
+                             # # this version doesn't include any standard errors
+                             # y %>%
+                             #   select(Site) %>%
+                             #   bind_cols(tibble(pred_cap = predict(x,
+                             #                                       newdata = y)))
+                             
+                           })) %>%
+  arrange(Species, response)
+
+# Sys.unsetenv("R_MAX_VSIZE")
+
+# pull out all predictions, create data.frame with one row per reach
+all_preds = model_rf_df %>%
+  select(Species, type = response, 
+         pred_no_champ) %>%
+  unnest(cols = pred_no_champ) %>%
+  # rename(resp_no_champ = pred_cap) %>%
+  rename(resp_no_champ = pred_cap,
+         se_no_champ = pred_se) %>%
+  left_join(model_rf_df %>%
+              select(Species, type = response, 
+                     pred_champ) %>%
+              unnest(cols = pred_champ) %>%
+              # rename(resp_champ = pred_cap)) %>%
+              rename(resp_champ = pred_cap,
+                     se_champ = pred_se)) %>%
+  # mutate_at(vars(starts_with("resp"), 
+  #                starts_with("se")),
+  #           list(exp)) %>%
+  # add in direct QRF estimates
+  left_join(pred_hab_sites %>%
+              select(UniqueID, Watershed,
+                     matches("per_m")) %>%
+              pivot_longer(cols = matches('per_m'),
+                           names_to = "type",
+                           values_to = "resp_qrf") %>%
+              mutate(Species = if_else(grepl('chnk', type),
+                                       'Chinook',
+                                       'Steelhead')) %>%
+              mutate(type = str_replace(type, 'chnk', 'cap'),
+                     type = str_replace(type, 'sthd', 'cap')) %>%
+              group_by(UniqueID, Watershed, Species, type) %>%
+              # slice(which.max(resp_qrf)) %>%
+              summarise_at(vars(resp_qrf),
+                           list(mean),
+                           na.rm = T) %>%
+              ungroup()) %>%
+  # choose which response to use: if QRF is available, use that, then if CHaMP model is available use that, then go with non-CHaMP model
+  mutate(model = if_else(!is.na(resp_qrf),
+                         "QRF",
+                         if_else(!is.na(resp_champ),
+                                 "CHaMP",
+                                 "non-CHaMP")),
+         response = if_else(model == 'QRF',
+                            resp_qrf,
+                            if_else(model == 'CHaMP',
+                                    resp_champ,
+                                    resp_no_champ))) %>%
+  mutate(SE = if_else(model == 'QRF',
+                      0,
+                      if_else(model == 'CHaMP',
+                              se_champ,
+                              # NA_real_))) %>%
+                              se_no_champ))) %>%
+  select(Species, type, UniqueID, model, response, SE) %>%
+  # add watershed name (and HUC8 code)
+  left_join(rch_200_df %>%
+              select(UniqueID, HUC8_code, chnk, sthd) %>%
+              left_join(pred_hab_df %>%
+                          select(UniqueID, Watershed) %>%
+                          left_join(rch_200_df %>%
+                                      select(UniqueID, HUC8_code)) %>%
+                          select(HUC8_code, Watershed) %>%
+                          distinct())) %>%
+  mutate(model = if_else(!is.na(Watershed) & Watershed == 'Asotin' & model != 'QRF',
+                         'CHaMP',
+                         model)) %>% 
+  filter(!is.na(response)) %>%
+  pivot_longer(cols = c(response, SE),
+               names_to = "key", 
+               values_to = "value") %>%
+  mutate(key = if_else(key == 'response',
+                       if_else(Species == 'Chinook',
+                               str_replace(type, 'cap', 'chnk'),
+                               str_replace(type, 'cap', 'sthd')),
+                       if_else(Species == 'Chinook',
+                               paste0(str_replace(type, 'cap', 'chnk'), "_se"),
+                               paste0(str_replace(type, 'cap', 'sthd'), "_se")))) %>%
+  select(UniqueID, Watershed, HUC8_code, model, chnk, sthd, key, value) %>%
+  pivot_wider(names_from = "key", 
+              values_from = "value",
+              values_fill = NA_real_)
+
+# save the results
+save(extrap_covars,
+     full_form,
+     pred_hab_df,
+     model_rf_df,
+     all_preds,
+     file = paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
