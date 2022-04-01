@@ -23,7 +23,7 @@ theme_set(theme_bw())
 mod_choice = c('juv_summer',
                'juv_summer_dash',
                'redds',
-               'juv_winter')[4]
+               'juv_winter')[1]
 
 load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 
@@ -32,7 +32,7 @@ load(paste0('output/modelFits/qrf_', mod_choice, '.rda'))
 #-----------------------------------------------------------------
 # what quantile is a proxy for capacity?
 pred_quant = 0.9
-
+set.seed(5)
 # for overwintering juveniles, predictions done on channel unit scale, then summed up for each CHaMP site.
 if(mod_choice == "juv_winter") {
   # note that some Tier1 designations have to be imputed. Even if they're wrong, at least it will be some estimate of capacity, which seems better than 0, when summing at the CHaMP site scale
@@ -51,9 +51,9 @@ if(mod_choice == "juv_winter") {
                                         'Elev_M', 
                                         'Channel_Type', 
                                         'CUMDRAINAG'),
-                        # method = 'missForest') %>%
+                        method = 'missForest') %>%
                         # method = "Hmisc") %>%
-                        method = "randomForestSRC") %>%
+                        # method = "randomForestSRC") %>%
     select(Site, Watershed, LON_DD, LAT_DD, 
            VisitID,
            Lgth_Wet, Area_Wet, 
@@ -141,8 +141,12 @@ pred_hab_df = pred_hab_sites %>%
               select(UniqueID, chnk, sthd)) %>%
   filter((Species == 'Steelhead' & sthd) |
            (Species == 'Chinook' & chnk)) %>%
-  filter(cap_per_m > 0,
-         cap_per_m2 > 0)
+  # filter(cap_per_m > 0,
+  #        cap_per_m2 > 0) %>%
+  mutate_at(vars(Watershed),
+            list(fct_drop))
+
+
 
 #----------------------------------------
 # prep 200 m reaches for extrapolation
