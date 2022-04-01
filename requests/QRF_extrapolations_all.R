@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Compile QRF extrapolations for entire CRB
 # Created: 7/29/2021
-# Last Modified: 7/29/2021
+# Last Modified: 12/17/2021
 # Notes: To fulfill BPA contract
 
 #-----------------------------------------------------------------
@@ -15,25 +15,37 @@ library(here)
 
 #-----------------------------------------------------------------
 # read in estimates at all master sample points
-qrf_pts = st_read('output/gpkg/Sum_Juv_Capacity.gpkg') %>%
+# qrf_pts = st_read('output/gpkg/Sum_Juv_Capacity.gpkg') %>%
+#   mutate(Lifestage = 'sum_juv') %>%
+#   rbind(st_read('output/gpkg/Win_Juv_Capacity.gpkg') %>%
+#           mutate(Lifestage = 'win_juv')) %>%
+#   rbind(st_read('output/gpkg/Redds_Capacity.gpkg') %>%
+#           mutate(Lifestage = 'redd')) %>%
+#   select(Lifestage, everything()) %>%
+#   st_transform(crs = 5070)
+
+qrf_pts = st_read('output/gpkg/MastPts_Cap_juv_summer.gpkg') %>%
   mutate(Lifestage = 'sum_juv') %>%
-  rbind(st_read('output/gpkg/Win_Juv_Capacity.gpkg') %>%
+  rbind(st_read('output/gpkg/MastPts_Cap_juv_winter.gpkg') %>%
           mutate(Lifestage = 'win_juv')) %>%
-  rbind(st_read('output/gpkg/Redds_Capacity.gpkg') %>%
+  rbind(st_read('output/gpkg/MastPts_Cap_redds.gpkg') %>%
           mutate(Lifestage = 'redd')) %>%
   select(Lifestage, everything()) %>%
   st_transform(crs = 5070)
+
 
 # how many distinct sites?
 n_sites = n_distinct(qrf_pts$Site)
 
 # split into 2 objects, one for each species, with one row per site
 chnk_pts = qrf_pts %>%
+  st_drop_geometry() %>%
+  as_tibble() %>%
   select(Lifestage:HUC12NmNRC,
-         spp_domain = chnk,
+         spp_domain = chnk_range,
          model,
          starts_with("chnk")) %>%
-  select(-inCovarRange) %>%
+  # select(-inCovarRange) %>%
   pivot_longer(starts_with("chnk"),
                names_to = "name",
                values_to = "value") %>%
@@ -49,15 +61,24 @@ chnk_pts = qrf_pts %>%
          matches("_per_"),
          everything())
 
+qrf_pts %>%
+  select(Site,
+         geom) %>%
+  distinct() %>%
+  left_join(chnk_pts,
+            by = "Site") -> chnk_pts
+
 sum(duplicated(chnk_pts$Site))
 identical(nrow(chnk_pts), n_sites)
 
 sthd_pts = qrf_pts %>%
+  st_drop_geometry() %>%
+  as_tibble() %>%
   select(Lifestage:HUC12NmNRC,
-         spp_domain = steel,
+         spp_domain = sthd_range,
          model,
          starts_with("sthd")) %>%
-  select(-inCovarRange) %>%
+  # select(-inCovarRange) %>%
   pivot_longer(starts_with("sthd"),
                names_to = "name",
                values_to = "value") %>%
@@ -75,6 +96,13 @@ sthd_pts = qrf_pts %>%
 
 sum(duplicated(sthd_pts$Site))
 identical(nrow(sthd_pts), n_sites)
+
+qrf_pts %>%
+  select(Site,
+         geom) %>%
+  distinct() %>%
+  left_join(sthd_pts,
+            by = "Site") -> sthd_pts
 
 # save as geopackages
 st_write(chnk_pts,
@@ -94,13 +122,27 @@ rm(qrf_pts, chnk_pts, sthd_pts, n_sites)
 data("rch_200")
 
 # read in estimates at all 200 m reaches
-qrf_rch = st_read(here("output/gpkg/Rch_Cap_RF_juv_summer.gpkg")) %>%
+
+# # results from random forest model
+# qrf_rch = st_read(here("output/gpkg/Rch_Cap_RF_juv_summer.gpkg")) %>%
+#   add_column(Lifestage = "sum_juv",
+#              .before = 0) %>%
+#   rbind(st_read(here("output/gpkg/Rch_Cap_RF_juv_winter.gpkg")) %>%
+#           add_column(Lifestage = "win_juv",
+#                      .before = 0)) %>%
+#   rbind(st_read(here("output/gpkg/Rch_Cap_RF_redds.gpkg")) %>%
+#           add_column(Lifestage = "redd",
+#                      .before = 0)) %>%
+#   st_transform(crs = 5070)
+
+# results from linear model
+qrf_rch = st_read(here("output/gpkg/Rch_Cap_juv_summer.gpkg")) %>%
   add_column(Lifestage = "sum_juv",
              .before = 0) %>%
-  rbind(st_read(here("output/gpkg/Rch_Cap_RF_juv_winter.gpkg")) %>%
+  rbind(st_read(here("output/gpkg/Rch_Cap_juv_winter.gpkg")) %>%
           add_column(Lifestage = "win_juv",
                      .before = 0)) %>%
-  rbind(st_read(here("output/gpkg/Rch_Cap_RF_redds.gpkg")) %>%
+  rbind(st_read(here("output/gpkg/Rch_Cap_redds.gpkg")) %>%
           add_column(Lifestage = "redd",
                      .before = 0)) %>%
   st_transform(crs = 5070)
@@ -110,6 +152,8 @@ n_rchs = n_distinct(qrf_rch$UniqueID)
 
 # split into 2 objects, one for each species, with one row per site
 chnk_rch = rch_200 %>%
+  # st_drop_geometry() %>%
+  # as_tibble() %>%
   select(UniqueID,
          reach_leng,
          HUC6_name,
@@ -120,28 +164,38 @@ chnk_rch = rch_200 %>%
   rename(spp_use = use,
          spp_domain = chnk) %>%
   inner_join(qrf_rch %>%
-              as_tibble() %>%
-              select(UniqueID,
-                     Lifestage,
-                     starts_with("chnk_")) %>%
-              select(UniqueID,
-                     Lifestage,
-                     matches("per")) %>%
-              rename_with(.fn = ~ str_remove(.x, "chnk_"),
-                          .cols = starts_with("chnk")) %>%
-              pivot_longer(starts_with("per"),
-                           names_to = "name",
-                           values_to = "value") %>%
-              unite(metric, Lifestage, name, sep = "_") %>% 
-              pivot_wider(names_from = metric,
-                          values_from = value) %>%
-              add_column(Species = "Chinook",
-                         .before = 0),
+               st_drop_geometry() %>%
+               as_tibble() %>%
+               select(UniqueID,
+                      Lifestage,
+                      starts_with("chnk_")) %>%
+               select(UniqueID,
+                      Lifestage,
+                      matches("per")) %>%
+               rename_with(.fn = ~ str_remove(.x, "chnk_"),
+                           .cols = starts_with("chnk")) %>%
+               pivot_longer(starts_with("per"),
+                            names_to = "name",
+                            values_to = "value") %>%
+               unite(metric, Lifestage, name, sep = "_") %>% 
+               pivot_wider(names_from = metric,
+                           values_from = value) %>%
+               add_column(Species = "Chinook",
+                          .before = 0),
              by = "UniqueID") %>%
   relocate(Species, 
            .before = 1) %>%
   relocate(spp_use, spp_domain,
            .after = reach_leng)
+
+qrf_rch %>%
+  select(UniqueID,
+         geom) %>%
+  distinct() %>%
+  left_join(chnk_rch,
+            by = "Site") -> chnk_rch
+
+
 
 sum(duplicated(chnk_rch$UniqueID))
 identical(nrow(chnk_rch), n_rchs)
