@@ -29,7 +29,8 @@ if(.Platform$OS.type != 'unix') {
 #-----------------------------------------------------------------
 # get globally available attributes from all master sample points
 #-----------------------------------------------------------------
-gaa = read_csv(paste0(nas_prefix, 'data/habitat/CHaMP/IC_Sites_withMetrics_20151016.csv')) %>%
+gaa = read_csv('data/raw/habitat/master_sample_pts/IC_Sites_withMetrics_20151016.csv') %>%
+# gaa = read_csv(paste0(nas_prefix, 'data/habitat/CHaMP/IC_Sites_withMetrics_20151016.csv')) %>%
   rename(Site = Site_ID, 
          Lon = LON_DD,
          Lat = LAT_DD) %>%
@@ -44,7 +45,8 @@ gaa = read_csv(paste0(nas_prefix, 'data/habitat/CHaMP/IC_Sites_withMetrics_20151
   mutate_at(vars(Site, CHaMPsheds),
             list(as.factor)) %>%
   # bring in some temperature data from NorWeST
-  left_join(read_csv(paste0(nas_prefix, 'data/habitat/CHaMP/mast_samp_norw.csv')) %>%
+  left_join(read_csv("data/prepped/mast_samp_norw.csv")) %>%
+  # left_join(read_csv(paste0(nas_prefix, 'data/habitat/CHaMP/mast_samp_norw.csv')) %>%
               select(-c(X1:Field1, FID_2, COMID)) %>%
               filter(Distance < 100) %>%
               rename(FLow_Aug = Flow_Ag,
@@ -103,6 +105,11 @@ comp_df %>%
 data("chnk_domain")
 data("sthd_domain")
 
+# fix old-style crs
+st_crs(chnk_domain) <- st_crs(chnk_domain)
+st_crs(sthd_domain) <- st_crs(sthd_domain)
+
+
 gaa_sf = gaa %>%
   select(Site, Lon, Lat) %>%
   distinct() %>%
@@ -160,6 +167,27 @@ gaa %<>%
 use_data(gaa,
          version = 2,
          overwrite = T)
+
+
+# alternative
+chnk_cap_pts = st_read("output/gpkg/MasterPts_Capacity_Chnk.gpkg")
+sthd_cap_pts = st_read("output/gpkg/MasterPts_Capacity_Sthd.gpkg")
+
+spp_range_pts = chnk_cap_pts %>%
+  st_drop_geometry() %>%
+  as_tibble() %>%
+  select(Site, 
+         chnk_range = spp_domain) %>%
+  full_join(sthd_cap_pts %>%
+              st_drop_geometry() %>%
+              as_tibble() %>%
+              select(Site, 
+                     sthd_range = spp_domain)) %>%
+  mutate(across(ends_with("range"),
+                ~ if_else(. == "Yes", T, F)))
+
+gaa %<>%
+  left_join(spp_range_pts)
 
 #------------------------------------
 # pull out lats/longs for use below
