@@ -10,3 +10,4 @@ output/modelFits/extrap_200rch_RFSRC_juv_summer_dash.rda filter=lfs diff=lfs mer
 *extrap_200rch_ filter=lfs diff=lfs merge=lfs -text
 output/modelFits/extrap_200rch_RF_redds.rda filter=lfs diff=lfs merge=lfs -text
 output/modelFits/extrap_200rch_* filter=lfs diff=lfs merge=lfs -text
+output/modelFits/* filter=lfs diff=lfs merge=lfs -text
