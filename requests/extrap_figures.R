@@ -18,8 +18,8 @@ theme_set(theme_bw())
 
 #-----------------------------------------------------------------
 # read in Chinook capacity estimates
-cap_df = here("output/gpkg/QRF_estimates",
-              "StreamNetwork_Capacity_chnk.gpkg") %>%
+cap_df = here("output/gpkg",
+              "StreamNetwork_Capacity_Chnk.gpkg") %>%
   st_read()
 
 
@@ -86,6 +86,75 @@ wtsd_cap %>%
             cap_se = sqrt(sum(cap_tot_se^2)),
             cap_cv = cap_se / cap)
 
+#-----------------------------------------------------------------
+# compare fish / m vs fish / m2
+# # pull out Lemhi
+# wtsd_huc_sf = huc12_sf %>%
+#   filter(str_detect(HUC12,
+#                     "^17060204"))
+# 
+# # pull out Wenatchee
+# wtsd_huc_sf = huc12_sf %>%
+#   filter(str_detect(HUC12,
+#                     "^17020011"))
+
+# pull out Methow
+wtsd_huc_sf = huc12_sf %>%
+  filter(str_detect(HUC12,
+                    "^17020008"))
+
+# compile watershed boundary
+wtsd_bndry = wtsd_huc_sf %>%
+  st_union() %>%
+  nngeo::st_remove_holes()
+
+# clip capacity layer
+wtsd_cap = cap_df %>%
+  st_intersection(wtsd_bndry)
+
+
+
+rel_dens_sf <- wtsd_cap %>%
+  filter(spp_domain) %>%
+  # mutate(rel_per_m = (sum_juv_per_m  - mean(sum_juv_per_m)) / sd(sum_juv_per_m),
+  #        rel_per_m2 = (sum_juv_per_m2  - mean(sum_juv_per_m2)) / sd(sum_juv_per_m2)) %>%
+  mutate(rel_per_m = sum_juv_per_m / max(sum_juv_per_m),
+         rel_per_m2 = sum_juv_per_m2 / max(sum_juv_per_m2) )%>%
+  select(Species:NWR_NAME,
+         starts_with("rel_")) %>%
+  pivot_longer(cols = starts_with("rel_"),
+               names_to = "density_type",
+               values_to = "cc") %>%
+  mutate(across(density_type,
+                recode,
+                "rel_per_m" = 'Per m',
+                "rel_per_m2" = "Per m sq."))
+
+comp_dens_map <- wtsd_cap %>%
+  ggplot() +
+  geom_sf(data = wtsd_bndry,
+          fill = NA,
+          color = "gray50") +
+  geom_sf(color = river_color) +
+  geom_sf(data = rel_dens_sf %>%
+            filter(abs(cc) < 3),
+          aes(color = cc),
+          size = 1) +
+  theme(legend.position = "bottom",
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        legend.background = element_rect(fill = "transparent", color = NA)) +
+  scale_color_viridis_c(direction = -1,
+                        name = "Relative\nCapacity") +
+  facet_wrap(~ density_type) +
+  labs(title = "Chinook Parr - Methow")
+
+comp_dens_map
+ggsave(filename = 'O:/Desktop/met_chnk_map.png',
+       comp_dens_map,
+       width = 6,
+       height = 6)  
 
 
 #-----------------------------------------------------------------
