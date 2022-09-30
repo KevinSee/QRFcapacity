@@ -17,21 +17,31 @@ library(readxl)
 library(dbplyr)
 library(QRFcapacity)
 
-#-------------------------
-# set NAS prefix, depending on operating system
-#-------------------------
-if(.Platform$OS.type != 'unix') {
-  nas_prefix = "S:"
-} else if(.Platform$OS.type == 'unix') {
-  nas_prefix = "~/../../Volumes/ABS/"
-}
 
+#-------------------------
+# set data filepath
+#-------------------------
+
+data_filepath = "data/raw/fish/summer/"
+
+# #-------------------------
+# # if using NAS set NAS prefix, depending on operating system
+# #-------------------------
+# if(.Platform$OS.type != 'unix') {
+#   nas_prefix = "S:"
+# } else if(.Platform$OS.type == 'unix') {
+#   nas_prefix = "~/../../Volumes/ABS/"
+# }
+# 
+# data_filepath = paste(nas_prefix,
+#                       "data/qrf/fish_data/summer/",
+#                       sep = "/")
 
 #-----------------------------------------------------------------
 # Entiat
 #-----------------------------------------------------------------
 # all data from 2006-2016, compiled by Terraqua
-ent = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/EntiatFishData_2006-2016_20170329.csv')) %>%
+ent = read_csv(paste0(data_filepath, 'EntiatFishData_2006-2016_20170329.csv')) %>%
   rename(Watershed = Subbasin) %>%
   select(Year, SiteName, Watershed, Lat = LAT_DD, Lon = LON_DD,
          Season, SampleDate, FishCrew, Method, Species,
@@ -55,12 +65,12 @@ ent = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/EntiatFishData_2006
                               as.POSIXct(ymd(20120725)),
                               SampleDate)) %>%
   # add 2017 data
-  bind_rows(excel_sheets(paste0(nas_prefix, 'data/qrf/fish_data/summer/Entiat2017_SummaryAbundance.xlsx')) %>%
+  bind_rows(excel_sheets(paste0(data_filepath, 'Entiat2017_SummaryAbundance.xlsx')) %>%
               as.list() %>%
               map_df(.f = function(x) {
                 if(grepl('^Sheet', x[1])) return(NULL)
                 
-                read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/Entiat2017_SummaryAbundance.xlsx'),
+                read_excel(paste0(data_filepath, 'Entiat2017_SummaryAbundance.xlsx'),
                            x[1]) %>%
                   rename(SiteName = Site.ID,
                          Watershed = Subbasin,
@@ -80,7 +90,7 @@ ent = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/EntiatFishData_2006
 #-----------------------------------------------------------------
 # Asotin
 #-----------------------------------------------------------------
-aso = read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/AsotinCHaMP_juvSteelheadMarkRecaps_2011-2018.xlsx')) %>%
+aso = read_excel(paste0(data_filepath, 'AsotinCHaMP_juvSteelheadMarkRecaps_2011-2018.xlsx')) %>%
   rename(FishSiteName = SiteName,
          SiteName = CHaMPSiteID,
          Year = Yr,
@@ -149,7 +159,7 @@ aso %<>%
 #-----------------------------------------------------------------
 # Upper Grande Ronde
 #-----------------------------------------------------------------
-ugr = read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_Export_Output4Kevin.xlsx')) %>%
+ugr = read_excel(paste0(data_filepath, 'ODFW_Export_Output4Kevin.xlsx')) %>%
   rename(Watershed = WatershedName,
          FishSiteLength = SiteLength,
          Lon = Long,
@@ -164,7 +174,7 @@ ugr = read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_Export_Outpu
 #-----------------------------------------------------------------
 # use the fish database provided by Nick Weber for fish data from ELR
 elr_conn = DBI::dbConnect(RSQLite::SQLite(),
-                          paste0(nas_prefix, 'data/qrf/fish_data/summer/JohnDayRovingFish_MASTER.db'))
+                          paste0(data_filepath, 'JohnDayRovingFish_MASTER.db'))
 
 src_dbi(elr_conn)
 db_list_tables(elr_conn)
@@ -391,7 +401,7 @@ jd_ELR %<>%
 # ODFW
 #----------------------
 # uses all fish at least 35mm in length
-jd_ODFW = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_JohnDay_SiteSummary_35mmandUp.csv')) %>%
+jd_ODFW = read_csv(paste0(data_filepath, 'ODFW_JohnDay_SiteSummary_35mmandUp.csv')) %>%
   rename(Lat = US.LatDD, Lon = US.LongDD,
          SampleDate = Date,
          Species = SpeciesSampled,
@@ -417,7 +427,7 @@ jd_ODFW = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_JohnDay_Si
 
 # # this re-creates the summary table, based on the raw fish data, but without some details like sampling data and method.
 # lngthCutOff = 35
-# jd_ODFW = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_JohnDay_FishSummary.csv')) %>%
+# jd_ODFW = read_csv(paste0(data_filepath, 'ODFW_JohnDay_FishSummary.csv')) %>%
 #   filter(!is.na(DataCollectionEvent)) %>%
 #   filter(Length < 0 | Length >= lngthCutOff) %>%
 #   filter(!(Length > 200 & SpeciesCode == '11W')) %>%
@@ -433,7 +443,7 @@ jd_ODFW = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_JohnDay_Si
 #            (`Pass Number` == 2 & pass == 'Recap')) %>%
 #   select(-`Pass Number`) %>%
 #   spread(pass, nFish) %>%
-#   full_join(read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_JohnDay_FishSummary.csv')) %>%
+#   full_join(read_csv(paste0(data_filepath, 'ODFW_JohnDay_FishSummary.csv')) %>%
 #               filter(!is.na(DataCollectionEvent)) %>%
 #               filter(Length < 0 | Length >= lngthCutOff) %>%
 #               filter(!(Length > 200 & SpeciesCode == '11W')) %>%
@@ -460,7 +470,7 @@ jd_ODFW = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_JohnDay_Si
 #   select(DataCollectionEvent:SpeciesCode, Species, everything())
 
 # uses all fish at least 35mm in length
-jd_ODFW = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_JohnDay_SiteSummary_35mmandUp.csv')) %>%
+jd_ODFW = read_csv(paste0(data_filepath, 'ODFW_JohnDay_SiteSummary_35mmandUp.csv')) %>%
   rename(Lat = US.LatDD, Lon = US.LongDD,
          SampleDate = Date,
          Species = SpeciesSampled,
@@ -488,9 +498,9 @@ jd_ODFW = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/ODFW_JohnDay_Si
 # Wenatchee
 #-----------------------------------------------------------------
 # start with 2011 data
-tq = read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/Wen-Ent 2011 S-T channel units zero fish (120312).xlsx'),
+tq = read_excel(paste0(data_filepath, 'Wenatchee/Wen-Ent 2011 S-T channel units zero fish (120312).xlsx'),
                 'Site Scale Abundances') %>%
-  bind_rows(read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/Wen-Ent 2011 S-T channel units zero fish (120312).xlsx'),
+  bind_rows(read_excel(paste0(data_filepath, 'Wenatchee/Wen-Ent 2011 S-T channel units zero fish (120312).xlsx'),
                        'Site Scale Zero Fish')) %>%
   rename(SiteName = GRTSSiteID,
          Stream = StreamName,
@@ -507,7 +517,7 @@ tq = read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/Wen-Ent 
          Nmethod = 'Prev. Calc.') %>%
   select(one_of(names(aso))) %>%
   # add 2012 data
-  bind_rows(read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/2012_MarkRecap.csv')) %>%
+  bind_rows(read_csv(paste0(data_filepath, 'Wenatchee/2012_MarkRecap.csv')) %>%
               select(SiteName, 
                      Watershed = SubBasin, 
                      Stream = StreamName,
@@ -529,7 +539,7 @@ tq = read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/Wen-Ent 
                                       'Chin' = 'Chinook')) %>%
               spread(pass, fish) %>%
               mutate(Method = 'Mark Recapture') %>%
-              bind_rows(read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/2012_SinglePass.csv')) %>%
+              bind_rows(read_csv(paste0(data_filepath, 'Wenatchee/2012_SinglePass.csv')) %>%
                           select(SiteName, 
                                  Watershed = SubBasin, 
                                  Stream = StreamName,
@@ -548,7 +558,7 @@ tq = read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/Wen-Ent 
                         list(as.POSIXct))) %>%
   select(one_of(names(ent))) %>%
   # add 2013 data
-  bind_rows(read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/2013 STM Summary Data 20131002.xlsx'),
+  bind_rows(read_excel(paste0(data_filepath, 'Wenatchee/2013 STM Summary Data 20131002.xlsx'),
                        'Mark Recap Counts') %>%
               select(SiteName = `Site ID`,
                      Watershed = Subbasin,
@@ -567,7 +577,7 @@ tq = read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/Wen-Ent 
               spread(pass, fish) %>%
               mutate(Method = 'Mark Recapture') %>%
               select(one_of(names(aso))) %>%
-              bind_rows(read_excel(paste0(nas_prefix, 'data/qrf/fish_data/summer/Wenatchee/2013 STM Summary Data 20131002.xlsx'),
+              bind_rows(read_excel(paste0(data_filepath, 'Wenatchee/2013 STM Summary Data 20131002.xlsx'),
                                    'Depletion Counts') %>%
                           select(SiteName = `Site ID`,
                                  Watershed = Subbasin,
@@ -616,7 +626,7 @@ ent %>%
 #-----------------------------------------------------------------
 # Lemhi
 #-----------------------------------------------------------------
-qci = read_csv(paste0(nas_prefix, 'data/qrf/fish_data/summer/QCI_GRTS_2009-2018.csv'),
+qci = read_csv(paste0(data_filepath, 'QCI_GRTS_2009-2018.csv'),
                col_types = paste0(paste(rep('?', 14), collapse = ''), 'd', 'd')) %>%
   rename(Watershed = WatershedName,
          FishSiteLength = SiteLength,
