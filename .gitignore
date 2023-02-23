@@ -11,6 +11,7 @@ inst/doc
 data/raw
 
 data/prepped/*.gpkg
+data/prepped/StreamNet
 data/prepped/outgoing
 data/prepped/NorWeST_temps.dbf
 data/prepped/NorWeST_temps.prj

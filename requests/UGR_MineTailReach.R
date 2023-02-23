@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Get QRF estimates for Upper Grande Ronde
 # Created: 9/29/22
-# Last Modified: 10/3/22
+# Last Modified: 2/22/23
 # Notes: This is done as part of a review of a paper by Roni
 
 #-----------------------------------------------------------------
@@ -20,7 +20,7 @@ theme_set(theme_bw())
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[3]
+               'redds')[2]
 
 # load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
 load(paste0('output/modelFits/extrap_200rch_', mod_choice, '.rda'))
@@ -35,6 +35,42 @@ rch_200_cap = rch_200 %>%
               select(-HUC8_code)) %>%
   filter(reach_leng < 500)
 
+# pulling estimates directly from StreamNet files
+sn_sf <- st_read("data/prepped/StreamNet/StreamNetwork_Capacity_RF_Chnk.gpkg")
+
+rch_200_cap = rch_200 %>%
+  select(UniqueID, GNIS_Name, reach_leng:HUC8_code, 
+         chnk, chnk_use, chnk_ESU_DPS:chnk_NWR_NAME,
+         sthd, sthd_use, sthd_ESU_DPS:sthd_NWR_NAME) %>%
+  left_join(sn_sf |> 
+              st_drop_geometry() |> 
+              as_tibble() |> 
+              filter(spp_domain) |> 
+              select(UniqueID,
+                     chnk_per_m = sum_juv_per_m,
+                     chnk_per_m_se = sum_juv_per_m_se,
+                     chnk_per_m2 = sum_juv_per_m2,
+                     chnk_per_m2_se = sum_juv_per_m2_se)) |> 
+  filter(reach_leng < 500)
+
+sn_sf |> 
+  filter(UniqueID %in% my_ids,
+         spp_domain) |> 
+  st_drop_geometry() |> 
+  summarize(across(ends_with("per_m2"),
+                list(mean = mean,
+                     median = median)))
+
+sn_sf |> 
+  filter(UniqueID %in% my_ids,
+         spp_domain) |> 
+  st_drop_geometry() |> 
+  mutate(across(ends_with("per_m"),
+                ~ . * reach_leng)) |> 
+  summarize(across(ends_with("per_m"),
+                   sum),
+            across(ends_with("per_m"),
+                   round_half_up))
 
 #-----------------------------------------------------------------
 # filter QRF capacities and species' domains to the upper Grande Ronde area
@@ -65,7 +101,14 @@ my_ids <- ugr_cap %>%
 mtr_cap <- ugr_cap %>%
   filter(UniqueID %in% my_ids)
 
-
+mtr_cap |> 
+  filter(is.na(chnk_per_m)) |> 
+  st_drop_geometry() |> 
+  select(UniqueID) |> 
+  left_join(mtr_cap_champ) |> 
+  rbind(mtr_cap |> 
+          filter(!is.na(chnk_per_m))) |> 
+  st_as_sf() -> mtr_cap
 
 # load(paste0('output/modelFits/extrap_mastPts_', mod_choice, '.rda'))
 # mtr_pts <- all_preds %>%
@@ -99,8 +142,8 @@ mtr_cap %>%
   st_drop_geometry() %>%
   summarize(across(c(chnk_per_m,
                      chnk_per_m2),
-                   # mean,
-                   median,
+                   list(mean = mean,
+                        median = median),
                    na.rm = T))
 
 # total capacity
@@ -108,13 +151,15 @@ mtr_cap %>%
   mutate(chnk_tot = chnk_per_m * reach_leng,
          chnk_tot_se = chnk_per_m_se * reach_leng) %>%
   st_drop_geometry() %>%
-  summarize(across(chnk_per_m,
-                   mean),
+  summarize(across(c(chnk_per_m,
+                     chnk_per_m2),
+                   mean,
+                   na.rm = T),
             across(chnk_tot,
                    sum,
                    na.rm = T),
             across(chnk_tot_se,
-                   ~ sqrt(sum(.^2)))) %>%
+                   ~ sqrt(sum(.^2, na.rm = T)))) %>%
   mutate(lci_tot = qnorm(0.025, chnk_tot, chnk_tot_se),
          uci_tot = qnorm(0.975, chnk_tot, chnk_tot_se))
 
@@ -159,9 +204,8 @@ champ_site_rch %>%
   select(Site, VisitYear,
          SampleDate,
          VisitObjective)
-  
-  
-champ_site_rch %>%
+
+mtr_dens_est <- champ_site_rch %>%
   inner_join(mtr_cap %>%
                st_drop_geometry() %>%
                select(UniqueID)) %>%
@@ -177,7 +221,28 @@ champ_site_rch %>%
          Nmethod,
          N, 
          fish_dens,
-         fish_dens_2) %>%
+         fish_dens_2)
+
+mtr_dens_est |> 
+  group_by(Site) |> 
+  summarize(across(fish_dens_2,
+                   list(min = min,
+                        mean = mean,
+                        median = median,
+                        max = max),
+                   .names = "{.fn}"))
+
+ggplot(mtr_dens_est,
+       aes(x = fish_dens_2,
+           fill = Site)) +
+  geom_histogram(bins = 10,
+                 position = "dodge") +
+  labs(x = "Fish Density (per m2)",
+       color = "CHaMP Site")
+  
+
+
+mtr_dens_est %>%
   group_by(Site) %>%
   # group_by(Year) %>%
   summarize(n_sites = n(),
