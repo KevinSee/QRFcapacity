@@ -30,7 +30,8 @@ uc_pts = st_read('output/gpkg/Sum_Juv_Capacity.gpkg') %>%
   st_transform(st_crs(chnk_domain))
 
 # get HUC 12 polygons
-huc12_sf = st_read('/Users/seek/OneDrive - Merck Sharp & Dohme, Corp/Data/WatershedBoundaries/WBDHU12.shp') %>%
+huc12_sf <-
+  st_read("data/raw/watershed_boundaries/WBDHU12.shp") |> 
   st_transform(st_crs(chnk_domain))
 
 ent_huc12 = huc12_sf %>%
