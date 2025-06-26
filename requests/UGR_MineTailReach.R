@@ -20,10 +20,10 @@ theme_set(theme_bw())
 #-----------------------------------------------------------------
 mod_choice = c('juv_summer',
                'juv_summer_dash',
-               'redds')[2]
+               'redds')[1]
 
-# load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
-load(paste0('output/modelFits/extrap_200rch_', mod_choice, '.rda'))
+load(paste0('output/modelFits/extrap_200rch_RF_', mod_choice, '.rda'))
+# load(paste0('output/modelFits/extrap_200rch_', mod_choice, '.rda'))
 
 data("rch_200")
 
@@ -142,9 +142,8 @@ mtr_cap %>%
   st_drop_geometry() %>%
   summarize(across(c(chnk_per_m,
                      chnk_per_m2),
-                   list(mean = mean,
-                        median = median),
-                   na.rm = T))
+                   list(mean = ~ mean(., na.rm = T),
+                        median = ~ median(., na.rm = T))))
 
 # total capacity
 mtr_cap %>%
@@ -175,8 +174,11 @@ mtr_cap %>%
 # quick map
 mtr_cap %>%
   ggplot(aes(color = chnk_per_m2)) +
-  geom_sf() +
-  scale_color_viridis_c() +
+  geom_sf(linewidth = 1) +
+  scale_color_viridis_c(name = "Chinook / m2") +
+  geom_sf(data = mtr_cap |> 
+            filter(chnk_per_m_se == 0),
+          linewidth = 2) +
   theme(axis.text = element_blank())
 
 mtr_cap %>%
@@ -230,7 +232,9 @@ mtr_dens_est |>
                         mean = mean,
                         median = median,
                         max = max),
-                   .names = "{.fn}"))
+                   .names = "{.fn}")) |> 
+  summarize(across(c(mean, median),
+                   mean))
 
 ggplot(mtr_dens_est,
        aes(x = fish_dens_2,
@@ -272,6 +276,13 @@ champ_site_rch %>%
          DpthBf_Max,
          DpthBf_Avg)
 
+champ_site_rch %>%
+  inner_join(mtr_cap %>%
+               st_drop_geometry() %>%
+               select(UniqueID)) %>%
+  left_join(rch_200_cap) |> 
+  select(Site,
+         contains("per_m"))
 
 fish_sum_est %>%
   filter(Species == "Chinook") %>%
